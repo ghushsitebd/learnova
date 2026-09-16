@@ -11,11 +11,11 @@ permissions:
 
 jobs:
   build:
-    name: Build Release APK
+    name: Build Learnova APK
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout Source
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
@@ -25,35 +25,64 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      - name: Set up Gradle
+      - name: Set up Gradle 8.7
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
+
+      - name: Check Java
+        run: java -version
 
       - name: Check Gradle
         run: gradle --version
 
       - name: Build Release APK
-        run: gradle clean assembleRelease
-
-      - name: Verify APK
         run: |
-          echo "Checking Release APK..."
-          test -f app/build/outputs/apk/release/app-release.apk
-          ls -lh app/build/outputs/apk/release/app-release.apk
+          gradle clean assembleRelease --stacktrace
 
-      - name: Rename APK
-        run: cp app/build/outputs/apk/release/app-release.apk Learnova.apk
+      - name: Find Generated APK
+        id: find_apk
+        shell: bash
+        run: |
+          echo "Searching for generated APK..."
+
+          find . -type f -name "*.apk" -print
+
+          APK=$(find . -type f \
+            \( -path "*/build/outputs/apk/release/*.apk" \
+            -o -path "*/build/outputs/apk/*/*.apk" \) \
+            | head -n 1)
+
+          if [ -z "$APK" ]; then
+            echo "ERROR: No APK was generated."
+            echo "All APK files:"
+            find . -type f -name "*.apk" -print
+            exit 1
+          fi
+
+          echo "APK FOUND:"
+          echo "$APK"
+
+          echo "apk_path=$APK" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare Learnova APK
+        run: |
+          APK="${{ steps.find_apk.outputs.apk_path }}"
+
+          echo "Using APK: $APK"
+
+          cp "$APK" Learnova.apk
+
+          ls -lh Learnova.apk
 
       - name: Generate SHA-256
         run: |
-          sha256sum Learnova.apk > Learnova.apk.sha256
-          cat Learnova.apk.sha256
+          sha256sum Learnova.apk | tee Learnova.apk.sha256
 
-      - name: Upload Release APK
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Learnova-Release-APK
+          name: Learnova-APK
           path: |
             Learnova.apk
             Learnova.apk.sha256
