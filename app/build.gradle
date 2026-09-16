@@ -15,6 +15,16 @@ android {
         versionName "1.0"
     }
 
+    // Java এবং Kotlin দুটোই JVM 17 ব্যবহার করবে
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+
     buildTypes {
         release {
             minifyEnabled false
