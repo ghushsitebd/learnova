@@ -26,12 +26,10 @@ android {
 
     signingConfigs {
         release {
-            // Temporary test signing
-            // পরে permanent private release key বসানো হবে
-            storeFile = file("${System.getProperty('user.home')}/.android/debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
+            storeFile file("${rootProject.projectDir}/learnova-test.keystore")
+            storePassword "LearnovaTest123"
+            keyAlias "learnova"
+            keyPassword "LearnovaTest123"
         }
     }
 
