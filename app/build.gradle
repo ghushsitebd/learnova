@@ -9,18 +9,24 @@ android {
 
     defaultConfig {
         applicationId 'com.learnova.app'
+
+        // Android 6.0+
         minSdk 23
+
+        // Modern Android compatibility
         targetSdk 35
+
         versionCode 1
         versionName "1.0"
     }
 
-    // Java এবং Kotlin দুটোই JVM 17 ব্যবহার করবে
+    // Java 17
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
 
+    // Kotlin JVM 17
     kotlinOptions {
         jvmTarget = '17'
     }
@@ -28,6 +34,24 @@ android {
     buildTypes {
         release {
             minifyEnabled false
+            shrinkResources false
+        }
+
+        debug {
+            minifyEnabled false
+        }
+    }
+
+    // APK build configuration
+    packaging {
+        resources {
+            excludes += [
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE",
+                "META-INF/LICENSE.txt",
+                "META-INF/NOTICE",
+                "META-INF/NOTICE.txt"
+            ]
         }
     }
 }
