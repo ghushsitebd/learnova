@@ -25,26 +25,25 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      - name: Check Android SDK
-        run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-          sdkmanager --version || true
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
 
-      - name: Grant Gradle permission
-        run: chmod +x ./gradlew
+      - name: Check Gradle
+        run: gradle --version
 
       - name: Build Release APK
-        run: ./gradlew clean assembleRelease
+        run: gradle clean assembleRelease
 
       - name: Verify APK
         run: |
+          echo "Checking Release APK..."
           test -f app/build/outputs/apk/release/app-release.apk
           ls -lh app/build/outputs/apk/release/app-release.apk
 
       - name: Rename APK
-        run: |
-          cp app/build/outputs/apk/release/app-release.apk Learnova.apk
+        run: cp app/build/outputs/apk/release/app-release.apk Learnova.apk
 
       - name: Generate SHA-256
         run: |
