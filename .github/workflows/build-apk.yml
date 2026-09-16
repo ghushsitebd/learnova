@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   build:
-    name: Build Signed Release APK
+    name: Build Release APK
     runs-on: ubuntu-latest
 
     steps:
@@ -34,21 +34,18 @@ jobs:
       - name: Build Release APK
         run: ./gradlew clean assembleRelease
 
-      - name: Verify APK exists
+      - name: Verify APK
         run: |
-          ls -lh app/build/outputs/apk/release/
           test -f app/build/outputs/apk/release/app-release.apk
+          ls -lh app/build/outputs/apk/release/app-release.apk
 
       - name: Rename APK
-        run: |
-          cp app/build/outputs/apk/release/app-release.apk Learnova.apk
+        run: cp app/build/outputs/apk/release/app-release.apk Learnova.apk
 
       - name: Generate SHA-256
-        run: |
-          sha256sum Learnova.apk > Learnova.apk.sha256
-          cat Learnova.apk.sha256
+        run: sha256sum Learnova.apk > Learnova.apk.sha256
 
-      - name: Upload APK Artifact
+      - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
           name: Learnova-Release-APK
@@ -66,23 +63,3 @@ jobs:
           files: |
             Learnova.apk
             Learnova.apk.sha256
-
-### ⚠️ কিন্তু একটি জিনিস আগে করতে হবে
-
-এই workflow **Release APK তৈরি করবে**, কিন্তু তোমার `app/build.gradle`-এ যদি Release signing configuration না থাকে, তাহলে `assembleRelease` signed APK নাও তৈরি করতে পারে।
-
-তাই **এখনই workflow চালাবে না।**
-
-পরের ধাপে তোমার `app/build.gradle`-এ **secure release signing** বসাব। তারপর GitHub Secrets দিয়ে key নিরাপদে রাখব।
-
-এতে আমরা বর্তমান:
-
-`assembleDebug ❌`
-
-থেকে:
-
-`assembleRelease → signed Learnova.apk → GitHub Release → Download`
-
-এ যাব।
-
-**তোমার GitHub repository-তে এখন এই workflow save করো। তারপর আমাকে শুধু “হয়ে গেছে” বলো—আমি পরের ধাপের signing configuration দেব।**
