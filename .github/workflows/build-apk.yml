@@ -30,6 +30,19 @@ jobs:
         with:
           gradle-version: '8.7'
 
+      - name: Create Release Keystore
+        run: |
+          keytool -genkeypair \
+            -v \
+            -keystore learnova-test.keystore \
+            -alias learnova \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass LearnovaTest123 \
+            -keypass LearnovaTest123 \
+            -dname "CN=Learnova, OU=Learnova, O=Learnova, L=Dhaka, ST=Dhaka, C=BD"
+
       - name: Build Release APK
         run: gradle clean assembleRelease --stacktrace
 
