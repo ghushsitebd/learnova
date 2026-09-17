@@ -4,8 +4,8 @@
     <application
         android:allowBackup="true"
         android:label="Learnova"
-        android:icon="@drawable/learnova_icon"
-        android:roundIcon="@drawable/learnova_icon"
+        android:icon="@drawable/file_00000000f3c48230ae6f57adba156a34"
+        android:roundIcon="@drawable/file_00000000f3c48230ae6f57adba156a34"
         android:supportsRtl="true"
         android:theme="@style/Theme.Learnova">
 
