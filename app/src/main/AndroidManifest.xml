@@ -4,8 +4,8 @@
     <application
         android:allowBackup="true"
         android:icon="@drawable/learnova_icon"
-        android:label="Learnova"
         android:roundIcon="@drawable/learnova_icon"
+        android:label="Learnova"
         android:supportsRtl="true"
         android:theme="@style/Theme.Learnova">
 
@@ -14,12 +14,4 @@
             android:exported="true">
 
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-
-        </activity>
-
-    </application>
-
-</manifest>
+                <action android:name="android
