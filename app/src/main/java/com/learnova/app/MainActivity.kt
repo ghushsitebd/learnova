@@ -56,26 +56,13 @@ class MainActivity : AppCompatActivity() {
             "Yak", "Zebra"
         )
 
-        private val lessonHints = arrayOf(
-            "English alphabet", "English alphabet", "English alphabet",
-            "English alphabet", "English alphabet", "English alphabet",
-            "English alphabet", "English alphabet", "English alphabet",
-            "English alphabet", "English alphabet", "English alphabet",
-            "English alphabet", "English alphabet", "English alphabet",
-            "English alphabet", "English alphabet", "English alphabet",
-            "English alphabet", "English alphabet", "English alphabet",
-            "English alphabet", "English alphabet", "English alphabet",
-            "English alphabet", "English alphabet",
-            "Arabic letters", "Arabic letters", "Arabic letters",
-            "Arabic letters", "Arabic letters", "Arabic letters",
-            "Arabic letters", "Arabic letters", "Arabic letters",
-            "Arabic letters", "Arabic letters", "Arabic letters",
-            "Arabic letters", "Arabic letters", "Arabic letters",
-            "Arabic letters", "Arabic letters", "Arabic letters",
-            "Arabic letters", "Arabic letters", "Arabic letters",
-            "Arabic letters", "Arabic letters", "Arabic letters",
-            "Arabic letters", "Arabic letters", "Quran learning"
-        )
+        private val lessonHints = Array(lessons.size) { index ->
+            when {
+                index < 26 -> "English alphabet"
+                index < lessons.size - 1 -> "Arabic letters"
+                else -> "Quran learning"
+            }
+        }
 
         init {
             level = prefs.getInt("level", 1).coerceAtLeast(1)
@@ -134,7 +121,6 @@ class MainActivity : AppCompatActivity() {
 
                 if (distance >= 1f) {
                     distance = 0f
-                    nextLesson()
                 }
             }
 
@@ -564,6 +550,11 @@ class MainActivity : AppCompatActivity() {
             text.color = Color.WHITE
             text.textSize = 12f
             c.drawText(if (running) "STOP" else "START",right-54f,top+57f,text)
+
+            text.textAlign = Paint.Align.CENTER
+            text.color = Color.rgb(27,105,69)
+            text.textSize = 11f
+            c.drawText("Tap bottom for next lesson", w/2f, top+101f, text)
         }
 
         private fun nextLesson() {
