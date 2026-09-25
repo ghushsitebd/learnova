@@ -225,7 +225,7 @@ class MainActivity : AppCompatActivity() {
             c.drawRect(0f, h * 0.64f, w, h, paint)
             paint.color = Color.argb(45, 255, 255, 255)
             for (i in 0..11) {
-                val x = (i * w / 11f) + if (running) (frame % 60L) else 0f
+                val x = (i * w / 11f) + if (running) ((frame % 60L).toFloat()) else 0f
                 c.drawCircle(x % w, h * 0.68f + (i % 3) * 11f, 3f, paint)
             }
         }
