@@ -25,12 +25,16 @@ class LearnovaVoice(context: Context) : TextToSpeech.OnInitListener {
         }
     }
 
+    fun speakEnglishLesson(letter: String, word: String) {
+        speak("Letter $letter. $word.", Locale.US)
+    }
+
     fun speakLesson(lesson: String) {
         val arabic = lesson.any { it in '\u0600'..'\u06FF' }
         val englishLetter = lesson.length == 1 && lesson[0] in 'A'..'Z'
         val spoken = when {
             englishLetter -> "Letter $lesson"
-            arabic && lesson == "الفاتحة" -> "Surah Al Fatiha"
+            arabic && lesson == "الفاتحة" -> "الفاتحة"
             arabic -> "Arabic letter $lesson"
             else -> lesson
         }
