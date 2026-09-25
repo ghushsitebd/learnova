@@ -2,6 +2,7 @@ package com.learnova.app
 
 import android.graphics.*
 import android.os.Bundle
+import android.content.SharedPreferences
 import android.view.MotionEvent
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
@@ -36,6 +37,14 @@ class MainActivity : AppCompatActivity() {
         private var worldSceneId = 1
         private var question = 0
         private var lastTap = 0L
+        private val prefs: SharedPreferences = getSharedPreferences("learnova_progress", MODE_PRIVATE)
+
+        init {
+            level = prefs.getInt("level", 1).coerceAtLeast(1)
+            vehicle = prefs.getInt("vehicle", 0).coerceIn(0, LearnovaUnlimitedWorld.vehicles.lastIndex)
+            worldSceneId = prefs.getInt("worldSceneId", 1).coerceAtLeast(1)
+            question = prefs.getInt("question", 0).coerceIn(0, 55)
+        }
 
         private val lessons = arrayOf(
             "A", "B", "C", "D", "E", "F", "G", "H",
@@ -91,6 +100,7 @@ class MainActivity : AppCompatActivity() {
             // Tap the vehicle name to switch vehicle.
             if (y < h * 0.18f && x > w * 0.68f) {
                 vehicle = (vehicle + 1) % LearnovaUnlimitedWorld.vehicles.size
+                saveProgress()
             }
 
             // Tap the very bottom to move to the next lesson.
@@ -547,7 +557,17 @@ class MainActivity : AppCompatActivity() {
             question = (question + 1) % lessons.size
             level += 1
             worldSceneId += 1
+            saveProgress()
             voice.speakLesson(lessons[question])
+        }
+
+        private fun saveProgress() {
+            prefs.edit()
+                .putInt("level", level)
+                .putInt("vehicle", vehicle)
+                .putInt("worldSceneId", worldSceneId)
+                .putInt("question", question)
+                .apply()
         }
 
         private fun drawHint(c: Canvas, w: Float, h: Float) {
@@ -564,6 +584,11 @@ class MainActivity : AppCompatActivity() {
 
             text.clearShadowLayer()
         }
+    }
+
+    override fun onPause() {
+        if (::voice.isInitialized) voice.stop()
+        super.onPause()
     }
 
     override fun onDestroy() {
