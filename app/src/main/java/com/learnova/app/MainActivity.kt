@@ -31,7 +31,7 @@ class MainActivity : AppCompatActivity() {
         private var distance = 0f
         private var level = 1
         private var vehicle = 0
-        private var scene = 0
+        private var worldSceneId = 1
         private var question = 0
         private var lastTap = 0L
 
@@ -87,13 +87,13 @@ class MainActivity : AppCompatActivity() {
 
             // Tap the vehicle name to switch vehicle.
             if (y < h * 0.18f && x > w * 0.68f) {
-                vehicle = (vehicle + 1) % 4
+                vehicle = (vehicle + 1) % LearnovaUnlimitedWorld.vehicles.size
             }
 
             // Tap the very bottom to move to the next lesson.
             if (y > h * 0.91f) {
                 question = (question + 1) % lessons.size
-                level = (level % 1000) + 1
+                nextLesson()
             }
 
             invalidate()
@@ -116,9 +116,11 @@ class MainActivity : AppCompatActivity() {
                     distance = 0f
                     level = (level % 1000) + 1
                     question = (question + 1) % lessons.size
-                    scene = (scene + 1) % 3
+                    worldSceneId += 1
                 }
             }
+
+            val world = LearnovaUnlimitedWorld.scene(worldSceneId)
 
             drawSky(canvas, w, h)
             drawSun(canvas, w, h)
@@ -128,10 +130,10 @@ class MainActivity : AppCompatActivity() {
             drawRiver(canvas, w, h)
             drawTrees(canvas, w, h)
             drawRoad(canvas, w, h)
-            drawAnimals(canvas, w, h)
+            drawAnimals(canvas, w, h, world)
             drawVehicle(canvas, w, h)
-            drawTopBar(canvas, w, h)
-            drawLearningCard(canvas, w, h)
+            drawTopBar(canvas, w, h, world)
+            drawLearningCard(canvas, w, h, world)
             drawHint(canvas, w, h)
 
             if (running) postInvalidateOnAnimation()
@@ -278,12 +280,14 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        private fun drawAnimals(c: Canvas, w: Float, h: Float) {
+        private fun drawAnimals(c: Canvas, w: Float, h: Float, world: SmartScene) {
             val base = h * .61f
-            when (scene) {
-                0 -> drawElephant(c, w * .82f, base)
-                1 -> drawBear(c, w * .14f, base)
-                else -> drawDinosaur(c, w * .83f, base)
+            when (world.region) {
+                "Dinosaur Valley" -> drawDinosaur(c, w * .83f, base)
+                "Forest" -> drawBear(c, w * .14f, base)
+                "Safari" -> drawElephant(c, w * .82f, base)
+                "Ocean", "Island", "Wetland" -> drawDolphin(c, w * .82f, base)
+                else -> if (world.id % 2 == 0) drawElephant(c, w * .82f, base) else drawBear(c, w * .14f, base)
             }
         }
 
@@ -340,13 +344,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         private fun drawVehicle(c: Canvas, w: Float, h: Float) {
+            val selected = LearnovaUnlimitedWorld.vehicles[vehicle]
             val cx = w/2f
             val cy = h * .79f + if (running) sin(frame/4.0).toFloat()*2f else 0f
-
-            when (vehicle) {
-                0 -> drawCar(c,cx,cy)
-                1 -> drawBike(c,cx,cy)
-                2 -> drawPlane(c,cx,cy)
+            when (selected.kind) {
+                "car", "bus", "truck" -> drawCar(c,cx,cy)
+                "bike" -> drawBike(c,cx,cy)
+                "air" -> drawPlane(c,cx,cy)
+                "boat" -> drawBoat(c,cx,cy)
+                "space" -> drawRocket(c,cx,cy)
                 else -> drawMicro(c,cx,cy)
             }
         }
@@ -440,7 +446,7 @@ class MainActivity : AppCompatActivity() {
             drawWheel(c,x+48f,y+30f)
         }
 
-        private fun drawTopBar(c: Canvas, w: Float, h: Float) {
+        private fun drawTopBar(c: Canvas, w: Float, h: Float, world: SmartScene) {
             paint.color = Color.argb(190,20,65,55)
             c.drawRoundRect(RectF(14f,14f,w-14f,70f),22f,22f,paint)
 
@@ -451,22 +457,18 @@ class MainActivity : AppCompatActivity() {
 
             text.textAlign = Paint.Align.CENTER
             text.textSize = 13f
-            c.drawText("LEVEL $level / 1000",w*.53f,37f,text)
+            c.drawText("LEVEL " + level,w*.53f,37f,text)
             c.drawText(if (running) "● ON" else "● OFF",w*.53f,56f,text)
 
-            text.textSize = 12f
-            c.drawText("TAP VEHICLE",w*.84f,35f,text)
-            c.drawText(vehicleName(),w*.84f,54f,text)
+            text.textSize = 11f
+            c.drawText("WORLD " + world.id,w*.70f,35f,text)
+            c.drawText(world.region,w*.70f,54f,text)
+            text.textSize = 11f
+            c.drawText("VEHICLE",w*.88f,35f,text)
+            c.drawText(LearnovaUnlimitedWorld.vehicles[vehicle].name,w*.88f,54f,text)
         }
 
-        private fun vehicleName(): String = when(vehicle) {
-            0 -> "CAR"
-            1 -> "BIKE"
-            2 -> "AIR"
-            else -> "MICRO"
-        }
-
-        private fun drawLearningCard(c: Canvas, w: Float, h: Float) {
+        private fun drawLearningCard(c: Canvas, w: Float, h: Float, world: SmartScene) {
             val top = h*.63f
             val left = 18f
             val right = w-18f
@@ -485,7 +487,7 @@ class MainActivity : AppCompatActivity() {
 
             text.color = Color.rgb(85,90,90)
             text.textSize = 12f
-            c.drawText("Tap bottom area for next lesson",left+18f,top+88f,text)
+            c.drawText(world.activity,left+18f,top+88f,text)
 
             paint.color = if (running) Color.rgb(20,150,83) else Color.rgb(45,100,80)
             c.drawRoundRect(RectF(right-90f,top+19f,right-18f,top+86f),18f,18f,paint)
@@ -494,6 +496,12 @@ class MainActivity : AppCompatActivity() {
             text.color = Color.WHITE
             text.textSize = 12f
             c.drawText(if (running) "STOP" else "START",right-54f,top+57f,text)
+        }
+
+        private fun nextLesson() {
+            question = (question + 1) % lessons.size
+            level += 1
+            worldSceneId += 1
         }
 
         private fun drawHint(c: Canvas, w: Float, h: Float) {
