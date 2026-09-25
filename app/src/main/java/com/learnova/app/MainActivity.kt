@@ -432,6 +432,51 @@ class MainActivity : AppCompatActivity() {
             c.drawCircle(x+68f,y+bob,6f,paint)
         }
 
+        private fun drawDolphin(c: Canvas, x: Float, y: Float) {
+            paint.color = Color.rgb(105, 165, 190)
+            val body = Path()
+            body.moveTo(x - 55f, y - 10f)
+            body.cubicTo(x - 20f, y - 45f, x + 42f, y - 45f, x + 60f, y - 5f)
+            body.cubicTo(x + 25f, y + 18f, x - 30f, y + 20f, x - 55f, y - 10f)
+            body.close()
+            c.drawPath(body, paint)
+            paint.color = Color.DKGRAY
+            c.drawCircle(x + 45f, y - 15f, 3f, paint)
+        }
+
+        private fun drawBoat(c: Canvas, x: Float, y: Float) {
+            paint.color = Color.rgb(30,95,130)
+            val hull = Path()
+            hull.moveTo(x-85f,y-5f)
+            hull.lineTo(x+85f,y-5f)
+            hull.lineTo(x+55f,y+35f)
+            hull.lineTo(x-55f,y+35f)
+            hull.close()
+            c.drawPath(hull,paint)
+            paint.color = Color.WHITE
+            val sail = Path()
+            sail.moveTo(x,y-95f)
+            sail.lineTo(x,y-10f)
+            sail.lineTo(x+55f,y-10f)
+            sail.close()
+            c.drawPath(sail,paint)
+        }
+
+        private fun drawRocket(c: Canvas, x: Float, y: Float) {
+            val bob = if (running) sin(frame/8.0).toFloat()*8f else 0f
+            paint.color = Color.rgb(225,230,235)
+            c.drawOval(RectF(x-30f,y-105f+bob,x+30f,y+45f+bob),paint)
+            paint.color = Color.rgb(20,130,80)
+            c.drawCircle(x,y-70f+bob,13f,paint)
+            val flame = Path()
+            flame.moveTo(x-15f,y+40f+bob)
+            flame.lineTo(x,y+85f+bob)
+            flame.lineTo(x+15f,y+40f+bob)
+            flame.close()
+            paint.color = Color.rgb(255,180,50)
+            c.drawPath(flame,paint)
+        }
+
         private fun drawMicro(c: Canvas, x: Float, y: Float) {
             paint.color = Color.argb(80,0,0,0)
             c.drawOval(RectF(x-75f,y+30f,x+75f,y+52f),paint)
