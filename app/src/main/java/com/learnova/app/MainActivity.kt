@@ -7,6 +7,7 @@ import android.view.MotionEvent
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import kotlin.math.sin
+import kotlin.math.cos
 
 class MainActivity : AppCompatActivity() {
 
@@ -34,6 +35,9 @@ class MainActivity : AppCompatActivity() {
         private var distance = 0f
         private var vehicleProgress = 0.78f
         private var wheelSpin = 0f
+        private var speed = 0f
+        private var laneOffset = 0f
+        private var steering = 0f
         private var level = 1
         private var vehicle = 0
         private var worldSceneId = 1
@@ -124,10 +128,19 @@ class MainActivity : AppCompatActivity() {
 
             if (running) {
                 frame++
-                distance += 0.022f
-                wheelSpin = (wheelSpin + 18f) % 360f
-                vehicleProgress += 0.0038f
+                speed += 0.00045f
+                speed = speed.coerceAtMost(0.022f)
+                distance += speed
+                wheelSpin = (wheelSpin + speed * 820f) % 360f
+                vehicleProgress += speed * 0.18f
                 if (vehicleProgress > 1f) vehicleProgress = 0.70f
+                val targetSteer = sin(frame / 70.0).toFloat() * 0.055f
+                steering += (targetSteer - steering) * 0.08f
+                laneOffset += (steering * 0.7f - laneOffset) * 0.045f
+            } else {
+                speed *= 0.84f
+                steering *= 0.88f
+                laneOffset *= 0.92f
             }
 
             val world = LearnovaUnlimitedWorld.scene(worldSceneId)
@@ -290,31 +303,43 @@ class MainActivity : AppCompatActivity() {
         }
 
         private fun drawRoad(c: Canvas, w: Float, h: Float) {
+            val horizonY = h * .61f
+            val bottomY = h
+            val bend = sin(frame / 115.0).toFloat() * w * 0.055f
             val road = Path()
-            road.moveTo(w * .39f, h * .61f)
-            road.lineTo(w * .61f, h * .61f)
-            road.lineTo(w * .96f, h)
-            road.lineTo(w * .04f, h)
+            road.moveTo(w * .43f + bend * .10f, horizonY)
+            road.cubicTo(w * .46f + bend * .28f, h * .72f, w * .57f + bend * .62f, h * .88f, w * .96f + bend, bottomY)
+            road.lineTo(w * .04f + bend, bottomY)
+            road.cubicTo(w * .43f - bend * .62f, h * .88f, w * .46f - bend * .28f, h * .72f, w * .57f + bend * .10f, horizonY)
             road.close()
 
-            paint.color = Color.rgb(52, 55, 59)
+            paint.color = Color.rgb(49, 52, 56)
             c.drawPath(road, paint)
-
             paint.color = Color.WHITE
             paint.style = Paint.Style.STROKE
             paint.strokeWidth = 4f
             c.drawPath(road, paint)
             paint.style = Paint.Style.FILL
 
-            val offset = if (running) (frame * 9L % 115L).toFloat() else 0f
-            var y = h * .63f + offset
-
-            while (y < h) {
-                val t = ((y - h * .61f) / (h * .39f)).coerceIn(0f, 1f)
-                val half = 4f + 24f * t
+            val travel = if (running) (frame * 7L % 120L).toFloat() else 0f
+            var y = horizonY + 10f + travel
+            while (y < bottomY) {
+                val t = ((y - horizonY) / (bottomY - horizonY)).coerceIn(0f, 1f)
+                val half = 3f + 30f * t
+                val center = w / 2f + bend * t + laneOffset * w * t
                 paint.color = Color.WHITE
-                c.drawRect(w/2f-half, y, w/2f+half, y + 9f + 18f*t, paint)
-                y += 70f + 90f*t
+                c.drawRoundRect(RectF(center - half, y, center + half, y + 7f + 20f * t), 4f, 4f, paint)
+                y += 62f + 110f * t
+            }
+
+            for (side in -1..1 step 2) {
+                for (i in 0..5) {
+                    val t = (i + 1) / 7f
+                    val y = horizonY + (bottomY - horizonY) * t
+                    val edgeX = w / 2f + side * (w * (.08f + .42f * t)) + bend * t
+                    paint.color = Color.rgb(255, 220, 90)
+                    c.drawCircle(edgeX, y, 2.5f + 4f * t, paint)
+                }
             }
         }
 
@@ -384,20 +409,23 @@ class MainActivity : AppCompatActivity() {
 
         private fun drawVehicle(c: Canvas, w: Float, h: Float) {
             val selected = LearnovaUnlimitedWorld.vehicles[vehicle]
-            // Perspective travel: the vehicle starts near the horizon and grows as it approaches.
             val p = vehicleProgress.coerceIn(0f, 1f)
-            val cx = w / 2f
-            val cy = h * (0.64f + 0.24f * p) + if (running) sin(frame / 4.0).toFloat() * (1.5f + 3f * p) else 0f
+            val cx = w / 2f + laneOffset * w * (0.45f + 0.55f * p)
+            val roadBend = sin(frame / 115.0).toFloat() * w * 0.055f
+            val cy = h * (0.64f + 0.24f * p) + roadBend * p * 0.10f +
+                if (running) sin(frame / 4.0).toFloat() * (1.2f + 3.5f * p) else 0f
             val scale = 0.45f + 0.75f * p
+
             c.save()
+            c.rotate(steering * 7f, cx, cy)
             c.scale(scale, scale, cx, cy)
             when (selected.kind) {
-                "car", "bus", "truck" -> drawCar(c,cx,cy)
-                "bike" -> drawBike(c,cx,cy)
-                "air" -> drawPlane(c,cx,cy)
-                "boat" -> drawBoat(c,cx,cy)
-                "space" -> drawRocket(c,cx,cy)
-                else -> drawMicro(c,cx,cy)
+                "car", "bus", "truck" -> drawCar(c, cx, cy)
+                "bike" -> drawBike(c, cx, cy)
+                "air" -> drawPlane(c, cx, cy)
+                "boat" -> drawBoat(c, cx, cy)
+                "space" -> drawRocket(c, cx, cy)
+                else -> drawMicro(c, cx, cy)
             }
             c.restore()
         }
@@ -426,15 +454,26 @@ class MainActivity : AppCompatActivity() {
             c.drawCircle(x-98f,y-5f,8f,paint)
             c.drawCircle(x+98f,y-5f,8f,paint)
 
-            drawWheel(c,x-68f,y+34f)
-            drawWheel(c,x+68f,y+34f)
+            drawWheel(c,x-68f,y+34f, wheelSpin)
+            drawWheel(c,x+68f,y+34f, wheelSpin)
         }
 
-        private fun drawWheel(c: Canvas, x: Float, y: Float) {
+        private fun drawWheel(c: Canvas, x: Float, y: Float, angle: Float) {
             paint.color = Color.rgb(25,25,25)
             c.drawCircle(x,y,23f,paint)
             paint.color = Color.rgb(175,175,175)
             c.drawCircle(x,y,9f,paint)
+            paint.color = Color.rgb(70,70,70)
+            paint.strokeWidth = 2.5f
+            c.save()
+            c.rotate(angle, x, y)
+            for (i in 0..3) {
+                val a = i * 90f
+                val dx = cos(Math.toRadians(a.toDouble())).toFloat() * 8f
+                val dy = sin(Math.toRadians(a.toDouble())).toFloat() * 8f
+                c.drawLine(x, y, x + dx, y + dy, paint)
+            }
+            c.restore()
         }
 
         private fun drawBike(c: Canvas, x: Float, y: Float) {
@@ -532,8 +571,8 @@ class MainActivity : AppCompatActivity() {
             paint.color = Color.rgb(185,230,245)
             c.drawRoundRect(RectF(x-35f,y-27f,x+35f,y+3f),13f,13f,paint)
 
-            drawWheel(c,x-48f,y+30f)
-            drawWheel(c,x+48f,y+30f)
+            drawWheel(c,x-48f,y+30f, wheelSpin)
+            drawWheel(c,x+48f,y+30f, wheelSpin)
         }
 
         private fun drawTopBar(c: Canvas, w: Float, h: Float, world: SmartScene) {
