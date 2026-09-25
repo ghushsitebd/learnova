@@ -39,7 +39,7 @@ class MainActivity : AppCompatActivity() {
             "A", "B", "C", "D", "E", "F", "G", "H",
             "I", "J", "K", "L", "M", "N", "O", "P",
             "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
-            "ا", "ب", "ت", "ث", "ج", "ح", "خ",
+            "ا", "ب", "ت", "ث", "ج", "ح", "خ", "د", "ذ", "ر", "ز",
             "س", "ش", "ص", "ض", "ط", "ظ", "ع", "غ",
             "ف", "ق", "ك", "ل", "م", "ن", "ه", "و", "ي",
             "الفاتحة"
@@ -63,7 +63,7 @@ class MainActivity : AppCompatActivity() {
             "Arabic letters", "Arabic letters", "Arabic letters",
             "Arabic letters", "Arabic letters", "Arabic letters",
             "Arabic letters", "Arabic letters", "Arabic letters",
-            "Arabic letters", "Quran learning"
+            "Arabic letters", "Arabic letters", "Quran learning"
         )
 
         override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -92,7 +92,6 @@ class MainActivity : AppCompatActivity() {
 
             // Tap the very bottom to move to the next lesson.
             if (y > h * 0.91f) {
-                question = (question + 1) % lessons.size
                 nextLesson()
             }
 
