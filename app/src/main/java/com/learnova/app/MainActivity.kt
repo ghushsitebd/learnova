@@ -420,12 +420,18 @@ class MainActivity : AppCompatActivity() {
             c.rotate(steering * 7f, cx, cy)
             c.scale(scale, scale, cx, cy)
             when (selected.kind) {
-                "car", "bus", "truck" -> drawCar(c, cx, cy)
+                "car" -> drawCar(c, cx, cy)
+                "bus" -> drawBus(c, cx, cy)
+                "truck" -> drawTruck(c, cx, cy)
+                "van" -> drawVan(c, cx, cy)
                 "bike" -> drawBike(c, cx, cy)
+                "sportBike" -> drawSportBike(c, cx, cy)
+                "bicycle" -> drawBicycle(c, cx, cy)
                 "air" -> drawPlane(c, cx, cy)
                 "boat" -> drawBoat(c, cx, cy)
                 "space" -> drawRocket(c, cx, cy)
-                else -> drawMicro(c, cx, cy)
+                "micro" -> drawMicro(c, cx, cy)
+                else -> drawCar(c, cx, cy)
             }
             c.restore()
         }
@@ -476,13 +482,47 @@ class MainActivity : AppCompatActivity() {
             c.restore()
         }
 
+        private fun drawBus(c: Canvas, x: Float, y: Float) {
+            paint.color = Color.rgb(235, 178, 45)
+            c.drawRoundRect(RectF(x-125f,y-58f,x+125f,y+38f),22f,22f,paint)
+            paint.color = Color.rgb(180,225,238)
+            c.drawRoundRect(RectF(x-88f,y-44f,x+88f,y-10f),10f,10f,paint)
+            paint.color = Color.rgb(30,45,50)
+            c.drawRoundRect(RectF(x-105f,y-8f,x+105f,y+22f),7f,7f,paint)
+            drawWheel(c,x-78f,y+36f,wheelSpin)
+            drawWheel(c,x+78f,y+36f,wheelSpin)
+        }
+
+        private fun drawTruck(c: Canvas, x: Float, y: Float) {
+            paint.color = Color.rgb(205, 70, 52)
+            c.drawRoundRect(RectF(x-120f,y-40f,x+15f,y+38f),12f,12f,paint)
+            paint.color = Color.rgb(80,105,115)
+            c.drawRoundRect(RectF(x+5f,y-65f,x+108f,y+38f),15f,15f,paint)
+            paint.color = Color.rgb(190,225,238)
+            c.drawRoundRect(RectF(x+22f,y-52f,x+91f,y-20f),8f,8f,paint)
+            drawWheel(c,x-72f,y+37f,wheelSpin)
+            drawWheel(c,x+72f,y+37f,wheelSpin)
+        }
+
+        private fun drawVan(c: Canvas, x: Float, y: Float) {
+            paint.color = Color.rgb(70,105,145)
+            c.drawRoundRect(RectF(x-115f,y-58f,x+112f,y+38f),20f,20f,paint)
+            paint.color = Color.rgb(185,225,238)
+            c.drawRoundRect(RectF(x-78f,y-43f,x+65f,y-10f),10f,10f,paint)
+            paint.color = Color.rgb(245,245,245)
+            c.drawRect(x-65f,y+2f,x+72f,y+25f,paint)
+            drawWheel(c,x-70f,y+36f,wheelSpin)
+            drawWheel(c,x+70f,y+36f,wheelSpin)
+        }
+
         private fun drawBike(c: Canvas, x: Float, y: Float) {
             paint.style = Paint.Style.STROKE
             paint.strokeWidth = 7f
             paint.color = Color.rgb(28,45,48)
 
-            c.drawCircle(x-52f,y+18f,25f,paint)
-            c.drawCircle(x+52f,y+18f,25f,paint)
+            drawWheel(c,x-52f,y+18f,wheelSpin)
+            drawWheel(c,x+52f,y+18f,wheelSpin)
+            paint.color = Color.rgb(28,45,48)
             c.drawLine(x-52f,y+18f,x-10f,y-12f,paint)
             c.drawLine(x-10f,y-12f,x+52f,y+18f,paint)
             c.drawLine(x-10f,y-12f,x+10f,y+18f,paint)
@@ -492,6 +532,44 @@ class MainActivity : AppCompatActivity() {
             paint.color = Color.rgb(20,145,82)
             c.drawCircle(x,y-35f,14f,paint)
             c.drawRect(x-9f,y-22f,x+9f,y+12f,paint)
+        }
+
+        private fun drawSportBike(c: Canvas, x: Float, y: Float) {
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 6f
+            paint.color = Color.rgb(28,32,36)
+            drawWheel(c,x-48f,y+25f,wheelSpin)
+            drawWheel(c,x+48f,y+25f,wheelSpin)
+            c.drawLine(x-48f,y+25f,x-8f,y-5f,paint)
+            c.drawLine(x-8f,y-5f,x+48f,y+25f,paint)
+            c.drawLine(x-8f,y-5f,x+5f,y+25f,paint)
+            paint.style = Paint.Style.FILL
+            paint.color = Color.rgb(215,45,45)
+            val fairing = Path()
+            fairing.moveTo(x-22f,y-8f); fairing.lineTo(x+12f,y-34f); fairing.lineTo(x+58f,y-8f)
+            fairing.lineTo(x+20f,y+17f); fairing.lineTo(x-25f,y+12f); fairing.close()
+            c.drawPath(fairing,paint)
+            paint.color = Color.rgb(35,35,40)
+            c.drawRoundRect(RectF(x-3f,y-42f,x+24f,y-25f),8f,8f,paint)
+        }
+
+        private fun drawBicycle(c: Canvas, x: Float, y: Float) {
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 5f
+            paint.color = Color.rgb(35,75,55)
+            drawWheel(c,x-55f,y+24f,wheelSpin)
+            drawWheel(c,x+55f,y+24f,wheelSpin)
+            c.drawLine(x-55f,y+24f,x-8f,y-8f,paint)
+            c.drawLine(x-8f,y-8f,x+55f,y+24f,paint)
+            c.drawLine(x-8f,y-8f,x+8f,y+24f,paint)
+            c.drawLine(x-8f,y-8f,x-28f,y+24f,paint)
+            c.drawLine(x+55f,y+24f,x+48f,y-10f,paint)
+            c.drawLine(x+48f,y-10f,x+62f,y-13f,paint)
+            c.drawLine(x-28f,y+24f,x-5f,y+27f,paint)
+            paint.style = Paint.Style.FILL
+            paint.color = Color.rgb(40,125,78)
+            c.drawCircle(x+2f,y-30f,12f,paint)
+            c.drawRoundRect(RectF(x-7f,y-18f,x+10f,y+8f),7f,7f,paint)
         }
 
         private fun drawPlane(c: Canvas, x: Float, y: Float) {
