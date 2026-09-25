@@ -152,6 +152,7 @@ class MainActivity : AppCompatActivity() {
             drawGround(canvas, w, h)
             drawRiver(canvas, w, h)
             drawTrees(canvas, w, h)
+            drawHabitatDetails(canvas, w, h, world)
             drawRoad(canvas, w, h)
             drawAnimals(canvas, w, h, world)
             drawVehicle(canvas, w, h)
@@ -300,6 +301,125 @@ class MainActivity : AppCompatActivity() {
             c.drawCircle(x + 27f*s, y - 87f*s, 28f*s, paint)
             paint.color = Color.rgb(67, 153, 70)
             c.drawCircle(x - 10f*s, y - 120f*s, 20f*s, paint)
+        }
+
+        private fun drawHabitatDetails(c: Canvas, w: Float, h: Float, world: SmartScene) {
+            val groundY = h * 0.64f
+            val phase = if (running) frame.toFloat() * 0.03f else 0f
+
+            when (world.region) {
+                "Farm" -> {
+                    paint.color = Color.rgb(181, 137, 70)
+                    for (i in 0..5) {
+                        val x = w * (0.08f + i * 0.17f)
+                        c.drawRoundRect(RectF(x, groundY + 22f, x + 5f, h * 0.86f), 2f, 2f, paint)
+                        paint.color = Color.rgb(86, 133, 52)
+                        c.drawCircle(x + 2.5f, groundY + 15f, 11f, paint)
+                        paint.color = Color.rgb(181, 137, 70)
+                    }
+                    paint.color = Color.rgb(232, 198, 116)
+                    c.drawRect(w * 0.05f, groundY + 58f, w * 0.34f, groundY + 63f, paint)
+                    c.drawRect(w * 0.05f, groundY + 83f, w * 0.34f, groundY + 88f, paint)
+                }
+                "Village", "City" -> {
+                    val heights = intArrayOf(42, 68, 52, 86, 58)
+                    for (i in heights.indices) {
+                        val x = w * (0.06f + i * 0.20f)
+                        val bh = heights[i].toFloat()
+                        paint.color = if (world.region == "City") Color.rgb(92, 108, 118) else Color.rgb(191, 155, 104)
+                        c.drawRoundRect(RectF(x, groundY - bh, x + w * 0.12f, groundY + 8f), 5f, 5f, paint)
+                        paint.color = Color.rgb(244, 214, 116)
+                        for (row in 0..1) {
+                            c.drawRect(x + 10f, groundY - bh + 12f + row * 20f, x + 22f, groundY - bh + 22f + row * 20f, paint)
+                        }
+                    }
+                    paint.color = Color.rgb(72, 78, 76)
+                    c.drawRect(w * 0.03f, groundY + 5f, w * 0.97f, groundY + 12f, paint)
+                }
+                "Desert" -> {
+                    paint.color = Color.rgb(220, 181, 91)
+                    for (i in 0..4) {
+                        val x = w * (0.10f + i * 0.20f)
+                        val y = groundY + 28f + sin(i.toDouble() + phase * 0.15).toFloat() * 5f
+                        c.drawOval(RectF(x - 38f, y - 10f, x + 42f, y + 10f), paint)
+                    }
+                    paint.color = Color.rgb(54, 125, 68)
+                    for (i in 0..2) {
+                        val x = w * (0.16f + i * 0.34f)
+                        c.drawRect(x - 5f, groundY - 5f, x + 5f, groundY + 38f, paint)
+                        c.drawCircle(x, groundY - 8f, 17f, paint)
+                    }
+                }
+                "Arctic" -> {
+                    paint.color = Color.rgb(238, 248, 252)
+                    c.drawRect(0f, groundY, w, h, paint)
+                    paint.color = Color.rgb(177, 215, 230)
+                    for (i in 0..5) {
+                        val x = w * (0.06f + i * 0.18f)
+                        c.drawCircle(x, groundY + 16f, 24f, paint)
+                        c.drawCircle(x + 22f, groundY + 22f, 18f, paint)
+                    }
+                }
+                "Ocean", "Island", "Wetland" -> {
+                    paint.color = Color.argb(105, 255, 255, 255)
+                    for (i in 0..4) {
+                        val x = (w * (0.12f + i * 0.22f) + phase * 7f) % (w + 80f) - 40f
+                        val y = groundY + 18f + (i % 2) * 28f
+                        c.drawOval(RectF(x, y, x + 62f, y + 8f), paint)
+                    }
+                    if (world.region == "Wetland") {
+                        paint.color = Color.rgb(71, 132, 67)
+                        for (i in 0..6) {
+                            val x = w * (0.05f + i * 0.15f)
+                            c.drawLine(x, groundY + 20f, x + 4f, groundY - 8f, paint)
+                        }
+                    }
+                }
+                "Dinosaur Valley" -> {
+                    paint.color = Color.rgb(117, 91, 58)
+                    for (i in 0..4) {
+                        val x = w * (0.08f + i * 0.21f)
+                        c.drawOval(RectF(x - 24f, groundY + 28f, x + 30f, groundY + 40f), paint)
+                    }
+                    paint.color = Color.rgb(77, 126, 64)
+                    for (i in 0..3) {
+                        val x = w * (0.12f + i * 0.25f)
+                        c.drawLine(x, groundY + 18f, x + 8f, groundY - 5f, paint)
+                    }
+                }
+                "Cave" -> {
+                    paint.color = Color.rgb(68, 72, 78)
+                    c.drawPath(Path().apply {
+                        moveTo(0f, groundY + 8f)
+                        lineTo(w * 0.20f, groundY - 35f)
+                        lineTo(w * 0.34f, groundY + 8f)
+                        close()
+                    }, paint)
+                    c.drawPath(Path().apply {
+                        moveTo(w, groundY + 8f)
+                        lineTo(w * 0.80f, groundY - 35f)
+                        lineTo(w * 0.66f, groundY + 8f)
+                        close()
+                    }, paint)
+                }
+                "Science Park", "Garden", "Quran Learning Garden", "Arabic Learning Garden", "Kindness Village" -> {
+                    paint.color = Color.rgb(218, 178, 78)
+                    for (i in 0..5) {
+                        val x = w * (0.08f + i * 0.17f)
+                        c.drawCircle(x, groundY + 22f, 5f, paint)
+                        paint.color = Color.rgb(67, 145, 76)
+                        c.drawRect(x - 2f, groundY + 25f, x + 2f, groundY + 43f, paint)
+                        paint.color = Color.rgb(218, 178, 78)
+                    }
+                }
+                "Sky", "Space" -> {
+                    paint.color = Color.argb(110, 255, 255, 255)
+                    for (i in 0..4) {
+                        val x = (w * (0.12f + i * 0.21f) + phase * 4f) % (w + 120f) - 60f
+                        c.drawOval(RectF(x, h * 0.52f + (i % 2) * 22f, x + 70f, h * 0.55f + (i % 2) * 22f), paint)
+                    }
+                }
+            }
         }
 
         private fun drawRoad(c: Canvas, w: Float, h: Float) {
