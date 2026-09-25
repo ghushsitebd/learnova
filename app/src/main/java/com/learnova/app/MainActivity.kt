@@ -56,6 +56,13 @@ class MainActivity : AppCompatActivity() {
             "الفاتحة"
         )
 
+        private val englishWords = arrayOf(
+            "Apple", "Ball", "Cat", "Dog", "Elephant", "Fish", "Grapes", "House",
+            "Ice cream", "Juice", "Kite", "Lion", "Moon", "Nest", "Orange", "Parrot",
+            "Queen", "Rabbit", "Sun", "Tiger", "Umbrella", "Van", "Whale", "Xylophone",
+            "Yak", "Zebra"
+        )
+
         private val lessonHints = arrayOf(
             "English alphabet", "English alphabet", "English alphabet",
             "English alphabet", "English alphabet", "English alphabet",
@@ -534,7 +541,12 @@ class MainActivity : AppCompatActivity() {
             text.textAlign = Paint.Align.LEFT
             text.color = Color.rgb(27,105,69)
             text.textSize = 13f
-            c.drawText(lessonHints[question],left+18f,top+25f,text)
+            val lessonLabel = if (question < 26) {
+                "English • Letter ${lessons[question]} • ${englishWords[question]}"
+            } else {
+                lessonHints[question]
+            }
+            c.drawText(lessonLabel,left+18f,top+25f,text)
 
             text.color = Color.rgb(35,45,48)
             text.textSize = if (lessons[question].length > 4) 25f else 34f
