@@ -1,20 +1,23 @@
 package com.learnova.app
 
-import android.os.Bundle
 import android.graphics.*
+import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import kotlin.math.sin
 
 class MainActivity : AppCompatActivity() {
 
+    private lateinit var learnovaView: LearnovaView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContentView(LearnovaView())
+        learnovaView = LearnovaView()
+        setContentView(learnovaView)
     }
 
-    private inner class LearnovaView : View(this) {
+    private inner class LearnovaView : View(this@MainActivity) {
 
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         private var running = false
@@ -26,6 +29,10 @@ class MainActivity : AppCompatActivity() {
             setOnClickListener {
                 running = !running
                 invalidate()
+
+                if (running) {
+                    postInvalidateOnAnimation()
+                }
             }
         }
 
@@ -35,18 +42,22 @@ class MainActivity : AppCompatActivity() {
             val w = width.toFloat()
             val h = height.toFloat()
 
-            frame++
+            // Prevent drawing before the screen has a valid size
+            if (w <= 0f || h <= 0f) return
 
-            // Sky
+            if (running) {
+                frame++
+            }
+
+            // SKY
             canvas.drawColor(Color.rgb(220, 242, 255))
 
+            // GROUND
             paint.style = Paint.Style.FILL
-
-            // Ground
             paint.color = Color.rgb(150, 205, 170)
             canvas.drawRect(0f, h * 0.45f, w, h, paint)
 
-            // Mountains
+            // MOUNTAINS
             val mountain = Path()
 
             mountain.moveTo(0f, h * 0.55f)
@@ -62,7 +73,7 @@ class MainActivity : AppCompatActivity() {
             paint.color = Color.rgb(100, 155, 135)
             canvas.drawPath(mountain, paint)
 
-            // River
+            // RIVER
             val river = Path()
 
             river.moveTo(w * 0.05f, h)
@@ -74,7 +85,7 @@ class MainActivity : AppCompatActivity() {
             paint.color = Color.rgb(80, 175, 220)
             canvas.drawPath(river, paint)
 
-            // Road
+            // ROAD
             val road = Path()
 
             road.moveTo(w * 0.43f, h * 0.53f)
@@ -86,13 +97,16 @@ class MainActivity : AppCompatActivity() {
             paint.color = Color.rgb(55, 60, 65)
             canvas.drawPath(road, paint)
 
-            // Road markings
+            // ROAD MARKINGS
             paint.color = Color.WHITE
             paint.strokeWidth = 6f
 
             val offset =
-                if (running) ((frame * 7) % 100).toFloat()
-                else 0f
+                if (running) {
+                    ((frame * 7L) % 100L).toFloat()
+                } else {
+                    0f
+                }
 
             var y = h * 0.58f + offset
 
@@ -115,16 +129,18 @@ class MainActivity : AppCompatActivity() {
                 y += 75f + t * 45f
             }
 
-            // Car movement
+            // CAR
             val bob =
-                if (running)
+                if (running) {
                     sin(frame / 7.0).toFloat() * 3f
-                else 0f
+                } else {
+                    0f
+                }
 
             val cx = w / 2f
             val cy = h * 0.78f + bob
 
-            // Car body
+            // CAR BODY
             paint.color = Color.rgb(20, 130, 75)
 
             val body = RectF(
@@ -141,7 +157,7 @@ class MainActivity : AppCompatActivity() {
                 paint
             )
 
-            // Car window
+            // CAR WINDOW
             paint.color = Color.rgb(175, 225, 240)
 
             val window = RectF(
@@ -158,7 +174,7 @@ class MainActivity : AppCompatActivity() {
                 paint
             )
 
-            // Wheels
+            // WHEELS
             paint.color = Color.rgb(30, 30, 30)
 
             canvas.drawCircle(
@@ -175,35 +191,33 @@ class MainActivity : AppCompatActivity() {
                 paint
             )
 
-            // Title
+            // TITLE
             paint.color = Color.WHITE
             paint.textAlign = Paint.Align.CENTER
-            paint.typeface =
-                Typeface.create(
-                    "sans-serif",
-                    Typeface.BOLD
-                )
+            paint.typeface = Typeface.create(
+                "sans-serif",
+                Typeface.BOLD
+            )
 
             paint.textSize = 34f
 
             canvas.drawText(
-                if (running)
+                if (running) {
                     "TOUCH TO PAUSE"
-                else
-                    "TOUCH TO START",
+                } else {
+                    "TOUCH TO START"
+                },
                 cx,
                 h * 0.13f,
                 paint
             )
 
-            // Subtitle
+            // SUBTITLE
             paint.textSize = 22f
-
-            paint.typeface =
-                Typeface.create(
-                    "sans-serif",
-                    Typeface.NORMAL
-                )
+            paint.typeface = Typeface.create(
+                "sans-serif",
+                Typeface.NORMAL
+            )
 
             canvas.drawText(
                 "Learn • Play • Discover",
@@ -212,7 +226,7 @@ class MainActivity : AppCompatActivity() {
                 paint
             )
 
-            // Continue animation
+            // ANIMATION
             if (running) {
                 postInvalidateOnAnimation()
             }
