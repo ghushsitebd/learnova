@@ -465,31 +465,76 @@ class MainActivity : AppCompatActivity() {
 
         private fun drawAnimals(c: Canvas, w: Float, h: Float, world: SmartScene) {
             val base = h * .61f
-            val motion = if (running) sin(frame / 18.0).toFloat() * 12f else 0f
+            val travel = if (running) frame.toFloat() * 0.85f else 0f
+            val primaryPhase = sin(frame / 7.0).toFloat()
+            val secondaryPhase = sin(frame / 9.5 + 1.4).toFloat()
+            val drift = if (running) sin(frame / 24.0).toFloat() * w * .018f else 0f
+
             when (world.region) {
-                "Dinosaur Valley" -> drawDinosaur(c, w * .83f + motion, base)
-                "Forest" -> when (world.id % 4) {
-                    0 -> drawBear(c, w * .14f + motion, base)
-                    1 -> drawDeer(c, w * .14f + motion, base)
-                    2 -> drawFox(c, w * .14f + motion, base)
-                    else -> drawBird(c, w * .18f + motion, base - 45f)
+                "Dinosaur Valley" -> {
+                    drawAnimatedAnimal(c, "dinosaur", w * .78f + drift, base + primaryPhase * 3f, travel)
+                    drawAnimatedAnimal(c, if (world.id % 2 == 0) "dinosaur" else "bird",
+                        w * .18f - drift, base - 28f + secondaryPhase * 2f, -travel * .7f)
                 }
-                "Safari" -> when (world.id % 4) {
-                    0 -> drawElephant(c, w * .82f + motion, base)
-                    1 -> drawGiraffe(c, w * .82f + motion, base)
-                    2 -> drawZebra(c, w * .82f + motion, base)
-                    else -> drawLion(c, w * .82f + motion, base)
+                "Forest" -> {
+                    val a = when (world.id % 4) { 0 -> "bear"; 1 -> "deer"; 2 -> "fox"; else -> "bird" }
+                    val b = when (world.id % 3) { 0 -> "bird"; 1 -> "deer"; else -> "fox" }
+                    drawAnimatedAnimal(c, a, w * .16f + drift, base + primaryPhase * 2f, travel)
+                    drawAnimatedAnimal(c, b, w * .76f - drift, base - 20f + secondaryPhase * 2f, -travel * .65f)
                 }
-                "Ocean", "Island", "Wetland" -> when (world.id % 4) {
-                    0 -> drawDolphin(c, w * .82f + motion, base)
-                    1 -> drawFish(c, w * .82f + motion, base)
-                    2 -> drawCrocodile(c, w * .72f + motion, base)
-                    else -> drawBird(c, w * .78f + motion, base - 35f)
+                "Safari" -> {
+                    val a = when (world.id % 4) { 0 -> "elephant"; 1 -> "giraffe"; 2 -> "zebra"; else -> "lion" }
+                    val b = when (world.id % 3) { 0 -> "zebra"; 1 -> "lion"; else -> "giraffe" }
+                    drawAnimatedAnimal(c, a, w * .78f + drift, base + primaryPhase * 2.5f, travel)
+                    drawAnimatedAnimal(c, b, w * .20f - drift, base - 12f + secondaryPhase * 2f, -travel * .55f)
                 }
-                "Arctic" -> drawPenguin(c, w * .78f + motion, base)
-                else -> if (world.id % 2 == 0) drawElephant(c, w * .82f + motion, base) else drawBear(c, w * .14f + motion, base)
+                "Ocean", "Island", "Wetland" -> {
+                    val a = when (world.id % 4) { 0 -> "dolphin"; 1 -> "fish"; 2 -> "crocodile"; else -> "bird" }
+                    val b = if (world.id % 2 == 0) "fish" else "bird"
+                    drawAnimatedAnimal(c, a, w * .78f + drift, base - 5f + primaryPhase * 5f, travel)
+                    drawAnimatedAnimal(c, b, w * .28f - drift, base - 42f + secondaryPhase * 4f, -travel * .8f)
+                }
+                "Arctic" -> {
+                    drawAnimatedAnimal(c, "penguin", w * .76f + drift, base + primaryPhase * 2f, travel)
+                    drawAnimatedAnimal(c, "penguin", w * .30f - drift, base - 4f + secondaryPhase * 2f, -travel * .6f)
+                }
+                else -> {
+                    val a = if (world.id % 2 == 0) "elephant" else "bear"
+                    val b = if (world.id % 3 == 0) "bird" else "fox"
+                    drawAnimatedAnimal(c, a, w * .80f + drift, base + primaryPhase * 2f, travel)
+                    drawAnimatedAnimal(c, b, w * .18f - drift, base - 18f + secondaryPhase * 2f, -travel * .55f)
+                }
             }
         }
+
+        private fun drawAnimatedAnimal(
+            c: Canvas,
+            kind: String,
+            x: Float,
+            y: Float,
+            travel: Float
+        ) {
+            val wrappedX = ((x + travel) % (wSafe(c) + 180f)) - 90f
+            val hop = if (running) sin((frame / 5.5) + x * 0.01).toFloat() * 2.5f else 0f
+            val bobbedY = y + hop
+            when (kind) {
+                "elephant" -> drawElephant(c, wrappedX, bobbedY)
+                "bear" -> drawBear(c, wrappedX, bobbedY)
+                "deer" -> drawDeer(c, wrappedX, bobbedY)
+                "fox" -> drawFox(c, wrappedX, bobbedY)
+                "bird" -> drawBird(c, wrappedX, bobbedY - if (running) abs(sin(frame / 6.0).toFloat()) * 18f else 0f)
+                "giraffe" -> drawGiraffe(c, wrappedX, bobbedY)
+                "zebra" -> drawZebra(c, wrappedX, bobbedY)
+                "lion" -> drawLion(c, wrappedX, bobbedY)
+                "fish" -> drawFish(c, wrappedX, bobbedY)
+                "crocodile" -> drawCrocodile(c, wrappedX, bobbedY)
+                "penguin" -> drawPenguin(c, wrappedX, bobbedY)
+                "dinosaur" -> drawDinosaur(c, wrappedX, bobbedY)
+                "dolphin" -> drawDolphin(c, wrappedX, bobbedY)
+            }
+        }
+
+        private fun wSafe(c: Canvas): Float = c.width.toFloat()
 
         private fun drawElephant(c: Canvas, x: Float, y: Float) {
             paint.color = Color.rgb(120, 128, 126)
