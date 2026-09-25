@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   build:
-    name: Build Learnova APK
+    name: Build Learnova APK + AAB
     runs-on: ubuntu-latest
 
     steps:
@@ -43,41 +43,59 @@ jobs:
             -keypass LearnovaTest123 \
             -dname "CN=Learnova, OU=Learnova, O=Learnova, L=Dhaka, ST=Dhaka, C=BD"
 
-      - name: Build Release APK
-        run: gradle clean assembleRelease --stacktrace
+      - name: Build Release APK and AAB
+        run: gradle clean assembleRelease bundleRelease --stacktrace
 
-      - name: Find Generated APK
-        id: find_apk
+      - name: Find Generated APK and AAB
+        id: find_outputs
         shell: bash
         run: |
           APK=$(find . -type f -path '*/build/outputs/apk/release/*.apk' | head -n 1)
+          AAB=$(find . -type f -path '*/build/outputs/bundle/release/*.aab' | head -n 1)
+
           if [ -z "$APK" ]; then
             echo "No release APK was generated."
             find . -type f -name '*.apk' -print
             exit 1
           fi
-          echo "apk_path=$APK" >> "$GITHUB_OUTPUT"
 
-      - name: Prepare Learnova APK
-        run: cp "${{ steps.find_apk.outputs.apk_path }}" Learnova.apk
+          if [ -z "$AAB" ]; then
+            echo "No release AAB was generated."
+            find . -type f -name '*.aab' -print
+            exit 1
+          fi
+
+          echo "apk_path=$APK" >> "$GITHUB_OUTPUT"
+          echo "aab_path=$AAB" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare Learnova APK and AAB
+        run: |
+          cp "${{ steps.find_outputs.outputs.apk_path }}" Learnova.apk
+          cp "${{ steps.find_outputs.outputs.aab_path }}" Learnova.aab
 
       - name: Generate SHA-256
-        run: sha256sum Learnova.apk | tee Learnova.apk.sha256
+        run: |
+          sha256sum Learnova.apk | tee Learnova.apk.sha256
+          sha256sum Learnova.aab | tee Learnova.aab.sha256
 
-      - name: Upload APK
+      - name: Upload Learnova build
         uses: actions/upload-artifact@v4
         with:
-          name: Learnova-APK
+          name: Learnova-APK-AAB
           path: |
             Learnova.apk
             Learnova.apk.sha256
+            Learnova.aab
+            Learnova.aab.sha256
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: learnova-v1.0.${{ github.run_number }}
-          name: Learnova v1.0.${{ github.run_number }}
+          tag_name: learnova-v1.1.${{ github.run_number }}
+          name: Learnova v1.1.${{ github.run_number }}
           generate_release_notes: true
           files: |
             Learnova.apk
             Learnova.apk.sha256
+            Learnova.aab
+            Learnova.aab.sha256
