@@ -43,7 +43,8 @@ class MainActivity : AppCompatActivity() {
             level = prefs.getInt("level", 1).coerceAtLeast(1)
             vehicle = prefs.getInt("vehicle", 0).coerceIn(0, LearnovaUnlimitedWorld.vehicles.lastIndex)
             worldSceneId = prefs.getInt("worldSceneId", 1).coerceAtLeast(1)
-            question = prefs.getInt("question", 0).coerceIn(0, 55)
+            question = prefs.getInt("question", 0).coerceIn(0, lessons.lastIndex)
+            voice.speakLesson(lessons[question])
         }
 
         private val lessons = arrayOf(
