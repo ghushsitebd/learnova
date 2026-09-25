@@ -126,7 +126,7 @@ class MainActivity : AppCompatActivity() {
 
             val world = LearnovaUnlimitedWorld.scene(worldSceneId)
 
-            drawSky(canvas, w, h)
+            drawSky(canvas, w, h, world)
             drawSun(canvas, w, h)
             drawClouds(canvas, w, h)
             drawMountains(canvas, w, h)
@@ -143,18 +143,44 @@ class MainActivity : AppCompatActivity() {
             if (running) postInvalidateOnAnimation()
         }
 
-        private fun drawSky(c: Canvas, w: Float, h: Float) {
-            paint.shader = LinearGradient(
-                0f, 0f, 0f, h * 0.68f,
-                Color.rgb(77, 178, 244),
-                Color.rgb(218, 246, 255),
-                Shader.TileMode.CLAMP
-            )
+        private fun drawSky(c: Canvas, w: Float, h: Float, world: SmartScene) {
+            val top = when (world.time) {
+                "Night" -> Color.rgb(18, 32, 74)
+                "Sunset" -> Color.rgb(241, 139, 92)
+                else -> if (world.weather == "Rainy") Color.rgb(105, 139, 156) else Color.rgb(77, 178, 244)
+            }
+            val bottom = when (world.time) {
+                "Night" -> Color.rgb(64, 78, 126)
+                "Sunset" -> Color.rgb(255, 214, 156)
+                else -> if (world.weather == "Rainy") Color.rgb(194, 215, 220) else Color.rgb(218, 246, 255)
+            }
+            paint.shader = LinearGradient(0f, 0f, 0f, h * 0.68f, top, bottom, Shader.TileMode.CLAMP)
             c.drawRect(0f, 0f, w, h, paint)
             paint.shader = null
+
+            if (world.time == "Night") {
+                paint.color = Color.argb(210, 255, 255, 220)
+                for (i in 0..28) {
+                    val x = ((i * 83 + world.id * 17) % 1000) / 1000f * w
+                    val y = ((i * 47 + world.id * 11) % 420) / 420f * h * .48f
+                    c.drawCircle(x, y, if (i % 5 == 0) 2.2f else 1.2f, paint)
+                }
+            }
+
+            if (world.weather == "Rainy") {
+                paint.color = Color.argb(85, 235, 250, 255)
+                paint.strokeWidth = 2f
+                for (i in 0..22) {
+                    val x = ((i * 91 + frame * 2L) % 1100).toFloat() / 1000f * w
+                    val y = ((i * 53 + frame * 4L) % 500).toFloat() / 500f * h * .65f
+                    c.drawLine(x, y, x - 7f, y + 18f, paint)
+                }
+            }
         }
 
         private fun drawSun(c: Canvas, w: Float, h: Float) {
+            val night = false
+            if (night) return
             paint.color = Color.rgb(255, 221, 100)
             c.drawCircle(w * 0.83f, h * 0.15f, minOf(w, h) * 0.065f, paint)
             paint.color = Color.argb(45, 255, 244, 180)
