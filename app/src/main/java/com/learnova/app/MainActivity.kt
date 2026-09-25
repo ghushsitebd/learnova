@@ -314,12 +314,13 @@ class MainActivity : AppCompatActivity() {
 
         private fun drawAnimals(c: Canvas, w: Float, h: Float, world: SmartScene) {
             val base = h * .61f
+            val motion = if (running) sin(frame / 18.0).toFloat() * 12f else 0f
             when (world.region) {
-                "Dinosaur Valley" -> drawDinosaur(c, w * .83f, base)
-                "Forest" -> drawBear(c, w * .14f, base)
-                "Safari" -> drawElephant(c, w * .82f, base)
-                "Ocean", "Island", "Wetland" -> drawDolphin(c, w * .82f, base)
-                else -> if (world.id % 2 == 0) drawElephant(c, w * .82f, base) else drawBear(c, w * .14f, base)
+                "Dinosaur Valley" -> drawDinosaur(c, w * .83f + motion, base)
+                "Forest" -> drawBear(c, w * .14f + motion, base)
+                "Safari" -> drawElephant(c, w * .82f + motion, base)
+                "Ocean", "Island", "Wetland" -> drawDolphin(c, w * .82f + motion, base)
+                else -> if (world.id % 2 == 0) drawElephant(c, w * .82f + motion, base) else drawBear(c, w * .14f + motion, base)
             }
         }
 
