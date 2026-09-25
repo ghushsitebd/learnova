@@ -71,7 +71,7 @@ class MainActivity : AppCompatActivity() {
             vehicle = prefs.getInt("vehicle", 0).coerceIn(0, LearnovaUnlimitedWorld.vehicles.lastIndex)
             worldSceneId = prefs.getInt("worldSceneId", 1).coerceAtLeast(1)
             question = prefs.getInt("question", 0).coerceIn(0, lessons.lastIndex)
-            voice.speakLesson(lessons[question])
+            speakCurrentLesson()
         }
 
         override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -600,12 +600,20 @@ class MainActivity : AppCompatActivity() {
             c.drawText("Tap card to listen • Tap bottom for next", w/2f, top+101f, text)
         }
 
+        private fun speakCurrentLesson() {
+            if (question < 26) {
+                voice.speakEnglishLesson(lessons[question], englishWords[question])
+            } else {
+                voice.speakLesson(lessons[question])
+            }
+        }
+
         private fun nextLesson() {
             question = (question + 1) % lessons.size
             level += 1
             worldSceneId += 1
             saveProgress()
-            voice.speakLesson(lessons[question])
+            speakCurrentLesson()
         }
 
         private fun saveProgress() {
