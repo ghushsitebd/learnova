@@ -32,6 +32,8 @@ class MainActivity : AppCompatActivity() {
         private var running = false
         private var frame = 0L
         private var distance = 0f
+        private var vehicleProgress = 0.78f
+        private var wheelSpin = 0f
         private var level = 1
         private var vehicle = 0
         private var worldSceneId = 1
@@ -87,9 +89,14 @@ class MainActivity : AppCompatActivity() {
             val y = event.y
 
             // Main child-friendly control: one tap ON, next tap OFF.
-            if (y > h * 0.56f && y < h * 0.91f) {
+            if (y > h * 0.34f && y < h * 0.63f) {
                 running = !running
                 voice.speakInstruction(running)
+            }
+
+            // Tap the learning card to hear the current lesson again.
+            if (y >= h * 0.63f && y <= h * 0.91f && x < w * 0.76f) {
+                voice.speakLesson(lessons[question])
             }
 
             // Tap the vehicle name to switch vehicle.
@@ -117,11 +124,10 @@ class MainActivity : AppCompatActivity() {
 
             if (running) {
                 frame++
-                distance += 0.018f
-
-                if (distance >= 1f) {
-                    distance = 0f
-                }
+                distance += 0.022f
+                wheelSpin = (wheelSpin + 18f) % 360f
+                vehicleProgress += 0.0038f
+                if (vehicleProgress > 1f) vehicleProgress = 0.70f
             }
 
             val world = LearnovaUnlimitedWorld.scene(worldSceneId)
@@ -378,8 +384,13 @@ class MainActivity : AppCompatActivity() {
 
         private fun drawVehicle(c: Canvas, w: Float, h: Float) {
             val selected = LearnovaUnlimitedWorld.vehicles[vehicle]
-            val cx = w/2f
-            val cy = h * .79f + if (running) sin(frame/4.0).toFloat()*2f else 0f
+            // Perspective travel: the vehicle starts near the horizon and grows as it approaches.
+            val p = vehicleProgress.coerceIn(0f, 1f)
+            val cx = w / 2f
+            val cy = h * (0.64f + 0.24f * p) + if (running) sin(frame / 4.0).toFloat() * (1.5f + 3f * p) else 0f
+            val scale = 0.45f + 0.75f * p
+            c.save()
+            c.scale(scale, scale, cx, cy)
             when (selected.kind) {
                 "car", "bus", "truck" -> drawCar(c,cx,cy)
                 "bike" -> drawBike(c,cx,cy)
@@ -388,6 +399,7 @@ class MainActivity : AppCompatActivity() {
                 "space" -> drawRocket(c,cx,cy)
                 else -> drawMicro(c,cx,cy)
             }
+            c.restore()
         }
 
         private fun drawCar(c: Canvas, x: Float, y: Float) {
@@ -583,7 +595,9 @@ class MainActivity : AppCompatActivity() {
             text.textAlign = Paint.Align.CENTER
             text.color = Color.rgb(27,105,69)
             text.textSize = 11f
-            c.drawText("Tap bottom for next lesson", w/2f, top+101f, text)
+            text.color = Color.rgb(35,105,78)
+            text.textSize = 10f
+            c.drawText("Tap card to listen • Tap bottom for next", w/2f, top+101f, text)
         }
 
         private fun nextLesson() {
@@ -610,8 +624,8 @@ class MainActivity : AppCompatActivity() {
             text.textSize = 15f
 
             c.drawText(
-                if (running) "ট্যাপ করলে গাড়ি থামবে • আবার ট্যাপ করলে চলবে"
-                else "স্ক্রিনে একবার ট্যাপ করুন — গাড়ি চলবে",
+                if (running) "গাড়ি চলছে • ট্যাপ করুন থামাতে"
+                else "গাড়ি চালাতে একবার ট্যাপ করুন",
                 w/2f,h*.965f,text
             )
 
