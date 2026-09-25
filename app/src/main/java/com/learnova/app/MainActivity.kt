@@ -10,11 +10,13 @@ import kotlin.math.sin
 class MainActivity : AppCompatActivity() {
 
     private lateinit var gameView: LearnovaGameView
+    private lateinit var voice: LearnovaVoice
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.setStatusBarColor(Color.rgb(78, 175, 235))
         window.setNavigationBarColor(Color.BLACK)
+        voice = LearnovaVoice(this)
         gameView = LearnovaGameView()
         setContentView(gameView)
     }
@@ -83,6 +85,7 @@ class MainActivity : AppCompatActivity() {
             // Main child-friendly control: one tap ON, next tap OFF.
             if (y > h * 0.56f && y < h * 0.91f) {
                 running = !running
+                voice.speakInstruction(running)
             }
 
             // Tap the vehicle name to switch vehicle.
@@ -544,6 +547,7 @@ class MainActivity : AppCompatActivity() {
             question = (question + 1) % lessons.size
             level += 1
             worldSceneId += 1
+            voice.speakLesson(lessons[question])
         }
 
         private fun drawHint(c: Canvas, w: Float, h: Float) {
@@ -560,5 +564,10 @@ class MainActivity : AppCompatActivity() {
 
             text.clearShadowLayer()
         }
+    }
+
+    override fun onDestroy() {
+        if (::voice.isInitialized) voice.shutdown()
+        super.onDestroy()
     }
 }
