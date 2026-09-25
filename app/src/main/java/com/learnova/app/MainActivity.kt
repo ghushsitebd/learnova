@@ -348,9 +348,25 @@ class MainActivity : AppCompatActivity() {
             val motion = if (running) sin(frame / 18.0).toFloat() * 12f else 0f
             when (world.region) {
                 "Dinosaur Valley" -> drawDinosaur(c, w * .83f + motion, base)
-                "Forest" -> drawBear(c, w * .14f + motion, base)
-                "Safari" -> drawElephant(c, w * .82f + motion, base)
-                "Ocean", "Island", "Wetland" -> drawDolphin(c, w * .82f + motion, base)
+                "Forest" -> when (world.id % 4) {
+                    0 -> drawBear(c, w * .14f + motion, base)
+                    1 -> drawDeer(c, w * .14f + motion, base)
+                    2 -> drawFox(c, w * .14f + motion, base)
+                    else -> drawBird(c, w * .18f + motion, base - 45f)
+                }
+                "Safari" -> when (world.id % 4) {
+                    0 -> drawElephant(c, w * .82f + motion, base)
+                    1 -> drawGiraffe(c, w * .82f + motion, base)
+                    2 -> drawZebra(c, w * .82f + motion, base)
+                    else -> drawLion(c, w * .82f + motion, base)
+                }
+                "Ocean", "Island", "Wetland" -> when (world.id % 4) {
+                    0 -> drawDolphin(c, w * .82f + motion, base)
+                    1 -> drawFish(c, w * .82f + motion, base)
+                    2 -> drawCrocodile(c, w * .72f + motion, base)
+                    else -> drawBird(c, w * .78f + motion, base - 35f)
+                }
+                "Arctic" -> drawPenguin(c, w * .78f + motion, base)
                 else -> if (world.id % 2 == 0) drawElephant(c, w * .82f + motion, base) else drawBear(c, w * .14f + motion, base)
             }
         }
@@ -378,6 +394,75 @@ class MainActivity : AppCompatActivity() {
             c.drawCircle(x-11f,y-55f,3f,paint)
             c.drawCircle(x+11f,y-55f,3f,paint)
             c.drawCircle(x,y-42f,3f,paint)
+        }
+
+        private fun drawDeer(c: Canvas, x: Float, y: Float) {
+            paint.color=Color.rgb(145,95,55)
+            c.drawOval(RectF(x-48f,y-45f,x+42f,y-5f),paint)
+            c.drawCircle(x+48f,y-48f,22f,paint)
+            paint.strokeWidth=4f
+            c.drawLine(x+52f,y-66f,x+43f,y-92f,paint)
+            c.drawLine(x+58f,y-66f,x+68f,y-90f,paint)
+            c.drawRect(x-25f,y-8f,x-17f,y+18f,paint); c.drawRect(x+18f,y-8f,x+26f,y+18f,paint)
+        }
+
+        private fun drawFox(c: Canvas, x: Float, y: Float) {
+            paint.color=Color.rgb(205,105,45)
+            c.drawOval(RectF(x-45f,y-42f,x+38f,y-5f),paint)
+            val head=Path(); head.moveTo(x+25f,y-48f); head.lineTo(x+52f,y-78f); head.lineTo(x+72f,y-45f); head.lineTo(x+45f,y-25f); head.close(); c.drawPath(head,paint)
+            paint.color=Color.WHITE; c.drawOval(RectF(x+43f,y-50f,x+69f,y-32f),paint)
+            paint.color=Color.rgb(75,50,35); c.drawRect(x-20f,y-8f,x-13f,y+16f,paint); c.drawRect(x+15f,y-8f,x+22f,y+16f,paint)
+        }
+
+        private fun drawBird(c: Canvas, x: Float, y: Float) {
+            paint.color=Color.rgb(55,105,175)
+            c.drawOval(RectF(x-25f,y-28f,x+25f,y+5f),paint)
+            val wing=Path(); wing.moveTo(x,y-5f); wing.quadTo(x-28f,y-45f,x-42f,y-20f); wing.quadTo(x-20f,y-5f,x,y-5f); wing.close(); c.drawPath(wing,paint)
+            paint.color=Color.rgb(235,180,55); c.drawCircle(x+28f,y-12f,10f,paint)
+        }
+
+        private fun drawGiraffe(c: Canvas, x: Float, y: Float) {
+            paint.color=Color.rgb(235,190,70)
+            c.drawOval(RectF(x-40f,y-65f,x+45f,y-18f),paint)
+            c.drawRoundRect(RectF(x+18f,y-120f,x+35f,y-48f),8f,8f,paint)
+            c.drawCircle(x+28f,y-125f,18f,paint)
+            paint.color=Color.rgb(120,80,35)
+            for(i in 0..5) c.drawCircle(x-25f+i*12f,y-45f+(i%2)*12f,5f,paint)
+            c.drawRect(x-20f,y-20f,x-13f,y+15f,paint); c.drawRect(x+18f,y-20f,x+25f,y+15f,paint)
+        }
+
+        private fun drawZebra(c: Canvas, x: Float, y: Float) {
+            paint.color=Color.WHITE
+            c.drawOval(RectF(x-48f,y-55f,x+45f,y-12f),paint)
+            c.drawCircle(x+50f,y-48f,21f,paint)
+            paint.color=Color.DKGRAY; paint.strokeWidth=4f
+            for(i in -2..2) c.drawLine(x-20f+i*15f,y-52f,x-30f+i*15f,y-18f,paint)
+            c.drawRect(x-25f,y-15f,x-18f,y+12f,paint); c.drawRect(x+18f,y-15f,x+25f,y+12f,paint)
+        }
+
+        private fun drawLion(c: Canvas, x: Float, y: Float) {
+            paint.color=Color.rgb(165,115,55); c.drawCircle(x,y-48f,31f,paint)
+            paint.color=Color.rgb(120,75,35); c.drawCircle(x,y-48f,43f,paint)
+            paint.color=Color.rgb(215,165,85); c.drawCircle(x,y-48f,25f,paint)
+            paint.color=Color.BLACK; c.drawCircle(x-9f,y-53f,3f,paint); c.drawCircle(x+9f,y-53f,3f,paint)
+        }
+
+        private fun drawFish(c: Canvas, x: Float, y: Float) {
+            paint.color=Color.rgb(55,145,205); c.drawOval(RectF(x-48f,y-25f,x+45f,y+20f),paint)
+            val tail=Path(); tail.moveTo(x-45f,y); tail.lineTo(x-78f,y-24f); tail.lineTo(x-78f,y+24f); tail.close(); c.drawPath(tail,paint)
+            paint.color=Color.WHITE; c.drawCircle(x+25f,y-8f,5f,paint); paint.color=Color.BLACK; c.drawCircle(x+26f,y-8f,2f,paint)
+        }
+
+        private fun drawCrocodile(c: Canvas, x: Float, y: Float) {
+            paint.color=Color.rgb(55,125,70); c.drawOval(RectF(x-85f,y-28f,x+75f,y+12f),paint)
+            val snout=Path(); snout.moveTo(x+35f,y-20f); snout.lineTo(x+100f,y-10f); snout.lineTo(x+45f,y+4f); snout.close(); c.drawPath(snout,paint)
+            paint.color=Color.WHITE; c.drawCircle(x+55f,y-22f,6f,paint); paint.color=Color.BLACK; c.drawCircle(x+56f,y-23f,2f,paint)
+        }
+
+        private fun drawPenguin(c: Canvas, x: Float, y: Float) {
+            paint.color=Color.rgb(35,45,55); c.drawOval(RectF(x-30f,y-80f,x+30f,y+8f),paint)
+            paint.color=Color.WHITE; c.drawOval(RectF(x-18f,y-55f,x+18f,y-5f),paint)
+            paint.color=Color.rgb(240,170,45); c.drawCircle(x,y-78f,18f,paint); c.drawOval(RectF(x-18f,y-5f,x-2f,y+8f),paint); c.drawOval(RectF(x+2f,y-5f,x+18f,y+8f),paint)
         }
 
         private fun drawDinosaur(c: Canvas, x: Float, y: Float) {
