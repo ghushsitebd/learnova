@@ -9,9 +9,6 @@ def buildVersionName = System.getenv("LEARNOVA_VERSION_NAME") ?: "1.1.0"
 def releaseStorePassword = System.getenv("LEARNOVA_STORE_PASSWORD") ?: "LearnovaTest123"
 def releaseKeyAlias = System.getenv("LEARNOVA_KEY_ALIAS") ?: "learnova"
 def releaseKeyPassword = System.getenv("LEARNOVA_KEY_PASSWORD") ?: "LearnovaTest123"
-def releaseStorePassword = System.getenv("LEARNOVA_STORE_PASSWORD") ?: "LearnovaTest123"
-def releaseKeyAlias = System.getenv("LEARNOVA_KEY_ALIAS") ?: "learnova"
-def releaseKeyPassword = System.getenv("LEARNOVA_KEY_PASSWORD") ?: "LearnovaTest123"
 
 android {
     namespace 'com.learnova.app'
