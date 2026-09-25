@@ -55,6 +55,9 @@ object LearnovaUnlimitedWorld {
         return (0 until count).map { scene(start + it) }
     }
 
+    // Lightweight catalog: names and learning roles stay in code; visuals are
+    // rendered procedurally so adding vehicles does not inflate the APK with
+    // large image/model files.
     val vehicles = listOf(
         VehicleEntry(1,"Family Car","car","road safety"),
         VehicleEntry(2,"Sport Car","car","colors and shapes"),
@@ -66,12 +69,20 @@ object LearnovaUnlimitedWorld {
         VehicleEntry(8,"Police Car","car","road safety"),
         VehicleEntry(9,"Ambulance","car","helping others"),
         VehicleEntry(10,"Motorbike","bike","road safety"),
-        VehicleEntry(11,"Scooter","bike","balance"),
-        VehicleEntry(12,"Micro Car","micro","city discovery"),
-        VehicleEntry(13,"Speed Boat","boat","water discovery"),
-        VehicleEntry(14,"Sail Boat","boat","wind science"),
-        VehicleEntry(15,"Helicopter","air","flight science"),
-        VehicleEntry(16,"Airplane","air","flight science"),
-        VehicleEntry(17,"Rocket","space","space science")
+        VehicleEntry(11,"R15-style Sport Bike","sportBike","road safety"),
+        VehicleEntry(12,"Bicycle","bicycle","balance and road safety"),
+        VehicleEntry(13,"Scooter","bike","balance"),
+        VehicleEntry(14,"Micro Car","micro","city discovery"),
+        VehicleEntry(15,"City Taxi","car","community"),
+        VehicleEntry(16,"Delivery Van","van","community"),
+        VehicleEntry(17,"Pickup Truck","truck","transport science"),
+        VehicleEntry(18,"Coach Bus","bus","community"),
+        VehicleEntry(19,"Speed Boat","boat","water discovery"),
+        VehicleEntry(20,"Sail Boat","boat","wind science"),
+        VehicleEntry(21,"Ferry","boat","water safety"),
+        VehicleEntry(22,"Helicopter","air","flight science"),
+        VehicleEntry(23,"Airplane","air","flight science"),
+        VehicleEntry(24,"Glider","air","wind science"),
+        VehicleEntry(25,"Rocket","space","space science")
     )
 }
