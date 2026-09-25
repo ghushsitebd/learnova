@@ -39,14 +39,6 @@ class MainActivity : AppCompatActivity() {
         private var lastTap = 0L
         private val prefs: SharedPreferences = getSharedPreferences("learnova_progress", MODE_PRIVATE)
 
-        init {
-            level = prefs.getInt("level", 1).coerceAtLeast(1)
-            vehicle = prefs.getInt("vehicle", 0).coerceIn(0, LearnovaUnlimitedWorld.vehicles.lastIndex)
-            worldSceneId = prefs.getInt("worldSceneId", 1).coerceAtLeast(1)
-            question = prefs.getInt("question", 0).coerceIn(0, lessons.lastIndex)
-            voice.speakLesson(lessons[question])
-        }
-
         private val lessons = arrayOf(
             "A", "B", "C", "D", "E", "F", "G", "H",
             "I", "J", "K", "L", "M", "N", "O", "P",
@@ -84,6 +76,14 @@ class MainActivity : AppCompatActivity() {
             "Arabic letters", "Arabic letters", "Arabic letters",
             "Arabic letters", "Arabic letters", "Quran learning"
         )
+
+        init {
+            level = prefs.getInt("level", 1).coerceAtLeast(1)
+            vehicle = prefs.getInt("vehicle", 0).coerceIn(0, LearnovaUnlimitedWorld.vehicles.lastIndex)
+            worldSceneId = prefs.getInt("worldSceneId", 1).coerceAtLeast(1)
+            question = prefs.getInt("question", 0).coerceIn(0, lessons.lastIndex)
+            voice.speakLesson(lessons[question])
+        }
 
         override fun onTouchEvent(event: MotionEvent): Boolean {
             if (event.actionMasked != MotionEvent.ACTION_UP) return true
