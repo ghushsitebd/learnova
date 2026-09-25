@@ -13,7 +13,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        window.setStatusBarColor(Color.rgb(78, 175, 235))
+        window.setNavigationBarColor(Color.BLACK)
         gameView = LearnovaGameView()
         setContentView(gameView)
     }
@@ -21,53 +22,82 @@ class MainActivity : AppCompatActivity() {
     private inner class LearnovaGameView : View(this@MainActivity) {
 
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        private val roadPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-        private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-
-        private var driving = false
-        private var time = 0L
-        private var level = 1
-
-        // Learning system
-        private val questions = arrayOf(
-            "A",
-            "B",
-            "C",
-            "1 + 1 = 2",
-            "বাংলা: অ",
-            "Arabic: ا"
-        )
-
-        private var questionIndex = 0
-
-        init {
-            isClickable = true
-
-            textPaint.typeface = Typeface.create(
-                "sans-serif",
-                Typeface.BOLD
-            )
+        private val text = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            typeface = Typeface.create("sans-serif", Typeface.BOLD)
         }
 
+        private var running = false
+        private var frame = 0L
+        private var distance = 0f
+        private var level = 1
+        private var vehicle = 0
+        private var scene = 0
+        private var question = 0
+        private var lastTap = 0L
+
+        private val lessons = arrayOf(
+            "A", "B", "C", "D", "E", "F", "G", "H",
+            "I", "J", "K", "L", "M", "N", "O", "P",
+            "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+            "ا", "ب", "ت", "ث", "ج", "ح", "خ",
+            "س", "ش", "ص", "ض", "ط", "ظ", "ع", "غ",
+            "ف", "ق", "ك", "ل", "م", "ن", "ه", "و", "ي",
+            "الفاتحة"
+        )
+
+        private val lessonHints = arrayOf(
+            "English alphabet", "English alphabet", "English alphabet",
+            "English alphabet", "English alphabet", "English alphabet",
+            "English alphabet", "English alphabet", "English alphabet",
+            "English alphabet", "English alphabet", "English alphabet",
+            "English alphabet", "English alphabet", "English alphabet",
+            "English alphabet", "English alphabet", "English alphabet",
+            "English alphabet", "English alphabet", "English alphabet",
+            "English alphabet", "English alphabet", "English alphabet",
+            "English alphabet", "English alphabet",
+            "Arabic letters", "Arabic letters", "Arabic letters",
+            "Arabic letters", "Arabic letters", "Arabic letters",
+            "Arabic letters", "Arabic letters", "Arabic letters",
+            "Arabic letters", "Arabic letters", "Arabic letters",
+            "Arabic letters", "Arabic letters", "Arabic letters",
+            "Arabic letters", "Arabic letters", "Arabic letters",
+            "Arabic letters", "Arabic letters", "Arabic letters",
+            "Arabic letters", "Arabic letters", "Arabic letters",
+            "Arabic letters", "Quran learning"
+        )
+
         override fun onTouchEvent(event: MotionEvent): Boolean {
+            if (event.actionMasked != MotionEvent.ACTION_UP) return true
 
-            when (event.actionMasked) {
+            val now = System.currentTimeMillis()
+            if (now - lastTap < 180L) return true
+            lastTap = now
 
-                MotionEvent.ACTION_DOWN -> {
-                    driving = true
-                    invalidate()
-                    postInvalidateOnAnimation()
-                    return true
-                }
+            val w = width.toFloat()
+            val h = height.toFloat()
+            if (w <= 0f || h <= 0f) return true
 
-                MotionEvent.ACTION_UP,
-                MotionEvent.ACTION_CANCEL -> {
-                    driving = false
-                    invalidate()
-                    return true
-                }
+            val x = event.x
+            val y = event.y
+
+            // Main child-friendly control: one tap ON, next tap OFF.
+            if (y > h * 0.56f && y < h * 0.91f) {
+                running = !running
             }
 
+            // Tap the vehicle name to switch vehicle.
+            if (y < h * 0.18f && x > w * 0.68f) {
+                vehicle = (vehicle + 1) % 4
+            }
+
+            // Tap the very bottom to move to the next lesson.
+            if (y > h * 0.91f) {
+                question = (question + 1) % lessons.size
+                level = (level % 1000) + 1
+            }
+
+            invalidate()
+            if (running) postInvalidateOnAnimation()
             return true
         }
 
@@ -76,771 +106,409 @@ class MainActivity : AppCompatActivity() {
 
             val w = width.toFloat()
             val h = height.toFloat()
-
             if (w <= 0f || h <= 0f) return
 
-            if (driving) {
-                time++
+            if (running) {
+                frame++
+                distance += 0.018f
+
+                if (distance >= 1f) {
+                    distance = 0f
+                    level = (level % 1000) + 1
+                    question = (question + 1) % lessons.size
+                    scene = (scene + 1) % 3
+                }
             }
 
             drawSky(canvas, w, h)
             drawSun(canvas, w, h)
+            drawClouds(canvas, w, h)
             drawMountains(canvas, w, h)
-            drawTrees(canvas, w, h)
+            drawGround(canvas, w, h)
             drawRiver(canvas, w, h)
+            drawTrees(canvas, w, h)
             drawRoad(canvas, w, h)
-            drawCar(canvas, w, h)
-            drawChild(canvas, w, h)
-            drawLearningPanel(canvas, w, h)
-            drawTopInfo(canvas, w, h)
+            drawAnimals(canvas, w, h)
+            drawVehicle(canvas, w, h)
+            drawTopBar(canvas, w, h)
+            drawLearningCard(canvas, w, h)
+            drawHint(canvas, w, h)
 
-            if (driving) {
-                postInvalidateOnAnimation()
-            }
+            if (running) postInvalidateOnAnimation()
         }
 
-        // ---------------------------------------------------------
-        // SKY
-        // ---------------------------------------------------------
-
-        private fun drawSky(
-            canvas: Canvas,
-            w: Float,
-            h: Float
-        ) {
-            val sky = LinearGradient(
-                0f,
-                0f,
-                0f,
-                h * 0.60f,
-                Color.rgb(115, 200, 255),
-                Color.rgb(225, 245, 255),
+        private fun drawSky(c: Canvas, w: Float, h: Float) {
+            paint.shader = LinearGradient(
+                0f, 0f, 0f, h * 0.68f,
+                Color.rgb(77, 178, 244),
+                Color.rgb(218, 246, 255),
                 Shader.TileMode.CLAMP
             )
-
-            paint.shader = sky
-            canvas.drawRect(0f, 0f, w, h, paint)
+            c.drawRect(0f, 0f, w, h, paint)
             paint.shader = null
         }
 
-        // ---------------------------------------------------------
-        // SUN
-        // ---------------------------------------------------------
+        private fun drawSun(c: Canvas, w: Float, h: Float) {
+            paint.color = Color.rgb(255, 221, 100)
+            c.drawCircle(w * 0.83f, h * 0.15f, minOf(w, h) * 0.065f, paint)
+            paint.color = Color.argb(45, 255, 244, 180)
+            c.drawCircle(w * 0.83f, h * 0.15f, minOf(w, h) * 0.105f, paint)
+        }
 
-        private fun drawSun(
-            canvas: Canvas,
-            w: Float,
-            h: Float
-        ) {
-            paint.color = Color.rgb(255, 218, 90)
+        private fun drawClouds(c: Canvas, w: Float, h: Float) {
+            val shift = if (running) (frame % 900L).toFloat() else 0f
+            drawCloud(c, (w * 0.18f + shift * 0.06f) % (w + 180f) - 90f, h * 0.19f, 0.8f)
+            drawCloud(c, (w * 0.58f + shift * 0.04f) % (w + 220f) - 110f, h * 0.27f, 0.62f)
+        }
 
-            canvas.drawCircle(
-                w * 0.82f,
-                h * 0.15f,
-                minOf(w, h) * 0.07f,
-                paint
+        private fun drawCloud(c: Canvas, x: Float, y: Float, s: Float) {
+            paint.color = Color.argb(205, 255, 255, 255)
+            c.drawCircle(x, y, 26f * s, paint)
+            c.drawCircle(x + 28f * s, y - 10f * s, 34f * s, paint)
+            c.drawCircle(x + 62f * s, y, 25f * s, paint)
+            c.drawRoundRect(
+                RectF(x - 5f * s, y, x + 70f * s, y + 25f * s),
+                12f * s, 12f * s, paint
             )
         }
 
-        // ---------------------------------------------------------
-        // MOUNTAINS
-        // ---------------------------------------------------------
+        private fun drawMountains(c: Canvas, w: Float, h: Float) {
+            val back = Path()
+            back.moveTo(0f, h * 0.58f)
+            back.lineTo(w * 0.17f, h * 0.29f)
+            back.lineTo(w * 0.32f, h * 0.48f)
+            back.lineTo(w * 0.50f, h * 0.22f)
+            back.lineTo(w * 0.69f, h * 0.49f)
+            back.lineTo(w * 0.84f, h * 0.30f)
+            back.lineTo(w, h * 0.50f)
+            back.lineTo(w, h * 0.68f)
+            back.lineTo(0f, h * 0.68f)
+            back.close()
+            paint.color = Color.rgb(101, 157, 137)
+            c.drawPath(back, paint)
 
-        private fun drawMountains(
-            canvas: Canvas,
-            w: Float,
-            h: Float
-        ) {
-            val mountainBack = Path()
-
-            mountainBack.moveTo(0f, h * 0.52f)
-            mountainBack.lineTo(w * 0.16f, h * 0.27f)
-            mountainBack.lineTo(w * 0.30f, h * 0.45f)
-            mountainBack.lineTo(w * 0.48f, h * 0.20f)
-            mountainBack.lineTo(w * 0.66f, h * 0.45f)
-            mountainBack.lineTo(w * 0.82f, h * 0.25f)
-            mountainBack.lineTo(w, h * 0.48f)
-            mountainBack.lineTo(w, h * 0.62f)
-            mountainBack.lineTo(0f, h * 0.62f)
-            mountainBack.close()
-
-            paint.color = Color.rgb(92, 145, 125)
-            canvas.drawPath(mountainBack, paint)
-
-            val mountainFront = Path()
-
-            mountainFront.moveTo(0f, h * 0.59f)
-            mountainFront.lineTo(w * 0.22f, h * 0.38f)
-            mountainFront.lineTo(w * 0.40f, h * 0.57f)
-            mountainFront.lineTo(w * 0.59f, h * 0.35f)
-            mountainFront.lineTo(w * 0.76f, h * 0.57f)
-            mountainFront.lineTo(w, h * 0.39f)
-            mountainFront.lineTo(w, h * 0.68f)
-            mountainFront.lineTo(0f, h * 0.68f)
-            mountainFront.close()
-
-            paint.color = Color.rgb(67, 125, 100)
-            canvas.drawPath(mountainFront, paint)
+            val front = Path()
+            front.moveTo(0f, h * 0.65f)
+            front.lineTo(w * 0.21f, h * 0.40f)
+            front.lineTo(w * 0.39f, h * 0.59f)
+            front.lineTo(w * 0.60f, h * 0.37f)
+            front.lineTo(w * 0.77f, h * 0.60f)
+            front.lineTo(w, h * 0.42f)
+            front.lineTo(w, h * 0.72f)
+            front.lineTo(0f, h * 0.72f)
+            front.close()
+            paint.color = Color.rgb(60, 125, 91)
+            c.drawPath(front, paint)
         }
 
-        // ---------------------------------------------------------
-        // TREES
-        // ---------------------------------------------------------
-
-        private fun drawTrees(
-            canvas: Canvas,
-            w: Float,
-            h: Float
-        ) {
-            val positions = floatArrayOf(
-                0.06f,
-                0.15f,
-                0.27f,
-                0.72f,
-                0.84f,
-                0.94f
-            )
-
-            for (i in positions.indices) {
-
-                val x = w * positions[i]
-
-                val baseY =
-                    h * (0.59f + (i % 2) * 0.035f)
-
-                val scale =
-                    0.75f + (i % 3) * 0.15f
-
-                drawTree(
-                    canvas,
-                    x,
-                    baseY,
-                    scale
-                )
-            }
-        }
-
-        private fun drawTree(
-            canvas: Canvas,
-            x: Float,
-            y: Float,
-            scale: Float
-        ) {
-            // trunk
-            paint.color = Color.rgb(105, 68, 38)
-
-            val trunk = RectF(
-                x - 12f * scale,
-                y - 130f * scale,
-                x + 12f * scale,
-                y,
-            )
-
-            canvas.drawRoundRect(
-                trunk,
-                8f,
-                8f,
-                paint
-            )
-
-            // foliage
-            paint.color = Color.rgb(35, 125, 65)
-
-            canvas.drawCircle(
-                x,
-                y - 155f * scale,
-                48f * scale,
-                paint
-            )
-
-            canvas.drawCircle(
-                x - 35f * scale,
-                y - 130f * scale,
-                38f * scale,
-                paint
-            )
-
-            canvas.drawCircle(
-                x + 35f * scale,
-                y - 130f * scale,
-                38f * scale,
-                paint
-            )
-
-            paint.color = Color.rgb(55, 155, 75)
-
-            canvas.drawCircle(
-                x - 12f * scale,
-                y - 178f * scale,
-                27f * scale,
-                paint
-            )
-        }
-
-        // ---------------------------------------------------------
-        // RIVER
-        // ---------------------------------------------------------
-
-        private fun drawRiver(
-            canvas: Canvas,
-            w: Float,
-            h: Float
-        ) {
+        private fun drawRiver(c: Canvas, w: Float, h: Float) {
             val river = Path()
-
-            river.moveTo(0f, h)
-            river.cubicTo(
-                w * 0.18f,
-                h * 0.76f,
-                w * 0.25f,
-                h * 0.64f,
-                w * 0.43f,
-                h * 0.55f
-            )
-
-            river.cubicTo(
-                w * 0.57f,
-                h * 0.50f,
-                w * 0.75f,
-                h * 0.72f,
-                w,
-                h * 0.83f
-            )
-
+            river.moveTo(0f, h * 0.80f)
+            river.cubicTo(w * 0.20f, h * 0.69f, w * 0.30f, h * 0.60f, w * 0.46f, h * 0.58f)
+            river.cubicTo(w * 0.64f, h * 0.55f, w * 0.78f, h * 0.70f, w, h * 0.76f)
             river.lineTo(w, h)
+            river.lineTo(0f, h)
             river.close()
+            paint.color = Color.rgb(53, 164, 219)
+            c.drawPath(river, paint)
 
-            paint.color = Color.rgb(55, 165, 220)
-
-            canvas.drawPath(
-                river,
-                paint
-            )
-
-            // water highlights
-            paint.color = Color.argb(
-                120,
-                220,
-                250,
-                255
-            )
-
+            paint.color = Color.argb(135, 220, 250, 255)
             paint.strokeWidth = 4f
-
             for (i in 0..5) {
-
-                val yy =
-                    h * 0.78f +
-                            i * 25f
-
-                canvas.drawLine(
-                    w * 0.70f,
-                    yy,
-                    w * 0.88f,
-                    yy + 4f,
-                    paint
-                )
+                val y = h * 0.79f + i * 24f
+                c.drawLine(w * 0.67f, y, w * 0.92f, y + 3f, paint)
             }
         }
 
-        // ---------------------------------------------------------
-        // ROAD
-        // ---------------------------------------------------------
+        private fun drawGround(c: Canvas, w: Float, h: Float) {
+            paint.color = Color.rgb(89, 165, 75)
+            c.drawRect(0f, h * 0.64f, w, h, paint)
+            paint.color = Color.argb(45, 255, 255, 255)
+            for (i in 0..11) {
+                val x = (i * w / 11f) + if (running) (frame % 60L) else 0f
+                c.drawCircle(x % w, h * 0.68f + (i % 3) * 11f, 3f, paint)
+            }
+        }
 
-        private fun drawRoad(
-            canvas: Canvas,
-            w: Float,
-            h: Float
-        ) {
+        private fun drawTrees(c: Canvas, w: Float, h: Float) {
+            val xs = floatArrayOf(.05f, .16f, .29f, .71f, .84f, .95f)
+            for (i in xs.indices) {
+                val scale = 0.65f + (i % 3) * .12f
+                drawTree(c, w * xs[i], h * (.66f + (i % 2) * .025f), scale)
+            }
+        }
+
+        private fun drawTree(c: Canvas, x: Float, y: Float, s: Float) {
+            paint.color = Color.rgb(104, 70, 40)
+            c.drawRoundRect(RectF(x - 10f*s, y - 78f*s, x + 10f*s, y), 7f, 7f, paint)
+            paint.color = Color.rgb(32, 120, 58)
+            c.drawCircle(x, y - 105f*s, 38f*s, paint)
+            c.drawCircle(x - 27f*s, y - 87f*s, 28f*s, paint)
+            c.drawCircle(x + 27f*s, y - 87f*s, 28f*s, paint)
+            paint.color = Color.rgb(67, 153, 70)
+            c.drawCircle(x - 10f*s, y - 120f*s, 20f*s, paint)
+        }
+
+        private fun drawRoad(c: Canvas, w: Float, h: Float) {
             val road = Path()
-
-            road.moveTo(
-                w * 0.40f,
-                h * 0.57f
-            )
-
-            road.lineTo(
-                w * 0.60f,
-                h * 0.57f
-            )
-
-            road.lineTo(
-                w * 0.95f,
-                h
-            )
-
-            road.lineTo(
-                w * 0.05f,
-                h
-            )
-
+            road.moveTo(w * .39f, h * .61f)
+            road.lineTo(w * .61f, h * .61f)
+            road.lineTo(w * .96f, h)
+            road.lineTo(w * .04f, h)
             road.close()
 
-            roadPaint.color =
-                Color.rgb(48, 51, 55)
+            paint.color = Color.rgb(52, 55, 59)
+            c.drawPath(road, paint)
 
-            canvas.drawPath(
-                road,
-                roadPaint
-            )
+            paint.color = Color.WHITE
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 4f
+            c.drawPath(road, paint)
+            paint.style = Paint.Style.FILL
 
-            // road edges
-            roadPaint.color =
-                Color.rgb(235, 235, 235)
-
-            roadPaint.strokeWidth = 5f
-            roadPaint.style = Paint.Style.STROKE
-
-            canvas.drawPath(
-                road,
-                roadPaint
-            )
-
-            roadPaint.style = Paint.Style.FILL
-
-            // moving center lines
-            val movement =
-                if (driving) {
-                    (time * 8L % 130L).toFloat()
-                } else {
-                    0f
-                }
-
-            var y = h * 0.61f + movement
+            val offset = if (running) (frame * 9L % 115L).toFloat() else 0f
+            var y = h * .63f + offset
 
             while (y < h) {
-
-                val t =
-                    ((y - h * 0.57f) /
-                            (h * 0.43f))
-                        .coerceIn(0f, 1f)
-
-                val width =
-                    4f + t * 28f
-
-                roadPaint.color = Color.WHITE
-
-                canvas.drawRect(
-                    w / 2f - width,
-                    y,
-                    w / 2f + width,
-                    y + 12f + t * 18f,
-                    roadPaint
-                )
-
-                y += 85f + t * 70f
+                val t = ((y - h * .61f) / (h * .39f)).coerceIn(0f, 1f)
+                val half = 4f + 24f * t
+                paint.color = Color.WHITE
+                c.drawRect(w/2f-half, y, w/2f+half, y + 9f + 18f*t, paint)
+                y += 70f + 90f*t
             }
         }
 
-        // ---------------------------------------------------------
-        // CAR
-        // ---------------------------------------------------------
-
-        private fun drawCar(
-            canvas: Canvas,
-            w: Float,
-            h: Float
-        ) {
-            val bob =
-                if (driving) {
-                    sin(time / 5.0).toFloat() * 3f
-                } else {
-                    0f
-                }
-
-            val cx = w / 2f
-            val cy = h * 0.80f + bob
-
-            // shadow
-            paint.color = Color.argb(
-                100,
-                0,
-                0,
-                0
-            )
-
-            canvas.drawOval(
-                RectF(
-                    cx - 115f,
-                    cy + 25f,
-                    cx + 115f,
-                    cy + 58f
-                ),
-                paint
-            )
-
-            // body
-            paint.color = Color.rgb(
-                18,
-                135,
-                78
-            )
-
-            canvas.drawRoundRect(
-                RectF(
-                    cx - 112f,
-                    cy - 42f,
-                    cx + 112f,
-                    cy + 38f
-                ),
-                25f,
-                25f,
-                paint
-            )
-
-            // roof
-            val roof = Path()
-
-            roof.moveTo(
-                cx - 68f,
-                cy - 42f
-            )
-
-            roof.lineTo(
-                cx - 40f,
-                cy - 82f
-            )
-
-            roof.lineTo(
-                cx + 45f,
-                cy - 82f
-            )
-
-            roof.lineTo(
-                cx + 72f,
-                cy - 42f
-            )
-
-            roof.close()
-
-            paint.color =
-                Color.rgb(15, 105, 62)
-
-            canvas.drawPath(
-                roof,
-                paint
-            )
-
-            // windows
-            paint.color =
-                Color.rgb(170, 220, 235)
-
-            canvas.drawRoundRect(
-                RectF(
-                    cx - 38f,
-                    cy - 72f,
-                    cx + 4f,
-                    cy - 43f
-                ),
-                8f,
-                8f,
-                paint
-            )
-
-            canvas.drawRoundRect(
-                RectF(
-                    cx + 8f,
-                    cy - 72f,
-                    cx + 43f,
-                    cy - 43f
-                ),
-                8f,
-                8f,
-                paint
-            )
-
-            // lights
-            paint.color =
-                Color.rgb(255, 240, 150)
-
-            canvas.drawCircle(
-                cx - 100f,
-                cy - 8f,
-                9f,
-                paint
-            )
-
-            canvas.drawCircle(
-                cx + 100f,
-                cy - 8f,
-                9f,
-                paint
-            )
-
-            // wheels
-            paint.color =
-                Color.rgb(25, 25, 25)
-
-            canvas.drawCircle(
-                cx - 70f,
-                cy + 38f,
-                24f,
-                paint
-            )
-
-            canvas.drawCircle(
-                cx + 70f,
-                cy + 38f,
-                24f,
-                paint
-            )
-
-            paint.color =
-                Color.rgb(170, 170, 170)
-
-            canvas.drawCircle(
-                cx - 70f,
-                cy + 38f,
-                10f,
-                paint
-            )
-
-            canvas.drawCircle(
-                cx + 70f,
-                cy + 38f,
-                10f,
-                paint
-            )
+        private fun drawAnimals(c: Canvas, w: Float, h: Float) {
+            val base = h * .61f
+            when (scene) {
+                0 -> drawElephant(c, w * .82f, base)
+                1 -> drawBear(c, w * .14f, base)
+                else -> drawDinosaur(c, w * .83f, base)
+            }
         }
 
-        // ---------------------------------------------------------
-        // CHILD - CAP + PANJABI
-        // ---------------------------------------------------------
+        private fun drawElephant(c: Canvas, x: Float, y: Float) {
+            paint.color = Color.rgb(120, 128, 126)
+            c.drawOval(RectF(x-42f,y-70f,x+42f,y-12f), paint)
+            c.drawCircle(x+45f, y-60f, 28f, paint)
+            paint.color = Color.rgb(145, 151, 148)
+            c.drawCircle(x+57f,y-78f,14f,paint)
+            c.drawRect(x+55f,y-48f,x+69f,y-8f,paint)
+            paint.color = Color.DKGRAY
+            c.drawCircle(x+55f,y-66f,3f,paint)
+            c.drawRect(x-27f,y-15f,x-17f,y+9f,paint)
+            c.drawRect(x+15f,y-15f,x+25f,y+9f,paint)
+        }
 
-        private fun drawChild(
-            canvas: Canvas,
-            w: Float,
-            h: Float
-        ) {
-            val x = w * 0.15f
-            val y = h * 0.74f
-
-            // body / panjabi
-            paint.color =
-                Color.rgb(245, 245, 235)
-
-            canvas.drawRoundRect(
-                RectF(
-                    x - 27f,
-                    y + 45f,
-                    x + 27f,
-                    y + 115f
-                ),
-                12f,
-                12f,
-                paint
-            )
-
-            // panjabi collar
-            paint.color =
-                Color.rgb(220, 220, 210)
-
-            canvas.drawRect(
-                x - 5f,
-                y + 48f,
-                x + 5f,
-                y + 78f,
-                paint
-            )
-
-            // head
-            paint.color =
-                Color.rgb(198, 145, 105)
-
-            canvas.drawCircle(
-                x,
-                y + 20f,
-                24f,
-                paint
-            )
-
-            // beard/hair detail
-            paint.color =
-                Color.rgb(55, 40, 30)
-
-            canvas.drawCircle(
-                x - 17f,
-                y + 10f,
-                5f,
-                paint
-            )
-
-            // cap
-            paint.color =
-                Color.rgb(45, 105, 70)
-
-            canvas.drawOval(
-                RectF(
-                    x - 29f,
-                    y - 4f,
-                    x + 29f,
-                    y + 16f
-                ),
-                paint
-            )
-
-            canvas.drawRect(
-                x - 22f,
-                y + 2f,
-                x + 22f,
-                y + 14f,
-                paint
-            )
-
-            // eyes
+        private fun drawBear(c: Canvas, x: Float, y: Float) {
+            paint.color = Color.rgb(120, 77, 48)
+            c.drawCircle(x, y-50f, 34f, paint)
+            c.drawCircle(x-25f,y-77f,13f,paint)
+            c.drawCircle(x+25f,y-77f,13f,paint)
+            c.drawCircle(x,y-41f,15f,paint)
             paint.color = Color.BLACK
+            c.drawCircle(x-11f,y-55f,3f,paint)
+            c.drawCircle(x+11f,y-55f,3f,paint)
+            c.drawCircle(x,y-42f,3f,paint)
+        }
 
-            canvas.drawCircle(
-                x - 8f,
-                y + 20f,
-                2.5f,
-                paint
-            )
+        private fun drawDinosaur(c: Canvas, x: Float, y: Float) {
+            paint.color = Color.rgb(54, 143, 76)
 
-            canvas.drawCircle(
-                x + 8f,
-                y + 20f,
-                2.5f,
-                paint
-            )
+            val body = Path()
+            body.moveTo(x-48f,y-25f)
+            body.cubicTo(x-20f,y-65f,x+35f,y-62f,x+52f,y-22f)
+            body.lineTo(x+22f,y-7f)
+            body.lineTo(x-48f,y-25f)
+            body.close()
+            c.drawPath(body,paint)
 
-            // smile
+            val neck = Path()
+            neck.moveTo(x+25f,y-35f)
+            neck.lineTo(x+55f,y-92f)
+            neck.lineTo(x+75f,y-92f)
+            neck.lineTo(x+42f,y-25f)
+            neck.close()
+            c.drawPath(neck,paint)
+
+            c.drawCircle(x+84f,y-94f,20f,paint)
+            paint.color = Color.BLACK
+            c.drawCircle(x+90f,y-99f,3f,paint)
+            paint.color = Color.rgb(39,105,58)
+            c.drawRect(x-28f,y-15f,x-18f,y+15f,paint)
+            c.drawRect(x+20f,y-15f,x+30f,y+15f,paint)
+        }
+
+        private fun drawVehicle(c: Canvas, w: Float, h: Float) {
+            val cx = w/2f
+            val cy = h * .79f + if (running) sin(frame/4.0).toFloat()*2f else 0f
+
+            when (vehicle) {
+                0 -> drawCar(c,cx,cy)
+                1 -> drawBike(c,cx,cy)
+                2 -> drawPlane(c,cx,cy)
+                else -> drawMicro(c,cx,cy)
+            }
+        }
+
+        private fun drawCar(c: Canvas, x: Float, y: Float) {
+            paint.color = Color.argb(90,0,0,0)
+            c.drawOval(RectF(x-115f,y+30f,x+115f,y+55f),paint)
+
+            paint.color = Color.rgb(15,137,76)
+            c.drawRoundRect(RectF(x-110f,y-40f,x+110f,y+35f),24f,24f,paint)
+
+            val roof = Path()
+            roof.moveTo(x-67f,y-40f)
+            roof.lineTo(x-38f,y-80f)
+            roof.lineTo(x+45f,y-80f)
+            roof.lineTo(x+70f,y-40f)
+            roof.close()
+            paint.color = Color.rgb(10,103,58)
+            c.drawPath(roof,paint)
+
+            paint.color = Color.rgb(177,225,240)
+            c.drawRoundRect(RectF(x-36f,y-69f,x+3f,y-43f),7f,7f,paint)
+            c.drawRoundRect(RectF(x+8f,y-69f,x+41f,y-43f),7f,7f,paint)
+
+            paint.color = Color.rgb(255,239,130)
+            c.drawCircle(x-98f,y-5f,8f,paint)
+            c.drawCircle(x+98f,y-5f,8f,paint)
+
+            drawWheel(c,x-68f,y+34f)
+            drawWheel(c,x+68f,y+34f)
+        }
+
+        private fun drawWheel(c: Canvas, x: Float, y: Float) {
+            paint.color = Color.rgb(25,25,25)
+            c.drawCircle(x,y,23f,paint)
+            paint.color = Color.rgb(175,175,175)
+            c.drawCircle(x,y,9f,paint)
+        }
+
+        private fun drawBike(c: Canvas, x: Float, y: Float) {
             paint.style = Paint.Style.STROKE
-            paint.strokeWidth = 2f
+            paint.strokeWidth = 7f
+            paint.color = Color.rgb(28,45,48)
 
-            canvas.drawArc(
-                RectF(
-                    x - 9f,
-                    y + 20f,
-                    x + 9f,
-                    y + 34f
-                ),
-                0f,
-                180f,
-                false,
-                paint
-            )
+            c.drawCircle(x-52f,y+18f,25f,paint)
+            c.drawCircle(x+52f,y+18f,25f,paint)
+            c.drawLine(x-52f,y+18f,x-10f,y-12f,paint)
+            c.drawLine(x-10f,y-12f,x+52f,y+18f,paint)
+            c.drawLine(x-10f,y-12f,x+10f,y+18f,paint)
+            c.drawLine(x+10f,y+18f,x-52f,y+18f,paint)
 
             paint.style = Paint.Style.FILL
+            paint.color = Color.rgb(20,145,82)
+            c.drawCircle(x,y-35f,14f,paint)
+            c.drawRect(x-9f,y-22f,x+9f,y+12f,paint)
         }
 
-        // ---------------------------------------------------------
-        // LEARNING PANEL
-        // ---------------------------------------------------------
+        private fun drawPlane(c: Canvas, x: Float, y: Float) {
+            val bob = if (running) sin(frame/12.0).toFloat()*7f else 0f
 
-        private fun drawLearningPanel(
-            canvas: Canvas,
-            w: Float,
-            h: Float
-        ) {
+            paint.color = Color.argb(70,0,0,0)
+            c.drawOval(RectF(x-90f,y+55f,x+90f,y+75f),paint)
+
+            paint.color = Color.rgb(235,239,242)
+            c.drawOval(RectF(x-95f,y-18f+bob,x+95f,y+18f+bob),paint)
+
+            val wing = Path()
+            wing.moveTo(x-5f,y+bob)
+            wing.lineTo(x-65f,y+55f+bob)
+            wing.lineTo(x-20f,y+45f+bob)
+            wing.lineTo(x+20f,y+bob)
+            wing.close()
+            c.drawPath(wing,paint)
+
+            paint.color = Color.rgb(20,135,78)
+            c.drawRect(x+38f,y-13f+bob,x+65f,y+13f+bob,paint)
+            c.drawCircle(x+68f,y+bob,6f,paint)
+        }
+
+        private fun drawMicro(c: Canvas, x: Float, y: Float) {
+            paint.color = Color.argb(80,0,0,0)
+            c.drawOval(RectF(x-75f,y+30f,x+75f,y+52f),paint)
+
+            paint.color = Color.rgb(35,125,190)
+            c.drawRoundRect(RectF(x-75f,y-35f,x+75f,y+32f),30f,30f,paint)
+
+            paint.color = Color.rgb(185,230,245)
+            c.drawRoundRect(RectF(x-35f,y-27f,x+35f,y+3f),13f,13f,paint)
+
+            drawWheel(c,x-48f,y+30f)
+            drawWheel(c,x+48f,y+30f)
+        }
+
+        private fun drawTopBar(c: Canvas, w: Float, h: Float) {
+            paint.color = Color.argb(190,20,65,55)
+            c.drawRoundRect(RectF(14f,14f,w-14f,70f),22f,22f,paint)
+
+            text.textAlign = Paint.Align.LEFT
+            text.color = Color.WHITE
+            text.textSize = 20f
+            c.drawText("LEARNOVA",30f,48f,text)
+
+            text.textAlign = Paint.Align.CENTER
+            text.textSize = 13f
+            c.drawText("LEVEL $level / 1000",w*.53f,37f,text)
+            c.drawText(if (running) "● ON" else "● OFF",w*.53f,56f,text)
+
+            text.textSize = 12f
+            c.drawText("TAP VEHICLE",w*.84f,35f,text)
+            c.drawText(vehicleName(),w*.84f,54f,text)
+        }
+
+        private fun vehicleName(): String = when(vehicle) {
+            0 -> "CAR"
+            1 -> "BIKE"
+            2 -> "AIR"
+            else -> "MICRO"
+        }
+
+        private fun drawLearningCard(c: Canvas, w: Float, h: Float) {
+            val top = h*.63f
             val left = 18f
-            val right = w - 18f
-            val bottom = h - 18f
-            val top = h - 110f
+            val right = w-18f
 
-            paint.color =
-                Color.argb(
-                    225,
-                    255,
-                    255,
-                    255
-                )
+            paint.color = Color.argb(225,255,255,255)
+            c.drawRoundRect(RectF(left,top,right,top+105f),22f,22f,paint)
 
-            canvas.drawRoundRect(
-                RectF(
-                    left,
-                    top,
-                    right,
-                    bottom
-                ),
-                22f,
-                22f,
-                paint
-            )
+            text.textAlign = Paint.Align.LEFT
+            text.color = Color.rgb(27,105,69)
+            text.textSize = 13f
+            c.drawText(lessonHints[question],left+18f,top+25f,text)
 
-            textPaint.textAlign =
-                Paint.Align.LEFT
+            text.color = Color.rgb(35,45,48)
+            text.textSize = if (lessons[question].length > 4) 25f else 34f
+            c.drawText(lessons[question],left+18f,top+61f,text)
 
-            textPaint.color =
-                Color.rgb(30, 90, 60)
+            text.color = Color.rgb(85,90,90)
+            text.textSize = 12f
+            c.drawText("Tap bottom area for next lesson",left+18f,top+88f,text)
 
-            textPaint.textSize = 17f
+            paint.color = if (running) Color.rgb(20,150,83) else Color.rgb(45,100,80)
+            c.drawRoundRect(RectF(right-90f,top+19f,right-18f,top+86f),18f,18f,paint)
 
-            canvas.drawText(
-                "LEARN",
-                left + 18f,
-                top + 28f,
-                textPaint
-            )
-
-            textPaint.color = Color.DKGRAY
-            textPaint.textSize = 22f
-
-            canvas.drawText(
-                "Level $level   •   ${questions[questionIndex]}",
-                left + 18f,
-                top + 60f,
-                textPaint
-            )
-
-            textPaint.color =
-                Color.rgb(70, 70, 70)
-
-            textPaint.textSize = 14f
-
-            canvas.drawText(
-                if (driving)
-                    "গাড়ি চলছে — শেখো এবং এগিয়ে যাও!"
-                else
-                    "স্ক্রিনে আঙুল ধরে রাখলে গাড়ি চলবে",
-                left + 18f,
-                top + 84f,
-                textPaint
-            )
+            text.textAlign = Paint.Align.CENTER
+            text.color = Color.WHITE
+            text.textSize = 12f
+            c.drawText(if (running) "STOP" else "START",right-54f,top+57f,text)
         }
 
-        // ---------------------------------------------------------
-        // TOP INFORMATION
-        // ---------------------------------------------------------
+        private fun drawHint(c: Canvas, w: Float, h: Float) {
+            text.textAlign = Paint.Align.CENTER
+            text.color = Color.WHITE
+            text.setShadowLayer(5f,0f,2f,Color.DKGRAY)
+            text.textSize = 15f
 
-        private fun drawTopInfo(
-            canvas: Canvas,
-            w: Float,
-            h: Float
-        ) {
-            textPaint.textAlign =
-                Paint.Align.CENTER
-
-            textPaint.color = Color.WHITE
-            textPaint.setShadowLayer(
-                5f,
-                0f,
-                2f,
-                Color.DKGRAY
+            c.drawText(
+                if (running) "ট্যাপ করলে গাড়ি থামবে • আবার ট্যাপ করলে চলবে"
+                else "স্ক্রিনে একবার ট্যাপ করুন — গাড়ি চলবে",
+                w/2f,h*.965f,text
             )
 
-            textPaint.textSize = 32f
-
-            canvas.drawText(
-                "LEARNOVA",
-                w / 2f,
-                h * 0.09f,
-                textPaint
-            )
-
-            textPaint.textSize = 16f
-
-            canvas.drawText(
-                if (driving)
-                    "DRIVING • LEARNING • DISCOVERING"
-                else
-                    "TOUCH AND HOLD TO DRIVE",
-                w / 2f,
-                h * 0.13f,
-                textPaint
-            )
-
-            textPaint.clearShadowLayer()
+            text.clearShadowLayer()
         }
     }
 }
