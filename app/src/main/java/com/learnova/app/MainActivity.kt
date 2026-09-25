@@ -114,9 +114,7 @@ class MainActivity : AppCompatActivity() {
 
                 if (distance >= 1f) {
                     distance = 0f
-                    level = (level % 1000) + 1
-                    question = (question + 1) % lessons.size
-                    worldSceneId += 1
+                    nextLesson()
                 }
             }
 
