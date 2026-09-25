@@ -127,7 +127,7 @@ class MainActivity : AppCompatActivity() {
             val world = LearnovaUnlimitedWorld.scene(worldSceneId)
 
             drawSky(canvas, w, h, world)
-            drawSun(canvas, w, h)
+            drawSun(canvas, w, h, world)
             drawClouds(canvas, w, h)
             drawMountains(canvas, w, h)
             drawGround(canvas, w, h)
@@ -178,13 +178,15 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        private fun drawSun(c: Canvas, w: Float, h: Float) {
-            val night = false
-            if (night) return
-            paint.color = Color.rgb(255, 221, 100)
-            c.drawCircle(w * 0.83f, h * 0.15f, minOf(w, h) * 0.065f, paint)
+        private fun drawSun(c: Canvas, w: Float, h: Float, world: SmartScene) {
+            if (world.time == "Night") return
+            val x = if (world.time == "Sunset") w * 0.72f else w * 0.83f
+            val y = if (world.time == "Sunset") h * 0.30f else h * 0.15f
+            val radius = minOf(w, h) * 0.065f
+            paint.color = if (world.time == "Sunset") Color.rgb(255, 176, 92) else Color.rgb(255, 221, 100)
+            c.drawCircle(x, y, radius, paint)
             paint.color = Color.argb(45, 255, 244, 180)
-            c.drawCircle(w * 0.83f, h * 0.15f, minOf(w, h) * 0.105f, paint)
+            c.drawCircle(x, y, radius * 1.62f, paint)
         }
 
         private fun drawClouds(c: Canvas, w: Float, h: Float) {
