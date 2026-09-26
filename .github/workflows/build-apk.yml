@@ -41,13 +41,17 @@ jobs:
             exit 1
           fi
           CLEAN_BASE64=$(printf '%s' "$LEARNOVA_KEYSTORE_BASE64" | tr -d '[:space:]')
+          CLEAN_BASE64=$(printf '%s' "$CLEAN_BASE64" | tr '_-' '/+')
+          CLEAN_BASE64=$(printf '%s' "$CLEAN_BASE64" | tr -cd 'A-Za-z0-9+/=')
           case $((${#CLEAN_BASE64} % 4)) in
             2) CLEAN_BASE64="$CLEAN_BASE64==" ;;
             3) CLEAN_BASE64="$CLEAN_BASE64=" ;;
+            1) echo "::error::Keystore Base64 has an invalid length."; exit 1 ;;
           esac
-          printf '%s' "$CLEAN_BASE64" | base64 --decode > learnova-release.keystore
+          printf '%s' "$CLEAN_BASE64" | base64 --decode --ignore-garbage > learnova-release.keystore
           chmod 600 learnova-release.keystore
           test -s learnova-release.keystore
+          file learnova-release.keystore
 
       - name: Verify signing configuration
         env:
