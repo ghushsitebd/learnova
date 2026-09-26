@@ -325,7 +325,9 @@ class MainActivity : AppCompatActivity() {
             paint.color = Color.rgb(104, 70, 40)
             c.drawRoundRect(RectF(x - 10f*s, y - 78f*s, x + 10f*s, y), 7f, 7f, paint)
             paint.color = Color.rgb(32, 120, 58)
-            c.drawCircle(x, y - 105f*s, 38f*s, paint)            c.drawCircle(x - 27f*s, y - 87f*s, 28f*s, paint)            c.drawCircle(x + 27f*s, y - 87f*s, 28f*s, paint)
+            c.drawCircle(x, y - 105f*s, 38f*s, paint)
+            c.drawCircle(x - 27f*s, y - 87f*s, 28f*s, paint)
+            c.drawCircle(x + 27f*s, y - 87f*s, 28f*s, paint)
             paint.color = Color.rgb(67, 153, 70)
             c.drawCircle(x - 10f*s, y - 120f*s, 20f*s, paint)
         }
@@ -624,7 +626,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         private fun drawZebra(c: Canvas, x: Float, y: Float) {            paint.color=Color.WHITE
-            c.drawOval(RectF(x-48f,y-55f,x+45f,y-12f),paint)            c.drawCircle(x+50f,y-48f,21f,paint)
+            c.drawOval(RectF(x-48f,y-55f,x+45f,y-12f),paint)
+            c.drawCircle(x+50f,y-48f,21f,paint)
             paint.color=Color.DKGRAY; paint.strokeWidth=4f
             for(i in -2..2) c.drawLine(x-20f+i*15f,y-52f,x-30f+i*15f,y-18f,paint)
             c.drawRect(x-25f,y-15f,x-18f,y+12f,paint); c.drawRect(x+18f,y-15f,x+25f,y+12f,paint)
@@ -921,9 +924,11 @@ class MainActivity : AppCompatActivity() {
             paint.color = Color.rgb(35,125,190)
             c.drawRoundRect(RectF(x-75f,y-35f,x+75f,y+32f),30f,30f,paint)
 
-            paint.color = Color.rgb(185,230,245)            c.drawRoundRect(RectF(x-35f,y-27f,x+35f,y+3f),13f,13f,paint)
+            paint.color = Color.rgb(185,230,245)
+            c.drawRoundRect(RectF(x-35f,y-27f,x+35f,y+3f),13f,13f,paint)
 
-            drawWheel(c,x-48f,y+30f, wheelSpin)            drawWheel(c,x+48f,y+30f, wheelSpin)
+            drawWheel(c,x-48f,y+30f, wheelSpin)
+            drawWheel(c,x+48f,y+30f, wheelSpin)
         }
 
         private fun drawTopBar(c: Canvas, w: Float, h: Float, world: SmartScene) {
