@@ -40,7 +40,7 @@ jobs:
             echo "Add the permanent Learnova keystore as a GitHub Actions secret before building a release."
             exit 1
           fi
-          echo "$LEARNOVA_KEYSTORE_BASE64" | base64 --decode > learnova-release.keystore
+          printf '%s' "$LEARNOVA_KEYSTORE_BASE64" | tr -d '[:space:]' | base64 --decode > learnova-release.keystore
           chmod 600 learnova-release.keystore
           test -s learnova-release.keystore
 
