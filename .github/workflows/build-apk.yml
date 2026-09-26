@@ -30,13 +30,13 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: Restore permanent release keystore
+      - name: Restore current Learnova release keystore
         env:
-          LEARNOVA_KEYSTORE_BASE64: ${{ secrets.LEARNOVA_KEYSTORE_BASE64 }}
+          LEARNOVA_KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
           set -euo pipefail
           if [ -z "${LEARNOVA_KEYSTORE_BASE64:-}" ]; then
-            echo "::error::LEARNOVA_KEYSTORE_BASE64 secret is missing."
+            echo "::error::KEYSTORE_BASE64 secret is missing."
             echo "Add the permanent Learnova keystore as a GitHub Actions secret before building a release."
             exit 1
           fi
@@ -55,32 +55,32 @@ jobs:
 
       - name: Verify signing configuration
         env:
-          LEARNOVA_STORE_PASSWORD: ${{ secrets.LEARNOVA_STORE_PASSWORD }}
-          LEARNOVA_KEY_ALIAS: ${{ secrets.LEARNOVA_KEY_ALIAS }}
-          LEARNOVA_KEY_PASSWORD: ${{ secrets.LEARNOVA_KEY_PASSWORD }}
+          LEARNOVA_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          LEARNOVA_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          LEARNOVA_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          test -n "${LEARNOVA_STORE_PASSWORD:-}" || { echo "::error::LEARNOVA_STORE_PASSWORD secret is missing."; exit 1; }
-          test -n "${LEARNOVA_KEY_ALIAS:-}" || { echo "::error::LEARNOVA_KEY_ALIAS secret is missing."; exit 1; }
-          test -n "${LEARNOVA_KEY_PASSWORD:-}" || { echo "::error::LEARNOVA_KEY_PASSWORD secret is missing."; exit 1; }
+          test -n "${LEARNOVA_STORE_PASSWORD:-}" || { echo "::error::KEYSTORE_PASSWORD secret is missing."; exit 1; }
+          test -n "${LEARNOVA_KEY_ALIAS:-}" || { echo "::error::KEY_ALIAS secret is missing."; exit 1; }
+          test -n "${LEARNOVA_KEY_PASSWORD:-}" || { echo "::error::KEY_PASSWORD secret is missing."; exit 1; }
 
           echo "Checking keystore password..."
           if ! keytool -list -keystore learnova-release.keystore -storepass "$LEARNOVA_STORE_PASSWORD" >/tmp/learnova-keytool.txt 2>/tmp/learnova-keytool.err; then
-            echo "::error::LEARNOVA_STORE_PASSWORD does not unlock the restored keystore."
+            echo "::error::KEYSTORE_PASSWORD does not unlock the restored keystore."
             cat /tmp/learnova-keytool.err
             exit 1
           fi
 
           echo "Checking key alias..."
           if ! grep -Fqi "alias name: $LEARNOVA_KEY_ALIAS" /tmp/learnova-keytool.txt; then
-            echo "::error::LEARNOVA_KEY_ALIAS does not match an alias in the keystore."
+            echo "::error::KEY_ALIAS does not match an alias in the keystore."
             grep -i "alias name:" /tmp/learnova-keytool.txt || true
             exit 1
           fi
 
           echo "Checking key password..."
           if ! keytool -certreq -keystore learnova-release.keystore -storepass "$LEARNOVA_STORE_PASSWORD" -alias "$LEARNOVA_KEY_ALIAS" -keypass "$LEARNOVA_KEY_PASSWORD" -file /tmp/learnova-test.csr -dname "CN=Learnova CI Test" >/tmp/learnova-csr.out 2>/tmp/learnova-csr.err; then
-            echo "::error::LEARNOVA_KEY_PASSWORD does not unlock the Learnova signing key."
+            echo "::error::KEY_PASSWORD does not unlock the Learnova signing key."
             cat /tmp/learnova-csr.err
             rm -f /tmp/learnova-test.csr
             exit 1
@@ -91,9 +91,9 @@ jobs:
       - name: Build Release APK and AAB
         env:
           LEARNOVA_KEYSTORE_PATH: ${{ github.workspace }}/learnova-release.keystore
-          LEARNOVA_STORE_PASSWORD: ${{ secrets.LEARNOVA_STORE_PASSWORD }}
-          LEARNOVA_KEY_ALIAS: ${{ secrets.LEARNOVA_KEY_ALIAS }}
-          LEARNOVA_KEY_PASSWORD: ${{ secrets.LEARNOVA_KEY_PASSWORD }}
+          LEARNOVA_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          LEARNOVA_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          LEARNOVA_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: gradle clean assembleRelease bundleRelease --stacktrace
 
       - name: Find Generated APK and AAB
