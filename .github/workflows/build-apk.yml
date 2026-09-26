@@ -30,20 +30,38 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: Create Release Keystore
+      - name: Restore permanent release keystore
+        env:
+          LEARNOVA_KEYSTORE_BASE64: ${{ secrets.LEARNOVA_KEYSTORE_BASE64 }}
         run: |
-          keytool -genkeypair \
-            -v \
-            -keystore learnova-test.keystore \
-            -alias learnova \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storepass LearnovaTest123 \
-            -keypass LearnovaTest123 \
-            -dname "CN=Learnova, OU=Learnova, O=Learnova, L=Dhaka, ST=Dhaka, C=BD"
+          set -euo pipefail
+          if [ -z "${LEARNOVA_KEYSTORE_BASE64:-}" ]; then
+            echo "::error::LEARNOVA_KEYSTORE_BASE64 secret is missing."
+            echo "Add the permanent Learnova keystore as a GitHub Actions secret before building a release."
+            exit 1
+          fi
+          echo "$LEARNOVA_KEYSTORE_BASE64" | base64 --decode > learnova-release.keystore
+          chmod 600 learnova-release.keystore
+          test -s learnova-release.keystore
+
+      - name: Verify signing configuration
+        env:
+          LEARNOVA_STORE_PASSWORD: ${{ secrets.LEARNOVA_STORE_PASSWORD }}
+          LEARNOVA_KEY_ALIAS: ${{ secrets.LEARNOVA_KEY_ALIAS }}
+          LEARNOVA_KEY_PASSWORD: ${{ secrets.LEARNOVA_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "${LEARNOVA_STORE_PASSWORD:-}" || { echo "::error::LEARNOVA_STORE_PASSWORD secret is missing."; exit 1; }
+          test -n "${LEARNOVA_KEY_ALIAS:-}" || { echo "::error::LEARNOVA_KEY_ALIAS secret is missing."; exit 1; }
+          test -n "${LEARNOVA_KEY_PASSWORD:-}" || { echo "::error::LEARNOVA_KEY_PASSWORD secret is missing."; exit 1; }
+          keytool -list -keystore learnova-release.keystore -storepass "$LEARNOVA_STORE_PASSWORD" -alias "$LEARNOVA_KEY_ALIAS" >/dev/null
 
       - name: Build Release APK and AAB
+        env:
+          LEARNOVA_KEYSTORE_PATH: ${{ github.workspace }}/learnova-release.keystore
+          LEARNOVA_STORE_PASSWORD: ${{ secrets.LEARNOVA_STORE_PASSWORD }}
+          LEARNOVA_KEY_ALIAS: ${{ secrets.LEARNOVA_KEY_ALIAS }}
+          LEARNOVA_KEY_PASSWORD: ${{ secrets.LEARNOVA_KEY_PASSWORD }}
         run: gradle clean assembleRelease bundleRelease --stacktrace
 
       - name: Find Generated APK and AAB
@@ -99,3 +117,7 @@ jobs:
             Learnova.apk.sha256
             Learnova.aab
             Learnova.aab.sha256
+
+      - name: Remove signing material
+        if: always()
+        run: rm -f learnova-release.keystore
