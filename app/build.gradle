@@ -5,7 +5,7 @@ plugins {
 
 def ciVersionCode = System.getenv("GITHUB_RUN_NUMBER")
 def buildVersionCode = ciVersionCode != null ? ciVersionCode.toInteger() : 2
-def buildVersionName = System.getenv("LEARNOVA_VERSION_NAME") ?: "1.1.0"
+def buildVersionName = System.getenv("LEARNOVA_VERSION_NAME") ?: (ciVersionCode != null ? "1.1.${ciVersionCode}" : "1.1.0")
 def releaseStorePassword = System.getenv("LEARNOVA_STORE_PASSWORD") ?: "LearnovaTest123"
 def releaseKeyAlias = System.getenv("LEARNOVA_KEY_ALIAS") ?: "learnova"
 def releaseKeyPassword = System.getenv("LEARNOVA_KEY_PASSWORD") ?: "LearnovaTest123"
