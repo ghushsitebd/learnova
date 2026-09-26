@@ -8,6 +8,7 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import kotlin.math.sin
 import kotlin.math.cos
+import kotlin.math.abs
 
 class MainActivity : AppCompatActivity() {
 
