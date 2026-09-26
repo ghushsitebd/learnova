@@ -26,16 +26,12 @@ android {
     signingConfigs {
         release {
             def keystorePath = System.getenv("LEARNOVA_KEYSTORE_PATH")
-            if (keystorePath == null || keystorePath.trim().isEmpty()) {
-                throw new GradleException("LEARNOVA_KEYSTORE_PATH is required for a stable release signing key.")
+            if (keystorePath && !keystorePath.trim().isEmpty() && releaseStorePassword && releaseKeyAlias && releaseKeyPassword) {
+                storeFile file(keystorePath)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
             }
-            if (!releaseStorePassword || !releaseKeyAlias || !releaseKeyPassword) {
-                throw new GradleException("LEARNOVA_STORE_PASSWORD, LEARNOVA_KEY_ALIAS and LEARNOVA_KEY_PASSWORD are required.")
-            }
-            storeFile file(keystorePath)
-            storePassword releaseStorePassword
-            keyAlias releaseKeyAlias
-            keyPassword releaseKeyPassword
         }
     }
 
@@ -43,7 +39,12 @@ android {
         release {
             minifyEnabled false
             shrinkResources false
-            signingConfig signingConfigs.release
+            def releaseTaskRequested = gradle.startParameter.taskNames.any { it.toLowerCase().contains("release") }
+            if (releaseStorePassword && releaseKeyAlias && releaseKeyPassword && System.getenv("LEARNOVA_KEYSTORE_PATH")) {
+                signingConfig signingConfigs.release
+            } else if (releaseTaskRequested) {
+                throw new GradleException("Release signing secrets are required for assembleRelease/bundleRelease.")
+            }
         }
 
         debug {
