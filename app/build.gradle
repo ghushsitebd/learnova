@@ -6,9 +6,10 @@ plugins {
 def ciVersionCode = System.getenv("GITHUB_RUN_NUMBER")
 def buildVersionCode = ciVersionCode != null ? ciVersionCode.toInteger() : 2
 def buildVersionName = System.getenv("LEARNOVA_VERSION_NAME") ?: (ciVersionCode != null ? "1.1.${ciVersionCode}" : "1.1.0")
-def releaseStorePassword = System.getenv("LEARNOVA_STORE_PASSWORD") ?: "LearnovaTest123"
-def releaseKeyAlias = System.getenv("LEARNOVA_KEY_ALIAS") ?: "learnova"
-def releaseKeyPassword = System.getenv("LEARNOVA_KEY_PASSWORD") ?: "LearnovaTest123"
+
+def releaseStorePassword = System.getenv("LEARNOVA_STORE_PASSWORD")
+def releaseKeyAlias = System.getenv("LEARNOVA_KEY_ALIAS")
+def releaseKeyPassword = System.getenv("LEARNOVA_KEY_PASSWORD")
 
 android {
     namespace 'com.learnova.app'
@@ -24,7 +25,14 @@ android {
 
     signingConfigs {
         release {
-            storeFile file("${rootProject.projectDir}/learnova-test.keystore")
+            def keystorePath = System.getenv("LEARNOVA_KEYSTORE_PATH")
+            if (keystorePath == null || keystorePath.trim().isEmpty()) {
+                throw new GradleException("LEARNOVA_KEYSTORE_PATH is required for a stable release signing key.")
+            }
+            if (!releaseStorePassword || !releaseKeyAlias || !releaseKeyPassword) {
+                throw new GradleException("LEARNOVA_STORE_PASSWORD, LEARNOVA_KEY_ALIAS and LEARNOVA_KEY_PASSWORD are required.")
+            }
+            storeFile file(keystorePath)
             storePassword releaseStorePassword
             keyAlias releaseKeyAlias
             keyPassword releaseKeyPassword
