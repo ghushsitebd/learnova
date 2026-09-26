@@ -45,7 +45,7 @@ class AdminPanelActivity : Activity() {
         val adTitle = EditText(this).apply {
             hint = "Advertisement title"
             setText(ads.title)
-            singleLine = true
+            isSingleLine = true
         }
         root.addView(adTitle, LinearLayout.LayoutParams(-1, -2))
 
