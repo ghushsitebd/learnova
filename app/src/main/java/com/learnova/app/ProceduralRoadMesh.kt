@@ -30,8 +30,9 @@ internal class ProceduralRoadMesh(
         const val ROAD_WIDTH = 7.2f
         const val SAMPLE_STEP = 3.25
         const val BEHIND = 80.0
-        const val VERTEX_COUNT = 2 * 127
-        const val INDEX_COUNT = 6 * 126
+        const val SAMPLE_COUNT = 191
+        const val VERTEX_COUNT = 2 * SAMPLE_COUNT
+        const val INDEX_COUNT = 6 * (SAMPLE_COUNT - 1)
         const val VERTEX_STRIDE = 9 * 4
     }
 
@@ -65,7 +66,7 @@ internal class ProceduralRoadMesh(
 
         val indices = ByteBuffer.allocate(INDEX_COUNT * 2)
             .order(ByteOrder.nativeOrder())
-        for (i in 0 until 126) {
+        for (i in 0 until SAMPLE_COUNT - 1) {
             val a = i * 2
             val b = a + 1
             val c = a + 2
@@ -108,7 +109,7 @@ internal class ProceduralRoadMesh(
         val data = ByteBuffer.allocate(VERTEX_COUNT * VERTEX_STRIDE)
             .order(ByteOrder.nativeOrder())
 
-        for (i in 0 until 127) {
+        for (i in 0 until SAMPLE_COUNT) {
             val distance = start + i * SAMPLE_STEP
             val sample = RoadSpline.sampleRelative(distance, centerDistance)
             val yaw = sample.yaw.toDouble()
