@@ -63,6 +63,10 @@ if "\x00" in text:
     print("::error::Vehicle catalog contains NUL bytes.")
     sys.exit(1)
 
+if not CATALOG.is_file():
+    print("::error::Vehicle catalog file is missing.")
+    sys.exit(1)
+
 if not ASSETS.exists():
     print("::notice::No real vehicle GLB assets are committed yet; catalog/resolver fallback remains active.")
     sys.exit(0)
