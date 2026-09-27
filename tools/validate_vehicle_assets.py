@@ -270,3 +270,5 @@ if ASSETS.exists():
             sys.exit(1)
 
 # CI hardening checkpoint 308: keep the production 3D asset pipeline deterministic and mobile-safe.
+
+# CI hardening checkpoint 309: keep the production 3D asset pipeline deterministic and mobile-safe.
