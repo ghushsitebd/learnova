@@ -173,6 +173,7 @@ class MainActivity : AppCompatActivity() {
             drawRoad(canvas, w, h, world)
             drawRoadInfrastructure(canvas, w, h, world)
             drawAtmosphere(canvas, w, h, world)
+            drawDistantWorld(canvas, w, h, world)
             drawAnimals(canvas, w, h, world)
             drawVehicle(canvas, w, h)
             drawTopBar(canvas, w, h, world)
@@ -1450,6 +1451,91 @@ class MainActivity : AppCompatActivity() {
                 .putInt("question", question)
                 .putFloat("levelProgress", levelProgress)
                 .apply()
+        }
+
+        private fun drawDistantWorld(c: Canvas, w: Float, h: Float, world: SmartScene) {
+            // Living distant world: lightweight traffic, trains and aircraft are
+            // rendered far behind the player and become visually larger as they approach.
+            val horizon = h * 0.59f
+            val travel = if (running) frame * 1.35f else 0f
+            val seed = abs(world.id * 41 + 17)
+
+            // Distant road traffic. Deterministic lanes keep it stable per scene.
+            for (i in 0..5) {
+                val lane = if (i % 2 == 0) -1f else 1f
+                val loop = ((travel * (0.65f + (i % 3) * 0.17f) + i * 137f) % 900f) / 900f
+                val depth = 0.08f + loop * 0.55f
+                val roadY = horizon + depth * (h * 0.30f)
+                val center = w / 2f + sin(frame / 180.0 + i).toFloat() * w * 0.035f
+                val x = center + lane * (w * (0.018f + depth * 0.105f))
+                val scale = 0.12f + depth * 0.46f
+                val bw = 18f * scale
+                val bh = 8f * scale
+                paint.color = Color.argb((45 + 95 * depth).toInt(), 20, 24, 27)
+                c.drawRoundRect(RectF(x - bw, roadY - bh, x + bw, roadY + bh), 3f * scale, 3f * scale, paint)
+                paint.color = if (i % 3 == 0) Color.rgb(205, 55, 45) else Color.rgb(45, 105, 150)
+                c.drawRoundRect(RectF(x - bw * .8f, roadY - bh * .72f, x + bw * .8f, roadY + bh * .72f), 2f, 2f, paint)
+                if (world.time == "Night") {
+                    paint.color = Color.argb((100 + 100 * depth).toInt(), 255, 240, 175)
+                    c.drawCircle(x + lane * bw * .72f, roadY, 1.4f + scale * 2f, paint)
+                }
+            }
+
+            // Railway corridor in suitable worlds: the train is a moving world object,
+            // not a static decoration. It stays behind the main road in perspective.
+            val hasRail = world.region.contains("Railway") ||
+                    world.environment.contains("railway", ignoreCase = true) ||
+                    world.region == "City" || world.region.contains("Village") ||
+                    world.region.contains("Mountain") || world.region == "Bangladesh Village"
+            if (hasRail) {
+                val railY = horizon + h * 0.085f
+                val railCenter = w * 0.74f + sin(frame / 240.0).toFloat() * w * .035f
+                paint.color = Color.rgb(80, 77, 72)
+                paint.strokeWidth = 2.2f
+                c.drawLine(railCenter - w*.18f, railY - 5f, railCenter + w*.18f, railY + 7f, paint)
+                c.drawLine(railCenter - w*.18f, railY + 4f, railCenter + w*.18f, railY + 16f, paint)
+                paint.color = Color.rgb(116, 88, 57)
+                for (i in 0..8) {
+                    val x = railCenter - w*.18f + i * w*.045f
+                    c.drawLine(x, railY - 9f, x, railY + 22f, paint)
+                }
+
+                val trainT = ((travel * .72f + seed * 11f) % 1100f) / 1100f
+                val trainX = w * .50f + trainT * w * .42f
+                val trainScale = .24f + trainT * .34f
+                val tw = 105f * trainScale
+                val th = 25f * trainScale
+                paint.color = Color.rgb(178, 185, 188)
+                c.drawRoundRect(RectF(trainX - tw, railY - th, trainX + tw, railY + th), 5f * trainScale, 5f * trainScale, paint)
+                paint.color = Color.rgb(38, 91, 124)
+                c.drawRect(trainX - tw*.82f, railY - th*.55f, trainX + tw*.78f, railY - th*.02f, paint)
+                paint.color = Color.rgb(235, 240, 242)
+                for (i in 0..3) {
+                    val wx = trainX - tw*.62f + i * tw*.38f
+                    c.drawRoundRect(RectF(wx, railY-th*.45f, wx+tw*.18f, railY-th*.12f), 2f,2f,paint)
+                }
+                if (world.time == "Night") {
+                    paint.color = Color.rgb(255, 238, 170)
+                    c.drawCircle(trainX + tw*.94f, railY, 3f + 4f*trainScale, paint)
+                }
+            }
+
+            // Air traffic gives open/city/airport scenes a second layer of depth.
+            if (world.region == "Airport" || world.region == "City" || world.region == "Beach Town" ||
+                world.region == "Harbor" || world.region == "Mountain Town") {
+                val ax = (w * .18f + ((travel * .18f + seed * 29f) % (w * .72f)))
+                val ay = h * .23f + sin(frame / 90.0).toFloat() * 9f
+                val a = Path()
+                a.moveTo(ax - 26f, ay)
+                a.lineTo(ax + 30f, ay - 4f)
+                a.lineTo(ax + 10f, ay + 5f)
+                a.lineTo(ax - 30f, ay + 5f)
+                a.close()
+                paint.color = Color.argb(185, 235, 240, 242)
+                c.drawPath(a, paint)
+                paint.color = Color.argb(150, 95, 145, 175)
+                c.drawRect(ax - 8f, ay - 1f, ax + 8f, ay + 2f, paint)
+            }
         }
 
         private fun drawRoadInfrastructure(c: Canvas, w: Float, h: Float, world: SmartScene) {
