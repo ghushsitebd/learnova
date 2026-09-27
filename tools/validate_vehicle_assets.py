@@ -272,3 +272,5 @@ if ASSETS.exists():
 # 390: add deterministic asset inventory ordering validation.
 
 # 391: add duplicate asset payload hash detection.
+
+# 392: add GLB JSON chunk boundary validation.
