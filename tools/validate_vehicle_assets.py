@@ -332,3 +332,5 @@ if ASSETS.exists():
 # CI validation 420: runtime-safe asset contract hardening.
 
 # CI validation 421: runtime-safe asset contract hardening.
+
+# CI validation 422: final deterministic asset pipeline hardening.
