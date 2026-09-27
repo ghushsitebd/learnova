@@ -32,6 +32,7 @@ internal class WaterSurfaceWorld(
     private var ib: IndexBuffer? = null
     private var material: MaterialInstance? = null
     private var lastCenter = Double.NaN
+    private var lastWaveUpdateNanos = 0L
 
     fun build(): Boolean {
         if (entity != 0) return true
@@ -81,7 +82,13 @@ internal class WaterSurfaceWorld(
 
     fun update(centerDistance: Double) {
         if (entity == 0 || vb == null || ib == null) return
-        if (!lastCenter.isNaN() && kotlin.math.abs(centerDistance - lastCenter) < 4.0) return
+        val now = System.nanoTime()
+        // The water is allowed to animate independently of vehicle travel. A small
+        // 160 ms update budget keeps mobile CPU/GPU work bounded while making the
+        // river/coast visibly alive even when the vehicle is stopped.
+        if (!lastCenter.isNaN() && kotlin.math.abs(centerDistance - lastCenter) < 4.0 &&
+            now - lastWaveUpdateNanos < 160_000_000L) return
+        val waveTime = now * 1.0e-9
 
         val data = ByteBuffer.allocate(VERTICES * STRIDE).order(ByteOrder.nativeOrder())
         val start = kotlin.math.floor((centerDistance - BEHIND) / STEP) * STEP
@@ -110,7 +117,10 @@ internal class WaterSurfaceWorld(
             val leftZ = cz + lz * half * side
             val rightX = cx - lx * half * side
             val rightZ = cz - lz * half * side
-            val wave = sin(d * 0.22) * 0.035 + sin(d * 0.071 + 1.4) * 0.022
+            val wave =
+                sin(d * 0.22 - waveTime * 1.55) * 0.035 +
+                sin(d * 0.071 + 1.4 - waveTime * 0.72) * 0.022 +
+                sin(d * 0.41 + waveTime * 0.48) * 0.008
             val waterY = sample.y - if (biome == WorldDirector.Biome.COAST) 0.45 else 0.72
 
             putVertex(data, leftX.toFloat(), (waterY + wave).toFloat(), leftZ.toFloat(), yaw, 0.0, 0f, d.toFloat() * 0.05f)
@@ -119,6 +129,7 @@ internal class WaterSurfaceWorld(
         data.flip()
         vb!!.setBufferAt(engine, 0, data)
         lastCenter = centerDistance
+        lastWaveUpdateNanos = now
     }
 
     private fun findMaterial(): MaterialInstance? {
@@ -161,5 +172,6 @@ internal class WaterSurfaceWorld(
         ib?.let { engine.destroyIndexBuffer(it) }
         material?.let { engine.destroyMaterialInstance(it) }
         vb = null; ib = null; material = null; lastCenter = Double.NaN
+        lastWaveUpdateNanos = 0L
     }
 }
