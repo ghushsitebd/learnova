@@ -73,6 +73,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var terrainMesh: LearnovaTerrainMesh? = null
     private var roadsideWorld: RoadsideWorld? = null
     private var waterSurfaceWorld: WaterSurfaceWorld? = null
+    private var shorelineWorld: ShorelineWorld? = null
     private var activeVehicle: VehicleDefinition = VehicleCatalog.byId(1)
     private var targetSpeed = activeVehicle.targetSpeed
     private var wheelRadius = activeVehicle.wheelRadius
@@ -121,6 +122,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             terrainMesh = LearnovaTerrainMesh(viewer.engine, viewer.scene, asset).also { it.build() }
             roadsideWorld = RoadsideWorld(viewer.engine, viewer.scene, asset).also { it.build() }
             waterSurfaceWorld = WaterSurfaceWorld(viewer.engine, viewer.scene, asset).also { it.build() }
+            shorelineWorld = ShorelineWorld(viewer.engine, viewer.scene, asset).also { it.build() }
         }
         configureRealisticSunLight()
         updateSkybox(WorldDirector.atmosphere(0.0), force = true)
@@ -175,6 +177,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 terrainMesh?.update(vehicleDistance)
                 roadsideWorld?.update(vehicleDistance)
                 waterSurfaceWorld?.update(vehicleDistance)
+                shorelineWorld?.update(vehicleDistance)
                 updateVehicleMechanics()
                 vehicleInteraction.update(dt.toFloat(), interactionProfile)
                 updateVehicleInteractionVisuals()
@@ -380,8 +383,10 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 terrainMesh?.destroy()
                 roadsideWorld?.destroy()
                 waterSurfaceWorld?.destroy()
+                shorelineWorld?.destroy()
                 roadsideWorld = null
                 waterSurfaceWorld = null
+                shorelineWorld = null
                 terrainMesh = viewer.asset?.let { asset ->
                     LearnovaTerrainMesh(viewer.engine, viewer.scene, asset).also { it.build() }
                 }
@@ -390,6 +395,9 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 }
                 waterSurfaceWorld = viewer.asset?.let {
                     WaterSurfaceWorld(viewer.engine, viewer.scene, it).also { world -> world.build() }
+                }
+                shorelineWorld = viewer.asset?.let {
+                    ShorelineWorld(viewer.engine, viewer.scene, it).also { world -> world.build() }
                 }
                 roadsideWorld = viewer.asset?.let {
                     RoadsideWorld(viewer.engine, viewer.scene, it).also { world -> world.build() }
@@ -904,6 +912,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         terrainMesh = null
         roadsideWorld?.destroy()
         waterSurfaceWorld?.destroy()
+        shorelineWorld?.destroy()
         roadsideWorld = null
         waterSurfaceWorld = null
         if (sunEntity != 0) {
