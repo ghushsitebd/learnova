@@ -883,7 +883,9 @@ class MainActivity : AppCompatActivity() {
             kind: String,
             x: Float,
             y: Float,
-            travel: Float
+            travel: Float,
+            aggressive: Boolean = false,
+            chargeProgress: Float = 0f
         ) {
             val wrappedX = ((x + travel) % (wSafe(c) + 180f)) - 90f
             val hop = if (running) sin((frame / 5.5) + x * 0.01).toFloat() * 2.5f else 0f
