@@ -19,15 +19,15 @@ import kotlin.random.Random
  */
 class LearnovaNatureAudio {
 
-    private val sampleRate = 22050
-    private val channelMask = AudioFormat.CHANNEL_OUT_MONO
+    private val sampleRate = 44100
+    private val channelMask = AudioFormat.CHANNEL_OUT_STEREO
     private val encoding = AudioFormat.ENCODING_PCM_16BIT
     private val minBuffer = AudioTrack.getMinBufferSize(sampleRate, channelMask, encoding)
         .coerceAtLeast(sampleRate / 4)
 
     @Volatile private var region = "Nature"
     @Volatile private var weather = "Clear"
-    @Volatile private var time = "Day"
+    @Volatile private var time = "Day"\n    @Volatile private var vehicleKind = "car"\n    @Volatile private var vehicleMoving = false
     @Volatile private var enabled = true
 
     private var track: AudioTrack? = null
@@ -63,13 +63,13 @@ class LearnovaNatureAudio {
         track = audioTrack
 
         thread = Thread({
-            val chunk = ShortArray(1024)
+            val chunk = ShortArray(2048)\n            val leftRight = ShortArray(4096)
             val random = Random(20260927)
             var low = 0.0
             var high = 0.0
             var phase = 0.0
             var sampleIndex = 0L
-            var nextBird = sampleRate * 2L
+            var nextBird = sampleRate * 2L\n            var enginePhase = 0.0\n            var enginePhase2 = 0.0
 
             try {
                 audioTrack.play()
@@ -77,7 +77,7 @@ class LearnovaNatureAudio {
                 while (!Thread.currentThread().isInterrupted && enabled) {
                     val localWeather = weather
                     val localRegion = region
-                    val localTime = time
+                    val localTime = time\n                    val localVehicleKind = vehicleKind\n                    val localVehicleMoving = vehicleMoving
 
                     for (i in chunk.indices) {
                         val white = random.nextDouble(-1.0, 1.0)
@@ -146,7 +146,7 @@ class LearnovaNatureAudio {
                         sampleIndex++
                     }
 
-                    audioTrack.write(chunk, 0, chunk.size, AudioTrack.WRITE_BLOCKING)
+                    audioTrack.write(leftRight, 0, leftRight.size, AudioTrack.WRITE_BLOCKING)
                 }
             } catch (_: Throwable) {
                 // Audio is optional. A device/audio-route problem must never crash gameplay.
