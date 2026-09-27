@@ -290,3 +290,5 @@ if ASSETS.exists():
 # 399: add malformed filename rejection hardening.
 
 # 399: reject malformed vehicle asset filenames before packaging.
+
+# 400: finalize deterministic vehicle asset contract validation.
