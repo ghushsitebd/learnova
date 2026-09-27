@@ -80,12 +80,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun onTouchEvent(event: MotionEvent): Boolean {
-            if (event.actionMasked != MotionEvent.ACTION_UP) return true
-
-            val now = System.currentTimeMillis()
-            if (now - lastTap < 180L) return true
-            lastTap = now
-
             val w = width.toFloat()
             val h = height.toFloat()
             if (w <= 0f || h <= 0f) return true
@@ -93,30 +87,36 @@ class MainActivity : AppCompatActivity() {
             val x = event.x
             val y = event.y
 
-            // Smart child-friendly controls:
-            // tap the main play area OR the START/STOP button to toggle movement.
-            if ((y > h * 0.30f && y < h * 0.63f) ||
-                (y >= h * 0.63f && y <= h * 0.91f && x >= w * 0.76f)) {
-                running = !running
-                voice.speakInstruction(running)
-            } else if (y >= h * 0.63f && y <= h * 0.91f && x < w * 0.76f) {
-                // Tap the learning card to hear the current lesson again.
-                voice.speakLesson(lessons[question])
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    // Natural child control: press and hold anywhere on the play field to drive.
+                    if (y > h * 0.22f && y < h * 0.63f) {
+                        running = true
+                        voice.speakInstruction(true)
+                        performClick()
+                        invalidate()
+                    } else if (y >= h * 0.63f && y <= h * 0.91f && x < w * 0.76f) {
+                        voice.speakLesson(lessons[question])
+                    }
+                    return true
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    if (y > h * 0.22f && y < h * 0.63f) {
+                        running = false
+                        voice.speakInstruction(false)
+                        invalidate()
+                    }
+                    if (event.actionMasked == MotionEvent.ACTION_UP && y > h * 0.91f) {
+                        nextLesson()
+                    }
+                    return true
+                }
             }
+            return true
+        }
 
-            // Tap the vehicle name to switch vehicle.
-            if (y < h * 0.18f && x > w * 0.68f) {
-                vehicle = (vehicle + 1) % LearnovaUnlimitedWorld.vehicles.size
-                saveProgress()
-            }
-
-            // Tap the very bottom to move to the next lesson.
-            if (y > h * 0.91f) {
-                nextLesson()
-            }
-
-            invalidate()
-            if (running) postInvalidateOnAnimation()
+        override fun performClick(): Boolean {
+            super.performClick()
             return true
         }
 
@@ -687,47 +687,70 @@ class MainActivity : AppCompatActivity() {
         }
 
         private fun drawCar(c: Canvas, x: Float, y: Float) {
-            paint.color = Color.argb(90,0,0,0)
-            c.drawOval(RectF(x-115f,y+30f,x+115f,y+55f),paint)
+            // Cinematic pseudo-3D car: layered body, glass reflections, contact shadow and highlights.
+            paint.shader = RadialGradient(x - 28f, y - 48f, 180f,
+                intArrayOf(Color.argb(255, 105, 230, 160), Color.rgb(13, 115, 67), Color.rgb(4, 62, 38)),
+                floatArrayOf(0f, .52f, 1f), Shader.TileMode.CLAMP)
+            c.drawRoundRect(RectF(x-112f,y-42f,x+112f,y+38f),24f,24f,paint)
+            paint.shader = null
 
-            paint.color = Color.rgb(15,137,76)
-            c.drawRoundRect(RectF(x-110f,y-40f,x+110f,y+35f),24f,24f,paint)
+            // Lower bumper and side contour.
+            paint.color = Color.rgb(5, 53, 39)
+            c.drawRoundRect(RectF(x-103f,y+17f,x+103f,y+42f),12f,12f,paint)
+            paint.color = Color.rgb(30, 158, 94)
+            c.drawRoundRect(RectF(x-106f,y-36f,x+106f,y+23f),21f,21f,paint)
 
-            val roof = Path()
-            roof.moveTo(x-67f,y-40f)
-            roof.lineTo(x-38f,y-80f)
-            roof.lineTo(x+45f,y-80f)
-            roof.lineTo(x+70f,y-40f)
-            roof.close()
-            paint.color = Color.rgb(10,103,58)
+            val roof = Path().apply {
+                moveTo(x-70f,y-34f); lineTo(x-42f,y-82f); lineTo(x+43f,y-82f)
+                lineTo(x+73f,y-34f); close()
+            }
+            paint.shader = LinearGradient(x.toFloat(), y-84f, x.toFloat(), y-28f,
+                Color.rgb(45, 184, 125), Color.rgb(7, 76, 49), Shader.TileMode.CLAMP)
             c.drawPath(roof,paint)
+            paint.shader = null
 
-            paint.color = Color.rgb(177,225,240)
-            c.drawRoundRect(RectF(x-36f,y-69f,x+3f,y-43f),7f,7f,paint)
-            c.drawRoundRect(RectF(x+8f,y-69f,x+41f,y-43f),7f,7f,paint)
+            // Deep glass with diagonal reflections.
+            paint.color = Color.rgb(24, 57, 66)
+            c.drawRoundRect(RectF(x-39f,y-70f,x+1f,y-43f),7f,7f,paint)
+            c.drawRoundRect(RectF(x+7f,y-70f,x+43f,y-43f),7f,7f,paint)
+            paint.color = Color.argb(120, 210, 245, 255)
+            c.drawRect(x-35f,y-67f,x-5f,y-63f,paint)
+            c.drawRect(x+11f,y-67f,x+38f,y-63f,paint)
 
-            paint.color = Color.rgb(255,239,130)
-            c.drawCircle(x-98f,y-5f,8f,paint)
-            c.drawCircle(x+98f,y-5f,8f,paint)
+            // Headlights and grille.
+            paint.shader = RadialGradient(x-96f,y-4f,18f,Color.WHITE,Color.argb(20,255,255,255),Shader.TileMode.CLAMP)
+            c.drawCircle(x-96f,y-4f,10f,paint)
+            paint.shader = RadialGradient(x+96f,y-4f,18f,Color.WHITE,Color.argb(20,255,255,255),Shader.TileMode.CLAMP)
+            c.drawCircle(x+96f,y-4f,10f,paint)
+            paint.shader = null
+            paint.color = Color.rgb(12, 39, 34)
+            c.drawRoundRect(RectF(x-38f,y+13f,x+38f,y+25f),6f,6f,paint)
+            paint.color = Color.argb(120,255,255,255)
+            c.drawRoundRect(RectF(x-72f,y-29f,x+62f,y-24f),3f,3f,paint)
 
-            drawWheel(c,x-68f,y+34f, wheelSpin)
-            drawWheel(c,x+68f,y+34f, wheelSpin)
+            // Ground contact shadow.
+            paint.color = Color.argb(105,0,0,0)
+            c.drawOval(RectF(x-120f,y+34f,x+120f,y+62f),paint)
+
+            drawWheel(c,x-69f,y+34f,wheelSpin)
+            drawWheel(c,x+69f,y+34f,wheelSpin)
         }
 
         private fun drawWheel(c: Canvas, x: Float, y: Float, angle: Float) {
-            paint.color = Color.rgb(25,25,25)
-            c.drawCircle(x,y,23f,paint)
-            paint.color = Color.rgb(175,175,175)
-            c.drawCircle(x,y,9f,paint)
-            paint.color = Color.rgb(70,70,70)
-            paint.strokeWidth = 2.5f
-            c.save()
-            c.rotate(angle, x, y)
-            for (i in 0..3) {
-                val a = i * 90f
-                val dx = cos(Math.toRadians(a.toDouble())).toFloat() * 8f
-                val dy = sin(Math.toRadians(a.toDouble())).toFloat() * 8f
-                c.drawLine(x, y, x + dx, y + dy, paint)
+            paint.shader = RadialGradient(x-5f,y-6f,25f,
+                intArrayOf(Color.rgb(75,75,75),Color.rgb(18,18,18),Color.BLACK),
+                floatArrayOf(0f,.62f,1f),Shader.TileMode.CLAMP)
+            c.drawCircle(x,y,24f,paint)
+            paint.shader = null
+            paint.color = Color.rgb(145,145,145)
+            c.drawCircle(x,y,10f,paint)
+            paint.color = Color.rgb(55,55,55)
+            c.save(); c.rotate(angle,x,y)
+            for(i in 0..7){
+                val a=i*45f
+                val dx=cos(Math.toRadians(a.toDouble())).toFloat()*9f
+                val dy=sin(Math.toRadians(a.toDouble())).toFloat()*9f
+                c.drawLine(x,y,x+dx,y+dy,paint)
             }
             c.restore()
         }
