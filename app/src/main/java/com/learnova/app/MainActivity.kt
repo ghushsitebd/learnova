@@ -170,7 +170,8 @@ class MainActivity : AppCompatActivity() {
             drawRiver(canvas, w, h)
             drawTrees(canvas, w, h)
             drawHabitatDetails(canvas, w, h, world)
-            drawRoad(canvas, w, h)
+            drawRoad(canvas, w, h, world)
+            drawAtmosphere(canvas, w, h, world)
             drawAnimals(canvas, w, h, world)
             drawVehicle(canvas, w, h)
             drawTopBar(canvas, w, h, world)
@@ -439,7 +440,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        private fun drawRoad(c: Canvas, w: Float, h: Float) {
+        private fun drawRoad(c: Canvas, w: Float, h: Float, world: SmartScene) {
             // Perspective road: the vanishing point stays near the horizon while the
             // lane, shoulders, reflectors and surface texture expand toward the camera.
             val horizonY = h * 0.60f
@@ -525,6 +526,18 @@ class MainActivity : AppCompatActivity() {
                              edge + side * (10f + 15f * tt), y),
                         2f, 2f, paint
                     )
+                }
+            }
+
+            // Weather-aware wet asphalt: restrained reflections make rain scenes feel grounded.
+            if (world.weather == "Rainy") {
+                paint.color = Color.argb(55, 190, 220, 235)
+                for (i in 0..7) {
+                    val tt = 0.16f + i * 0.105f
+                    val y = horizonY + (bottomY - horizonY) * tt
+                    val cx = roadCenter(tt)
+                    val hw = roadHalfWidth(tt) * 0.72f
+                    c.drawRoundRect(RectF(cx - hw, y, cx + hw, y + 2f + 4f * tt), 3f, 3f, paint)
                 }
             }
 
@@ -1297,6 +1310,36 @@ class MainActivity : AppCompatActivity() {
                 .putInt("question", question)
                 .putFloat("levelProgress", levelProgress)
                 .apply()
+        }
+
+        private fun drawAtmosphere(c: Canvas, w: Float, h: Float, world: SmartScene) {
+            // Depth cues: distant haze + low-angle light keep the procedural world readable
+            // without heavy bitmap assets. This stays compatible with the existing GPU Canvas path.
+            val horizon = h * 0.59f
+            val hazeAlpha = when (world.weather) {
+                "Rainy" -> 54
+                "Cloudy" -> 34
+                "Fresh" -> 18
+                else -> if (world.time == "Sunset") 24 else 12
+            }
+            paint.shader = LinearGradient(
+                0f, horizon - h * 0.16f, 0f, horizon + h * 0.10f,
+                Color.argb(0, 235, 245, 248),
+                Color.argb(hazeAlpha, 235, 245, 248),
+                Shader.TileMode.CLAMP
+            )
+            c.drawRect(0f, horizon - h * 0.16f, w, horizon + h * 0.10f, paint)
+            paint.shader = null
+
+            if (world.time == "Sunset") {
+                paint.color = Color.argb(24, 255, 190, 105)
+                c.drawRect(0f, h * 0.34f, w, h * 0.67f, paint)
+            }
+
+            if (world.time == "Night") {
+                paint.color = Color.argb(18, 20, 35, 70)
+                c.drawRect(0f, h * 0.45f, w, h, paint)
+            }
         }
 
         private fun drawHint(c: Canvas, w: Float, h: Float) {
