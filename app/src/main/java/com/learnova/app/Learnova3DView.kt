@@ -124,8 +124,15 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         surface.setZOrderOnTop(false)
         configureDeviceRenderProfile()
 
-        val modelBytes = decodeModel()
-        viewer.loadModelGlb(ByteBuffer.wrap(modelBytes))
+        // Startup must remain recoverable even if the embedded model data is
+        // corrupted or a future build changes the compression format. The learning HUD
+        // can still open while the optional 3D world is unavailable.
+        try {
+            val modelBytes = decodeModel()
+            viewer.loadModelGlb(ByteBuffer.wrap(modelBytes))
+        } catch (_: Throwable) {
+            // Keep the renderer alive; all world components below are optional.
+        }
         // Never force-unwrap the parsed asset during Activity startup. A malformed
         // or unsupported GLB must degrade to a renderer without the road mesh rather
         // than crashing the entire app before the child can reach the learning screen.
