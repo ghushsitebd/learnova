@@ -69,11 +69,18 @@ class LearnovaVoice(private val context: Context) : TextToSpeech.OnInitListener 
         if (index >= lines.size) return
         val dialogue = lines[index]
         val player = try {
-            MediaPlayer().apply {
-                setDataSource(context.assets.openFd(dialogue.assetPath).fileDescriptor,
-                    context.assets.openFd(dialogue.assetPath).startOffset,
-                    context.assets.openFd(dialogue.assetPath).length)
-                prepare()
+            val descriptor = context.assets.openFd(dialogue.assetPath)
+            try {
+                MediaPlayer().apply {
+                    setDataSource(
+                        descriptor.fileDescriptor,
+                        descriptor.startOffset,
+                        descriptor.length
+                    )
+                    prepare()
+                }
+            } finally {
+                descriptor.close()
             }
         } catch (_: Exception) {
             return
