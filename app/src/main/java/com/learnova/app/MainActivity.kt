@@ -93,15 +93,7 @@ class MainActivity : AppCompatActivity() {
         private val prefs: SharedPreferences = getSharedPreferences("learnova_progress", MODE_PRIVATE)
         private val renderQuality = LearnovaRenderQuality(this@MainActivity)
 
-        private val lessons = arrayOf(
-            "A", "B", "C", "D", "E", "F", "G", "H",
-            "I", "J", "K", "L", "M", "N", "O", "P",
-            "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
-            "ا", "ب", "ت", "ث", "ج", "ح", "خ", "د", "ذ", "ر", "ز",
-            "س", "ش", "ص", "ض", "ط", "ظ", "ع", "غ",
-            "ف", "ق", "ك", "ل", "م", "ن", "ه", "و", "ي",
-            "الفاتحة"
-        )
+        private val lessons = SmartLearningEngine.lessons.map { it.display }.toTypedArray()
 
         private val englishWords = arrayOf(
             "Apple", "Ball", "Cat", "Dog", "Elephant", "Fish", "Grapes", "House",
@@ -111,11 +103,7 @@ class MainActivity : AppCompatActivity() {
         )
 
         private val lessonHints = Array(lessons.size) { index ->
-            when {
-                index < 26 -> "English alphabet"
-                index < lessons.size - 1 -> "Arabic letters"
-                else -> "Quran learning"
-            }
+            SmartLearningEngine.category(index)
         }
 
         init {
