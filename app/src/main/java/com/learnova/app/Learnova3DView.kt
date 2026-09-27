@@ -193,6 +193,9 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 if (!driving) lateralOffset *= (1.0 - (dt * 2.8).coerceAtMost(0.9))
                 lateralOffset = lateralOffset.coerceIn(-laneLimit, laneLimit)
 
+                // The camera follows the vehicle; the world itself is never
+                // animated backward. Procedural meshes are regenerated around the
+                // vehicle only to extend the visible horizon.
                 updateDriveScene()
                 if (kotlin.math.abs(vehicleDistance - renderOriginDistance) >= 4.0) {
                     renderOriginDistance = vehicleDistance
