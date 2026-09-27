@@ -50,6 +50,12 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var wheelEntities = IntArray(0)
     private val frontWheelEntities = HashSet<Int>()
     private val wheelBaseTransforms = HashMap<Int, FloatArray>()
+    // Per-wheel contact state keeps the chassis response physical instead of using
+    // one shared bounce value. The road spline is the authoritative ground surface.
+    private val wheelContactLongitudinal = HashMap<Int, Double>()
+    private val wheelContactLateral = HashMap<Int, Double>()
+    private val wheelSuspensionDisplacement = HashMap<Int, Double>()
+    private val wheelSuspensionVelocity = HashMap<Int, Double>()
     private var vehicleRootEntity = 0
     private var vehicleRootBaseTransform: FloatArray? = null
     private var sunEntity = 0
@@ -381,23 +387,57 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             "FrontLeftWheel", "FrontRightWheel", "RearLeftWheel", "RearRightWheel"
         )
         val found = ArrayList<Int>()
+        val semanticNames = HashMap<Int, String>()
         for (name in names) {
             val entity = asset.getFirstEntityByName(name)
-            if (entity != 0 && !found.contains(entity)) found.add(entity)
+            if (entity != 0 && !found.contains(entity)) {
+                found.add(entity)
+                semanticNames[entity] = name
+            }
         }
         wheelEntities = found.toIntArray()
         frontWheelEntities.clear()
-        val frontNames = setOf("Wheel_FL", "Wheel_FR", "wheel_fl", "wheel_fr", "FrontLeftWheel", "FrontRightWheel")
+        val frontNames = setOf(
+            "Wheel_FL", "Wheel_FR", "wheel_fl", "wheel_fr",
+            "FrontLeftWheel", "FrontRightWheel"
+        )
         for (name in frontNames) {
             val entity = asset.getFirstEntityByName(name)
             if (entity != 0) frontWheelEntities.add(entity)
         }
+
         val tm = viewer.engine.transformManager
         wheelBaseTransforms.clear()
+        wheelContactLongitudinal.clear()
+        wheelContactLateral.clear()
+        wheelSuspensionDisplacement.clear()
+        wheelSuspensionVelocity.clear()
+
         for (entity in wheelEntities) {
-            if (tm.hasComponent(entity)) {
-                wheelBaseTransforms[entity] = tm.getTransform(tm.getInstance(entity), FloatArray(16))
+            if (!tm.hasComponent(entity)) continue
+            wheelBaseTransforms[entity] =
+                tm.getTransform(tm.getInstance(entity), FloatArray(16))
+
+            val name = semanticNames[entity].orEmpty().lowercase()
+            val front = frontWheelEntities.contains(entity)
+            val lateralFromName = when {
+                name.contains("_fl") || name.contains("frontleft") -> -1.0
+                name.contains("_fr") || name.contains("frontright") -> 1.0
+                name.contains("_rl") || name.contains("rearleft") -> -1.0
+                name.contains("_rr") || name.contains("rearright") -> 1.0
+                else -> {
+                    val base = wheelBaseTransforms[entity]!!
+                    if (base[12] >= 0.0f) 1.0 else -1.0
+                }
             }
+
+            // The production vehicle convention is +Z forward. Semantic wheel
+            // names override the mesh's authored longitudinal position so that
+            // different GLBs share the same physical contact model.
+            wheelContactLongitudinal[entity] = if (front) 1.15 else -1.15
+            wheelContactLateral[entity] = lateralFromName * 0.78
+            wheelSuspensionDisplacement[entity] = 0.0
+            wheelSuspensionVelocity[entity] = 0.0
         }
     }
 
@@ -515,49 +555,21 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
     private fun updateVehicleMechanics() {
         if (wheelEntities.isEmpty() && vehicleRootEntity == 0) return
+
         val tm = viewer.engine.transformManager
-        // Approximate a 0.30 m tyre radius: angular travel = distance / radius.
-        // This keeps wheel rotation tied to actual vehicle travel rather than time.
+        val dt = frameDeltaSeconds.coerceIn(1.0 / 240.0, 0.05)
         val wheelAngle = (vehicleDistance / wheelRadius).toFloat()
-        // Spring-damper suspension reacts to the road's actual vertical
-        // curvature instead of using a purely time-based bounce. This keeps the
-        // chassis settled over crests/dips and remains deterministic at any FPS.
+
         val road = RoadSpline.sampleRelative(vehicleDistance, renderOriginDistance)
-        // Short look-ahead for progressive steering of the front axle.
         val roadAhead = RoadSpline.sampleRelative(
             vehicleDistance + 1.8,
             renderOriginDistance
         )
-        // Evaluate the road at the approximate front/rear axle centers instead of
-        // using a tiny time-based bounce. The chassis therefore follows the actual
-        // longitudinal road slope and reacts naturally to crests and dips.
-        val axleHalfLength = 1.15
-        val frontRoad = RoadSpline.sampleRelative(
-            vehicleDistance + axleHalfLength,
+        val roadBehind = RoadSpline.sampleRelative(
+            vehicleDistance - 1.8,
             renderOriginDistance
         )
-        val rearRoad = RoadSpline.sampleRelative(
-            vehicleDistance - axleHalfLength,
-            renderOriginDistance
-        )
-        val axleAverageHeight = (frontRoad.y + rearRoad.y) * 0.5
-        val verticalCurvature = axleAverageHeight - road.y
-        val targetCompression = (-verticalCurvature * 0.32).coerceIn(-0.045, 0.045)
-        val axlePitch = Math.atan2(
-            frontRoad.y - rearRoad.y,
-            axleHalfLength * 2.0
-        ).coerceIn(-0.16, 0.16).toFloat()
-        // Use the exact Choreographer delta already used by speed integration.
-        // Sampling the clock again here can produce a near-zero delta and make
-        // the suspension appear unnaturally stiff or frame-rate dependent.
-        val dt = frameDeltaSeconds.coerceIn(1.0 / 240.0, 0.05)
-        suspensionVelocity += ((targetCompression - suspensionDisplacement) * 18.0 - suspensionVelocity * 5.2) * dt
-        suspensionDisplacement += suspensionVelocity * dt
-        suspensionDisplacement = suspensionDisplacement.coerceIn(-0.045, 0.045)
-        val suspension = suspensionDisplacement.toFloat()
 
-        // Steering is automatic and spline-derived: the child keeps one simple
-        // control, while the vehicle body smoothly anticipates road curvature.
         val yawDelta = Math.atan2(
             Math.sin(road.yaw - previousRoadYaw),
             Math.cos(road.yaw - previousRoadYaw)
@@ -565,70 +577,145 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         roadYawRate += (yawDelta / dt - roadYawRate) * (dt * 7.0).coerceAtMost(1.0)
         previousRoadYaw = road.yaw.toDouble()
 
+        // Four independent tyre contact patches. Each tyre samples the road at
+        // its own longitudinal/lateral position, including the road's banking.
+        // This makes the body settle differently over bumps, cambers and curves.
+        val contactHeights = HashMap<Int, Double>()
+        val contactCompression = HashMap<Int, Double>()
+        var frontSum = 0.0
+        var rearSum = 0.0
+        var leftSum = 0.0
+        var rightSum = 0.0
+        var frontCount = 0
+        var rearCount = 0
+        var leftCount = 0
+        var rightCount = 0
+
+        for (entity in wheelEntities) {
+            val longitudinal = wheelContactLongitudinal[entity] ?: continue
+            val lateral = wheelContactLateral[entity] ?: continue
+            val sample = RoadSpline.sampleRelative(
+                vehicleDistance + longitudinal,
+                renderOriginDistance
+            )
+
+            // Offset from road centerline into the banked road surface.
+            val lateralLift = Math.sin(sample.bank.toDouble()) * lateral
+            val contactY = sample.y.toDouble() + lateralLift
+            contactHeights[entity] = contactY
+
+            val displacement = wheelSuspensionDisplacement[entity] ?: 0.0
+            val velocity = wheelSuspensionVelocity[entity] ?: 0.0
+            val target = ((contactY - road.y.toDouble()) * 0.22)
+                .coerceIn(-0.075, 0.075)
+
+            // Wheel spring/damper: critically damped enough for a child-friendly
+            // smooth ride while preserving visible mechanical response.
+            val springForce = (target - displacement) * 22.0
+            val damperForce = velocity * 6.4
+            val nextVelocity = velocity + (springForce - damperForce) * dt
+            val nextDisplacement = (displacement + nextVelocity * dt)
+                .coerceIn(-0.075, 0.075)
+            wheelSuspensionVelocity[entity] = nextVelocity
+            wheelSuspensionDisplacement[entity] = nextDisplacement
+            contactCompression[entity] = nextDisplacement
+
+            val front = frontWheelEntities.contains(entity)
+            if (front) {
+                frontSum += contactY
+                frontCount++
+            } else {
+                rearSum += contactY
+                rearCount++
+            }
+            if (lateral < 0.0) {
+                leftSum += contactY
+                leftCount++
+            } else {
+                rightSum += contactY
+                rightCount++
+            }
+        }
+
+        val frontHeight = if (frontCount > 0) frontSum / frontCount else roadAhead.y.toDouble()
+        val rearHeight = if (rearCount > 0) rearSum / rearCount else roadBehind.y.toDouble()
+        val leftHeight = if (leftCount > 0) leftSum / leftCount else road.y.toDouble()
+        val rightHeight = if (rightCount > 0) rightSum / rightCount else road.y.toDouble()
+
+        val axlePitch = Math.atan2(
+            frontHeight - rearHeight,
+            2.30
+        ).coerceIn(-0.16, 0.16).toFloat()
+        val contactRoll = Math.atan2(
+            rightHeight - leftHeight,
+            1.56
+        ).coerceIn(-0.10, 0.10).toFloat()
+
+        val averageSuspension = if (contactCompression.isNotEmpty()) {
+            contactCompression.values.average()
+        } else 0.0
+        suspensionVelocity = (averageSuspension - suspensionDisplacement) / dt
+        suspensionDisplacement += (averageSuspension - suspensionDisplacement) *
+            (dt * 12.0).coerceAtMost(1.0)
+        suspensionDisplacement = suspensionDisplacement.coerceIn(-0.075, 0.075)
+
         tm.openLocalTransformTransaction()
         try {
             val baseRoot = vehicleRootBaseTransform
             if (vehicleRootEntity != 0 && baseRoot != null && tm.hasComponent(vehicleRootEntity)) {
-                val travel = vehicleDistance
-                val road = RoadSpline.sampleRelative(travel, renderOriginDistance)
-                val suspensionBob = suspensionDisplacement.toFloat()
                 val chassis = Mat4.of(*baseRoot) *
-                        Mat4.of(
-                            1f, 0f, 0f, road.x.toFloat(),
-                            0f, 1f, 0f, road.y.toFloat() + suspensionBob,
-                            0f, 0f, 1f, road.z.toFloat(),
-                            0f, 0f, 0f, 1f
-                        ) *
-                        rotation(Float3(0.0f, 1.0f, 0.0f), road.yaw) *
-                        rotation(Float3(0.0f, 0.0f, 1.0f), (road.bank + roadYawRate * 0.018).coerceIn(-0.10, 0.10).toFloat()) *
-                        rotation(Float3(1.0f, 0.0f, 0.0f), axlePitch)
+                    Mat4.of(
+                        1f, 0f, 0f, road.x.toFloat(),
+                        0f, 1f, 0f, road.y.toFloat() + suspensionDisplacement.toFloat(),
+                        0f, 0f, 1f, road.z.toFloat(),
+                        0f, 0f, 0f, 1f
+                    ) *
+                    rotation(Float3(0.0f, 1.0f, 0.0f), road.yaw) *
+                    rotation(
+                        Float3(0.0f, 0.0f, 1.0f),
+                        (road.bank + contactRoll + roadYawRate * 0.018)
+                            .coerceIn(-0.14, 0.14).toFloat()
+                    ) *
+                    rotation(Float3(1.0f, 0.0f, 0.0f), axlePitch)
                 tm.setTransform(tm.getInstance(vehicleRootEntity), chassis.toFloatArray())
             }
 
             if (renderProfile.enableWheelAnimation) {
-                for ((index, entity) in wheelEntities.withIndex()) {
+                for (entity in wheelEntities) {
                     val base = wheelBaseTransforms[entity] ?: continue
                     if (!tm.hasComponent(entity)) continue
 
-                    // Front wheels steer automatically from the road curvature.
-                    // Use semantic wheel names rather than GLB list order.
                     val isFrontWheel = frontWheelEntities.contains(entity)
-                    // Steering follows road curvature, not absolute world yaw.
-                    // This prevents the wheels from pointing at a fixed world angle
-                    // whenever the road itself is already rotated.
-                    val roadBehind = RoadSpline.sampleRelative(
-                        vehicleDistance - 1.8,
-                        renderOriginDistance
+                    val steeringTarget = kotlin.math.atan(
+                        2.30 * (
+                            kotlin.math.atan2(
+                                kotlin.math.sin(roadAhead.yaw - roadBehind.yaw),
+                                kotlin.math.cos(roadAhead.yaw - roadBehind.yaw)
+                            ) / 3.6
+                        )
                     )
-                    val yawChange = kotlin.math.atan2(
-                        kotlin.math.sin(roadAhead.yaw - roadBehind.yaw),
-                        kotlin.math.cos(roadAhead.yaw - roadBehind.yaw)
-                    )
-                    val curvature = yawChange / 3.6
-                    val wheelBase = 2.30
-                    val steeringTarget = kotlin.math.atan(wheelBase * curvature)
                     val steerAngle = if (isFrontWheel) {
                         steeringTarget.coerceIn(-0.55, 0.55).toFloat()
-                    } else {
-                        0.0f
-                    }
+                    } else 0.0f
 
                     val wheelSteering = if (isFrontWheel) {
                         rotation(Float3(0.0f, 1.0f, 0.0f), steerAngle)
-                    } else {
-                        Mat4.identity()
-                    }
+                    } else Mat4.identity()
+
                     val wheelRotation = rotation(
                         Float3(1.0f, 0.0f, 0.0f),
                         wheelAngle
                     )
-                    val bob = Mat4.of(
+                    val localSuspension =
+                        (wheelSuspensionDisplacement[entity] ?: 0.0).toFloat()
+                    val wheelLift = Mat4.of(
                         1f, 0f, 0f, 0f,
-                        0f, 1f, 0f, suspension,
+                        0f, 1f, 0f, localSuspension,
                         0f, 0f, 1f, 0f,
                         0f, 0f, 0f, 1f
                     )
-                    val transform = bob * Mat4.of(*base) * wheelSteering * wheelRotation
+                    val transform =
+                        wheelLift * Mat4.of(*base) * wheelSteering * wheelRotation
                     tm.setTransform(tm.getInstance(entity), transform.toFloatArray())
                 }
             }
