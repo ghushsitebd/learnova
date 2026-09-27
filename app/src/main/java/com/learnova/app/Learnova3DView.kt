@@ -64,6 +64,9 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var vehicleRootBaseTransform: FloatArray? = null
     private var sunEntity = 0
     private var activeSkyBiome: WorldDirector.Biome? = null
+    private var lastSkyR = Float.NaN
+    private var lastSkyG = Float.NaN
+    private var lastSkyB = Float.NaN
     private var proceduralRoad: ProceduralRoadMesh? = null
     private var terrainMesh: LearnovaTerrainMesh? = null
     private var activeVehicle: VehicleDefinition = VehicleCatalog.byId(1)
@@ -114,7 +117,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             terrainMesh = LearnovaTerrainMesh(viewer.engine, viewer.scene, asset).also { it.build() }
         }
         configureRealisticSunLight()
-        updateSkybox(WorldDirector.profile(0.0), force = true)
+        updateSkybox(WorldDirector.atmosphere(0.0), force = true)
         cacheWheelEntities()
         cacheVehicleRoot()
         cacheDoorEntities()
@@ -760,8 +763,22 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
      * genuinely different depth cues while keeping the runtime allocation small.
      */
     private fun updateSkybox(world: WorldDirector.Profile, force: Boolean = false) {
-        if (!force && activeSkyBiome == world.biome) return
+        // Rebuild only when the atmosphere has visibly changed. The interpolation
+        // itself is continuous, but avoiding a Skybox allocation every frame keeps
+        // mobile GPU/CPU pressure low.
+        val changedEnough =
+            force ||
+                lastSkyR.isNaN() ||
+                kotlin.math.abs(world.skyR - lastSkyR) > 0.018f ||
+                kotlin.math.abs(world.skyG - lastSkyG) > 0.018f ||
+                kotlin.math.abs(world.skyB - lastSkyB) > 0.018f
+
+        if (!changedEnough) return
+
         activeSkyBiome = world.biome
+        lastSkyR = world.skyR
+        lastSkyG = world.skyG
+        lastSkyB = world.skyB
 
         viewer.scene.skybox = Skybox.Builder()
             .color(world.skyR, world.skyG, world.skyB, world.skyA)
@@ -774,7 +791,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         // forest -> river -> mountain -> desert -> plateau -> market -> village -> coast.
         // This changes the visual rhythm without loading a large environment pack.
         val travel = vehicleDistance
-        val world = WorldDirector.profile(travel)
+        val world = WorldDirector.atmosphere(travel)
         updateSkybox(world)
         val road = RoadSpline.sampleRelative(travel, renderOriginDistance)
         // Adaptive look-ahead increases with speed, so the child sees curves and
@@ -840,6 +857,9 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         roadYawRate = 0.0
         cameraBank = 0.0
         cameraYaw = 0.0
+        lastSkyR = Float.NaN
+        lastSkyG = Float.NaN
+        lastSkyB = Float.NaN
         assetLoadGeneration.incrementAndGet()
         frameCallback?.let { choreographer.removeFrameCallback(it) }
         frameCallback = null
