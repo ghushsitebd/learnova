@@ -951,7 +951,7 @@ class MainActivity : AppCompatActivity() {
             }
             val h = if (type == 2) 64f else 58f
             paint.shader = LinearGradient(x,y-h,x,y+42f,body,
-                Color.rgb((body.red*.55f).toInt(),(body.green*.55f).toInt(),(body.blue*.55f).toInt()),
+                Color.rgb((Color.red(body)*.55f).toInt(),(Color.green(body)*.55f).toInt(),(Color.blue(body)*.55f).toInt()),
                 Shader.TileMode.CLAMP)
             c.drawRoundRect(RectF(x-128f,y-h,x+128f,y+40f),22f,22f,paint)
             paint.shader = null
@@ -997,7 +997,7 @@ class MainActivity : AppCompatActivity() {
             val cargoRight = if (type == 0) 112f else 120f
             c.drawRoundRect(RectF(x-118f,y-42f,x+12f,y+38f),10f,10f,paint)
             paint.shader = LinearGradient(x+55f,y-68f,x+55f,y+40f,cabColor,
-                Color.rgb((cabColor.red*.5f).toInt(),(cabColor.green*.5f).toInt(),(cabColor.blue*.5f).toInt()),
+                Color.rgb((Color.red(cabColor)*.5f).toInt(),(Color.green(cabColor)*.5f).toInt(),(Color.blue(cabColor)*.5f).toInt()),
                 Shader.TileMode.CLAMP)
             c.drawRoundRect(RectF(x+5f,y-66f,x+cargoRight,y+39f),15f,15f,paint)
             paint.shader = null
@@ -1032,7 +1032,7 @@ class MainActivity : AppCompatActivity() {
                 else -> Color.rgb(55,145,120)
             }
             paint.shader = LinearGradient(x,y-62f,x,y+42f,body,
-                Color.rgb((body.red*.55f).toInt(),(body.green*.55f).toInt(),(body.blue*.55f).toInt()),
+                Color.rgb((Color.red(body)*.55f).toInt(),(Color.green(body)*.55f).toInt(),(Color.blue(body)*.55f).toInt()),
                 Shader.TileMode.CLAMP)
             c.drawRoundRect(RectF(x-116f,y-60f,x+116f,y+40f),20f,20f,paint)
             paint.shader = null
