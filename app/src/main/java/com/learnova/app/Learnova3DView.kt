@@ -43,6 +43,9 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var vehicleRootBaseTransform: FloatArray? = null
     private var sunEntity = 0
     private var proceduralRoad: ProceduralRoadMesh? = null
+    private var activeVehicle: VehicleDefinition = VehicleCatalog.byId(1)
+    private var targetSpeed = activeVehicle.targetSpeed
+    private var wheelRadius = activeVehicle.wheelRadius
 
     init {
         addView(
@@ -93,10 +96,10 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 // Child-simple input, physically smoother motion: one tap starts,
                 // the next tap requests a controlled stop. Speed is integrated with
                 // acceleration/deceleration instead of assuming a fixed 60 FPS rate.
-                val targetSpeed = if (driving) 7.2 else 0.0
+                val requestedSpeed = if (driving) targetSpeed else 0.0
                 val response = if (driving) 2.8 else 6.5
                 val blend = (response * dt).coerceAtMost(1.0)
-                vehicleSpeed += (targetSpeed - vehicleSpeed) * blend
+                vehicleSpeed += (requestedSpeed - vehicleSpeed) * blend
                 driveTime += dt * (if (vehicleSpeed > 0.02) 1.0 else 0.0)
                 vehicleDistance += vehicleSpeed * dt
 
@@ -137,6 +140,20 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     fun setDriving(value: Boolean) {
         driving = value
         if (!value && vehicleSpeed < 0.02) vehicleSpeed = 0.0
+    }
+
+    /**
+     * Selects the physical profile used by the renderer.
+     *
+     * Asset replacement is intentionally separate: a catalog entry can point to
+     * its future GLB without forcing 100 models into memory at the same time.
+     */
+    fun setVehicle(definition: VehicleDefinition) {
+        activeVehicle = definition
+        targetSpeed = definition.targetSpeed.coerceIn(2.0, 18.0)
+        wheelRadius = definition.wheelRadius.coerceIn(0.12, 0.80)
+        cacheWheelEntities()
+        cacheVehicleRoot()
     }
 
 
@@ -216,7 +233,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         val tm = viewer.engine.transformManager
         // Approximate a 0.30 m tyre radius: angular travel = distance / radius.
         // This keeps wheel rotation tied to actual vehicle travel rather than time.
-        val wheelAngle = (vehicleDistance / 0.30).toFloat()
+        val wheelAngle = (vehicleDistance / wheelRadius).toFloat()
         val suspension = if (driving) {
             kotlin.math.sin(vehicleDistance * 8.0).toFloat() * 0.025f
         } else 0f
