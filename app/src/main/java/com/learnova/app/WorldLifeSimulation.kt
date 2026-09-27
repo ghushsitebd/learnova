@@ -118,19 +118,25 @@ internal class WorldLifeSimulation(
                 }
             }
             val side = if ((seed and 1L) == 0L) -1.0 else 1.0
-            // A small, slow lateral phase creates a believable lane-position
-            // correction/overtake cue without allowing agents to leave the road.
-            val laneShiftAllowed = distanceFromPlayer < MID_RADIUS && (seed ushr 12) % 5L == 0L
+            // Traffic only performs a lane correction when it has enough
+            // longitudinal separation. This avoids the arcade-like "weaving"
+            // look and leaves a stable safety gap around the player.
+            val correctionBand = if (distanceFromPlayer < NEAR_RADIUS) 1.15 else 1.8
+            val laneShiftAllowed = distanceFromPlayer < MID_RADIUS &&
+                (seed ushr 12) % 5L == 0L &&
+                kotlin.math.abs(trafficMotion) > 0.9
             val laneShift = if (laneShiftAllowed) {
-                sin(centerDistance * 0.018 + trafficPhase * 6.283) * 2.0
+                sin(centerDistance * 0.014 + trafficPhase * 6.283) * correctionBand
             } else 0.0
             val lane = baseLane + laneShift
             val x = sample.x + cos(sample.yaw) * lane * side
             val z = sample.z - sin(sample.yaw) * lane * side
             val biome = WorldDirector.profile(agentDistance).biome
             val isBusyBiome = biome == WorldDirector.Biome.MARKET || biome == WorldDirector.Biome.VILLAGE
+            val hasVisibleMotion = kotlin.math.abs(trafficMotion) > 0.75
             val moving = when {
                 distanceFromPlayer < NEAR_RADIUS && isBusyBiome -> (seed ushr 9) % 5L != 0L
+                distanceFromPlayer < NEAR_RADIUS -> hasVisibleMotion && (seed ushr 9) % 6L != 0L
                 distanceFromPlayer < MID_RADIUS -> (seed ushr 9) % 4L != 0L
                 else -> (seed ushr 9) % 3L != 0L
             }
