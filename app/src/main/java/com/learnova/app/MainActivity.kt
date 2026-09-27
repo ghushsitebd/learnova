@@ -85,6 +85,7 @@ class MainActivity : AppCompatActivity() {
         private var completedLessons = 0
         private var learningPoints = 0
         private var celebrationUntil = 0L
+        private var quranFeedback = ""
         private val sessionStartedAt = System.currentTimeMillis()
         private var worldSceneId = 1
         private var question = 0
@@ -315,11 +316,14 @@ class MainActivity : AppCompatActivity() {
                     celebrationUntil = System.currentTimeMillis() + 1400L
                 }
                 if (levelProgress >= 0.999f) levelComplete = true
+                quranFeedback = "✓ ঠিক হয়েছে — এবার এগিয়ে যাও"
                 voice.speakQuranStage(current.name, current.mode, 2)
                 saveProgress()
             } else if (lessonStage == 1) {
+                quranFeedback = "আবার চেষ্টা করো — মন দিয়ে শোনো"
                 voice.speak("Try again. Listen and choose carefully.", java.util.Locale.US)
             } else if (lessonStage == 2 && correct) {
+                quranFeedback = "✓ দারুণ — শেখাটা মনে রাখো"
                 levelProgress = (levelProgress + 0.34f).coerceAtMost(1f)
                 if (levelProgress >= 0.999f) levelComplete = true
                 voice.speakQuranStage(current.name, current.mode, 2)
@@ -2448,7 +2452,8 @@ class MainActivity : AppCompatActivity() {
                 text.color = Color.rgb(70, 88, 82)
                 text.textSize = 10f
                 c.drawText(
-                    if (lessonStage == 1) "একটি সঠিক উত্তর ছুঁয়ে দাও" else "শিখতে ছুঁয়ে দাও",
+                    if (quranFeedback.isNotEmpty()) quranFeedback
+                    else if (lessonStage == 1) "একটি সঠিক উত্তর ছুঁয়ে দাও" else "শিখতে ছুঁয়ে দাও",
                     w / 2f, h * 0.925f, text
                 )
             }
