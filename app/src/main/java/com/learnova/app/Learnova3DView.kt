@@ -38,6 +38,14 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var vehicleRootEntity = 0
     private var vehicleRootBaseTransform: FloatArray? = null
 
+    private data class RoadSample(
+        val x: Double,
+        val z: Double,
+        val yaw: Float,
+        val bank: Float
+    )
+
+
     init {
         addView(
             surface,
