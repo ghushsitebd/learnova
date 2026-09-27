@@ -757,11 +757,13 @@ class MainActivity : AppCompatActivity() {
             c.rotate(bodyLean, cx, cy)
             c.scale(scale, scale, cx, cy)
 
+            // Vehicle-specific procedural rendering. Different real-world classes
+            // get distinct proportions/details while sharing lightweight primitives.
             when (selected.kind) {
-                "car" -> drawCar(c, cx, cy)
-                "bus" -> drawBus(c, cx, cy)
-                "truck" -> drawTruck(c, cx, cy)
-                "van" -> drawVan(c, cx, cy)
+                "car" -> drawCar(c, cx, cy, selected.id)
+                "bus" -> drawBus(c, cx, cy, selected.id)
+                "truck" -> drawTruck(c, cx, cy, selected.id)
+                "van" -> drawVan(c, cx, cy, selected.id)
                 "bike" -> drawBike(c, cx, cy)
                 "sportBike" -> drawSportBike(c, cx, cy)
                 "bicycle" -> drawBicycle(c, cx, cy)
@@ -769,7 +771,7 @@ class MainActivity : AppCompatActivity() {
                 "boat" -> drawBoat(c, cx, cy)
                 "space" -> drawRocket(c, cx, cy)
                 "micro" -> drawMicro(c, cx, cy)
-                else -> drawCar(c, cx, cy)
+                else -> drawCar(c, cx, cy, selected.id)
             }
             c.restore()
 
@@ -782,7 +784,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        private fun drawCar(c: Canvas, x: Float, y: Float) {
+        private fun drawCar(c: Canvas, x: Float, y: Float, variant: Int = 1) {
             // Cinematic pseudo-3D car: layered body, glass reflections, contact shadow and highlights.
             paint.shader = RadialGradient(x - 28f, y - 48f, 180f,
                 intArrayOf(Color.argb(255, 105, 230, 160), Color.rgb(13, 115, 67), Color.rgb(4, 62, 38)),
@@ -791,9 +793,16 @@ class MainActivity : AppCompatActivity() {
             paint.shader = null
 
             // Lower bumper and side contour.
-            paint.color = Color.rgb(5, 53, 39)
+            paint.color = if (variant % 4 == 0) Color.rgb(25,35,42) else Color.rgb(5, 53, 39)
             c.drawRoundRect(RectF(x-103f,y+17f,x+103f,y+42f),12f,12f,paint)
-            paint.color = Color.rgb(30, 158, 94)
+            paint.color = when (variant % 6) {
+                0 -> Color.rgb(210,55,55)
+                1 -> Color.rgb(30,158,94)
+                2 -> Color.rgb(38,105,190)
+                3 -> Color.rgb(235,175,45)
+                4 -> Color.rgb(155,55,175)
+                else -> Color.rgb(25,145,150)
+            }
             c.drawRoundRect(RectF(x-106f,y-36f,x+106f,y+23f),21f,21f,paint)
 
             val roof = Path().apply {
@@ -851,8 +860,13 @@ class MainActivity : AppCompatActivity() {
             c.restore()
         }
 
-        private fun drawBus(c: Canvas, x: Float, y: Float) {
-            paint.color = Color.rgb(235, 178, 45)
+        private fun drawBus(c: Canvas, x: Float, y: Float, variant: Int = 1) {
+            paint.color = when (variant % 4) {
+                0 -> Color.rgb(235,178,45)
+                1 -> Color.rgb(45,125,205)
+                2 -> Color.rgb(220,70,55)
+                else -> Color.rgb(35,150,90)
+            }
             c.drawRoundRect(RectF(x-125f,y-58f,x+125f,y+38f),22f,22f,paint)
             paint.color = Color.rgb(180,225,238)
             c.drawRoundRect(RectF(x-88f,y-44f,x+88f,y-10f),10f,10f,paint)
@@ -862,8 +876,14 @@ class MainActivity : AppCompatActivity() {
             drawWheel(c,x+78f,y+36f,wheelSpin)
         }
 
-        private fun drawTruck(c: Canvas, x: Float, y: Float) {
-            paint.color = Color.rgb(205, 70, 52)
+        private fun drawTruck(c: Canvas, x: Float, y: Float, variant: Int = 1) {
+            paint.color = when (variant % 5) {
+                0 -> Color.rgb(205,70,52)
+                1 -> Color.rgb(55,105,145)
+                2 -> Color.rgb(210,175,55)
+                3 -> Color.rgb(55,130,75)
+                else -> Color.rgb(90,90,95)
+            }
             c.drawRoundRect(RectF(x-120f,y-40f,x+15f,y+38f),12f,12f,paint)
             paint.color = Color.rgb(80,105,115)
             c.drawRoundRect(RectF(x+5f,y-65f,x+108f,y+38f),15f,15f,paint)
@@ -873,8 +893,14 @@ class MainActivity : AppCompatActivity() {
             drawWheel(c,x+72f,y+37f,wheelSpin)
         }
 
-        private fun drawVan(c: Canvas, x: Float, y: Float) {
-            paint.color = Color.rgb(70,105,145)
+        private fun drawVan(c: Canvas, x: Float, y: Float, variant: Int = 1) {
+            paint.color = when (variant % 5) {
+                0 -> Color.rgb(70,105,145)
+                1 -> Color.rgb(225,225,225)
+                2 -> Color.rgb(45,135,90)
+                3 -> Color.rgb(210,85,55)
+                else -> Color.rgb(120,75,145)
+            }
             c.drawRoundRect(RectF(x-115f,y-58f,x+112f,y+38f),20f,20f,paint)
             paint.color = Color.rgb(185,225,238)
             c.drawRoundRect(RectF(x-78f,y-43f,x+65f,y-10f),10f,10f,paint)
