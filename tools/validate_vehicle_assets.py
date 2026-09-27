@@ -296,3 +296,5 @@ if ASSETS.exists():
 # CI validation 401: asset inventory determinism.
 
 # CI validation 402: duplicate payload detection.
+
+# CI validation 403: GLB JSON chunk validation.
