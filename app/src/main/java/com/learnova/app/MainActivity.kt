@@ -567,114 +567,233 @@ class MainActivity : AppCompatActivity() {
         private fun phaseForWorld(seed:Int):Float = if(running) frame.toFloat()+seed else seed.toFloat()
 
         private fun drawRoad(c: Canvas, w: Float, h: Float, world: SmartScene) {
-            // Perspective road: the vanishing point stays near the horizon while the
-            // lane, shoulders, reflectors and surface texture expand toward the camera.
+            // A deterministic road generator creates many distinct road families while
+            // keeping the renderer asset-light: urban boulevard, highway, village road,
+            // mountain pass, bridge, coastal road, dirt track, wetland causeway and
+            // railway-crossing approaches. The scene id selects the road, so progression
+            // continually exposes new road geometry instead of repeating one template.
             val horizonY = h * 0.60f
             val bottomY = h
-            val roadPhase = worldSceneId * 0.73f
-            val curve = (sin(roadPhase + frame / 900.0) * 0.72 + sin(roadPhase * 0.47 + frame / 1450.0) * 0.28).toFloat()
-            val bend = curve * w * 0.085f
+            val roadType = abs(world.id * 17 + worldSceneId * 7) % 12
+            val curveSeed = world.id * 0.73f + roadType * 0.41f
+            val curve = (sin(curveSeed + frame / 900.0) * 0.62 +
+                    sin(curveSeed * 0.47 + frame / 1450.0) * 0.38).toFloat()
+            val bend = curve * w * when (roadType) {
+                3, 4, 7 -> 0.13f
+                8, 9 -> 0.10f
+                else -> 0.085f
+            }
 
             fun roadCenter(t: Float): Float =
-                w * 0.50f + bend * (t * t) + laneOffset * w * t * 0.18f
+                w * 0.50f + bend * t * t + laneOffset * w * t * 0.18f
 
-            fun roadHalfWidth(t: Float): Float =
-                w * (0.025f + 0.49f * t.pow(1.12f))
+            fun roadHalfWidth(t: Float): Float {
+                val base = when (roadType) {
+                    0 -> 0.44f   // city boulevard
+                    1 -> 0.47f   // divided/highway
+                    2 -> 0.36f   // village
+                    3 -> 0.40f   // mountain
+                    4 -> 0.43f   // bridge
+                    5 -> 0.45f   // coastal
+                    6 -> 0.34f   // dirt
+                    7 -> 0.39f   // wetland
+                    8 -> 0.46f   // airport/industrial
+                    9 -> 0.42f   // railway approach
+                    10 -> 0.38f  // forest
+                    else -> 0.45f
+                }
+                return w * (0.022f + base * t.pow(1.10f))
+            }
 
             val road = Path()
             road.moveTo(roadCenter(0f) - roadHalfWidth(0f), horizonY)
-            for (i in 1..24) {
-                val t = i / 24f
+            for (i in 1..28) {
+                val t = i / 28f
                 val y = horizonY + (bottomY - horizonY) * t
                 road.lineTo(roadCenter(t) - roadHalfWidth(t), y)
             }
-            for (i in 24 downTo 0) {
-                val t = i / 24f
+            for (i in 28 downTo 0) {
+                val t = i / 28f
                 val y = horizonY + (bottomY - horizonY) * t
                 road.lineTo(roadCenter(t) + roadHalfWidth(t), y)
             }
             road.close()
 
+            val asphaltTop = when (roadType) {
+                6 -> Color.rgb(116, 101, 78)
+                4, 7 -> Color.rgb(61, 72, 72)
+                else -> Color.rgb(67, 70, 73)
+            }
+            val asphaltMid = when (roadType) {
+                6 -> Color.rgb(91, 78, 59)
+                else -> Color.rgb(43, 45, 47)
+            }
+            val asphaltBottom = when (roadType) {
+                6 -> Color.rgb(67, 57, 43)
+                else -> Color.rgb(31, 32, 34)
+            }
             paint.shader = LinearGradient(
                 0f, horizonY, 0f, bottomY,
-                intArrayOf(Color.rgb(67,70,73), Color.rgb(43,45,47), Color.rgb(31,32,34)),
-                floatArrayOf(0f, .55f, 1f),
-                Shader.TileMode.CLAMP
+                intArrayOf(asphaltTop, asphaltMid, asphaltBottom),
+                floatArrayOf(0f, .55f, 1f), Shader.TileMode.CLAMP
             )
             c.drawPath(road, paint)
             paint.shader = null
 
-            // Soft road-edge shoulders.
-            paint.color = Color.rgb(190, 188, 174)
+            // Road shoulders and edge lines.
+            val shoulderColor = if (roadType == 6) Color.rgb(151, 126, 88) else Color.rgb(190, 188, 174)
             paint.style = Paint.Style.STROKE
-            paint.strokeWidth = 5f
+            paint.strokeWidth = if (roadType == 6) 6f else 4.5f
+            paint.color = shoulderColor
             c.drawPath(road, paint)
             paint.style = Paint.Style.FILL
 
-            // Subtle asphalt texture, kept cheap for low-end phones.
-            paint.color = Color.argb(34, 255, 255, 255)
-            for (i in 0..30) {
-                val t = ((i * 0.071f + frame * 0.0012f) % 1f).coerceIn(0f,1f)
-                val y = horizonY + (bottomY - horizonY) * t
+            // Dashed/solid edge lines vary by road class.
+            for (side in -1..1 step 2) {
+                var t = 0.035f
+                while (t < 1f) {
+                    val y = horizonY + (bottomY - horizonY) * t
+                    val cx = roadCenter(t)
+                    val edge = cx + side * roadHalfWidth(t)
+                    val thickness = 1.3f + 3.2f * t
+                    paint.color = if (roadType == 6) Color.rgb(181, 147, 92) else Color.rgb(235, 235, 222)
+                    if (roadType == 2 || roadType == 10) {
+                        c.drawRoundRect(RectF(edge - thickness, y, edge + thickness, y + 5f + 12f*t), thickness, thickness, paint)
+                    } else {
+                        c.drawRect(edge - thickness, y, edge + thickness, y + 4f + 10f*t, paint)
+                    }
+                    t += 0.11f + 0.13f*t
+                }
+            }
+
+            // Lane system: one, two or three visible lanes depending on the road.
+            val laneCount = when (roadType) {
+                1, 0, 8 -> 3
+                2, 6, 10 -> 1
+                else -> 2
+            }
+            if (laneCount > 1) {
+                for (lane in 1 until laneCount) {
+                    val normalized = lane.toFloat() / laneCount
+                    var t = 0.02f
+                    while (t < 1f) {
+                        val y = horizonY + (bottomY - horizonY) * t
+                        val cx = roadCenter(t)
+                        val hw = roadHalfWidth(t)
+                        val x = cx - hw + hw * 2f * normalized
+                        val thickness = 1.0f + 4.5f*t
+                        val dashLen = 5f + 26f*t
+                        val color = if (roadType == 0 || roadType == 1 || roadType == 8)
+                            Color.rgb(232,232,220) else Color.rgb(216,216,204)
+                        paint.color = color
+                        c.drawRoundRect(RectF(x-thickness, y, x+thickness, y+dashLen), thickness, thickness, paint)
+                        t += 0.075f + 0.15f*t
+                    }
+                }
+            }
+
+            // Central divider/median for major roads. It gives the player a realistic
+            // sense of opposing traffic without changing the one-tap control model.
+            if (roadType == 0 || roadType == 1 || roadType == 8) {
+                var t = 0.025f
+                while (t < 1f) {
+                    val y = horizonY + (bottomY - horizonY) * t
+                    val cx = roadCenter(t)
+                    val hw = roadHalfWidth(t)
+                    paint.color = Color.rgb(246, 239, 177)
+                    c.drawRoundRect(RectF(cx-2.2f-3.5f*t, y, cx+2.2f+3.5f*t, y+8f+22f*t), 3f, 3f, paint)
+                    t += 0.105f + 0.16f*t
+                }
+            } else {
+                // Center line for normal two-way roads.
+                var t = 0.015f
+                val travel = if (running) (frame * 0.010f) % 1f else 0f
+                while (t < 1f) {
+                    val tt = (t + travel) % 1f
+                    val y = horizonY + (bottomY - horizonY) * tt
+                    val cx = roadCenter(tt)
+                    val half = 1.3f + 6.5f*tt
+                    val length = 6f + 32f*tt
+                    paint.color = if (roadType == 6) Color.rgb(214,184,112) else Color.rgb(248,247,236)
+                    c.drawRoundRect(RectF(cx-half,y,cx+half,y+length),half,half,paint)
+                    t += 0.105f + 0.16f*tt
+                }
+            }
+
+            // Special road surfaces/structures.
+            if (roadType == 4) {
+                // Bridge deck expansion joints.
+                paint.color = Color.argb(90, 215, 220, 220)
+                for (i in 1..7) {
+                    val t = i/8f
+                    val y = horizonY + (bottomY-horizonY)*t
+                    val cx = roadCenter(t)
+                    val hw = roadHalfWidth(t)
+                    c.drawRect(cx-hw,y,cx+hw,y+2f+3f*t,paint)
+                }
+            }
+            if (roadType == 9 || world.region.contains("Railway", true)) {
+                // Railway crossing warning bands.
+                for (i in 0..3) {
+                    val t = 0.44f + i*0.028f
+                    val y = horizonY + (bottomY-horizonY)*t
+                    val cx = roadCenter(t)
+                    val hw = roadHalfWidth(t)*.96f
+                    paint.color = if (i%2==0) Color.rgb(245,245,238) else Color.rgb(45,48,50)
+                    c.drawRect(cx-hw,y,cx+hw,y+3f+4f*t,paint)
+                }
+            }
+
+            // Asphalt micro-texture. Keep density adaptive so realism scales with hardware.
+            paint.color = Color.argb(if (renderQuality.supportsModernGraphics()) 42 else 28,255,255,255)
+            val textureCount = if (renderQuality.supportsModernGraphics()) 44 else 24
+            for (i in 0 until textureCount) {
+                val t = ((i*0.071f + frame*0.0012f) % 1f).coerceIn(0f,1f)
+                val y = horizonY + (bottomY-horizonY)*t
                 val cx = roadCenter(t)
                 val hw = roadHalfWidth(t)
-                val x = cx + sin(i * 7.3).toFloat() * hw * .72f
-                c.drawCircle(x, y, 0.7f + 1.8f * t, paint)
+                val x = cx + sin(i*7.3).toFloat()*hw*.72f
+                c.drawCircle(x,y,.6f+1.8f*t,paint)
             }
 
-            // Dashed center line with true perspective scaling.
-            val travel = if (running) (frame * 0.010f) % 1f else 0f
-            var t = 0.015f
-            while (t < 1f) {
-                val tt = (t + travel) % 1f
-                val y = horizonY + (bottomY - horizonY) * tt
-                val cx = roadCenter(tt)
-                val half = 1.5f + 7.5f * tt
-                val length = 7f + 34f * tt
-                paint.color = Color.rgb(248, 247, 236)
-                c.drawRoundRect(RectF(cx - half, y, cx + half, y + length), half, half, paint)
-                t += 0.105f + 0.16f * tt
-            }
-
-            // Raised lane reflectors and roadside posts.
+            // Raised reflectors and delineator posts, positioned in perspective.
             for (side in -1..1 step 2) {
-                for (i in 1..8) {
-                    val tt = i / 9f
-                    val y = horizonY + (bottomY - horizonY) * tt
+                for (i in 1..9) {
+                    val tt = i/10f
+                    val y = horizonY + (bottomY-horizonY)*tt
                     val cx = roadCenter(tt)
-                    val edge = cx + side * roadHalfWidth(tt)
-                    paint.color = Color.rgb(255, 214, 78)
-                    c.drawCircle(edge, y, 2f + 3.5f * tt, paint)
-
-                    val postHeight = 10f + 20f * tt
-                    paint.color = Color.rgb(225, 225, 215)
-                    c.drawRoundRect(
-                        RectF(edge + side * (5f + 12f * tt), y - postHeight,
-                             edge + side * (10f + 15f * tt), y),
-                        2f, 2f, paint
-                    )
+                    val edge = cx + side*roadHalfWidth(tt)
+                    paint.color = if (roadType == 6) Color.rgb(236,190,76) else Color.rgb(255,214,78)
+                    c.drawCircle(edge,y,1.8f+3.7f*tt,paint)
+                    val postHeight = 9f+22f*tt
+                    paint.color = Color.rgb(225,225,215)
+                    c.drawRoundRect(RectF(
+                        edge + side*(5f+12f*tt), y-postHeight,
+                        edge + side*(10f+15f*tt), y
+                    ),2f,2f,paint)
                 }
             }
 
-            // Weather-aware wet asphalt: restrained reflections make rain scenes feel grounded.
+            // Rain/wet-road response.
             if (world.weather == "Rainy") {
-                paint.color = Color.argb(55, 190, 220, 235)
-                for (i in 0..7) {
-                    val tt = 0.16f + i * 0.105f
-                    val y = horizonY + (bottomY - horizonY) * tt
+                paint.color = Color.argb(58,190,220,235)
+                for (i in 0..9) {
+                    val tt = .12f+i*.09f
+                    val y = horizonY+(bottomY-horizonY)*tt
                     val cx = roadCenter(tt)
-                    val hw = roadHalfWidth(tt) * 0.72f
-                    c.drawRoundRect(RectF(cx - hw, y, cx + hw, y + 2f + 4f * tt), 3f, 3f, paint)
+                    val hw = roadHalfWidth(tt)*.74f
+                    c.drawRoundRect(RectF(cx-hw,y,cx+hw,y+2f+4f*tt),3f,3f,paint)
                 }
             }
 
-            // Moving dust/road spray makes forward motion visible without adding assets.
-            if (running && speed > 0.004f) {
-                paint.color = Color.argb(35, 235, 235, 225)
-                for (i in 0..7) {
-                    val spread = (i - 3.5f) * 13f
-                    val yy = h * (.86f + (i % 3) * .025f)
-                    c.drawCircle(w/2f + spread, yy, 2f + (i % 3), paint)
+            // Motion particles and wheel spray stay close to the vehicle so the world
+            // remains readable and the learning card stays unobstructed.
+            if (running && speed > .004f) {
+                paint.color = if (world.weather=="Rainy") Color.argb(60,225,240,245) else Color.argb(38,235,235,225)
+                for (i in 0..9) {
+                    val spread=(i-4.5f)*13f
+                    val yy=h*(.85f+(i%3)*.025f)
+                    c.drawCircle(w/2f+spread,yy,2f+(i%3),paint)
                 }
             }
         }
