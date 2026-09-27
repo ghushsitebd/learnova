@@ -70,6 +70,7 @@ class MainActivity : AppCompatActivity() {
         private var laneOffset = 0f
         private var steering = 0f
         private var vehicleHeading = 0f
+        private var steeringInput = 0f
         private var lateralVelocity = 0f
         private var suspensionOffset = 0f
         private var suspensionVelocity = 0f
@@ -163,6 +164,22 @@ class MainActivity : AppCompatActivity() {
                 // One-tap driving: tap the road/play area to toggle drive/stop.
                 if (y > h * 0.22f && y < h * 0.63f) {
                     val now = System.currentTimeMillis()
+                    if (running && now - lastTap > 90L && x < w * 0.30f) {
+                        lastTap = now
+                        steeringInput = -1f
+                        threeDWorld.setSteeringInput(-1f)
+                        performClick()
+                        invalidate()
+                        return true
+                    }
+                    if (running && now - lastTap > 90L && x > w * 0.70f) {
+                        lastTap = now
+                        steeringInput = 1f
+                        threeDWorld.setSteeringInput(1f)
+                        performClick()
+                        invalidate()
+                        return true
+                    }
                     if (now - lastTap > 220L) {
                         lastTap = now
                         running = !running
@@ -230,7 +247,7 @@ class MainActivity : AppCompatActivity() {
                 val farSlope = (roadFar - roadAhead) / w
                 val curvatureSteer = (nearSlope * 2.8f + farSlope * 1.6f).coerceIn(-0.12f, 0.12f)
                 val laneCorrection = (-laneOffset * 0.24f).coerceIn(-0.055f, 0.055f)
-                val targetSteer = (curvatureSteer + laneCorrection).coerceIn(-0.14f, 0.14f)
+                val targetSteer = (curvatureSteer + laneCorrection + steeringInput * 0.055f).coerceIn(-0.14f, 0.14f)
 
                 steering += (targetSteer - steering) * 0.085f
                 vehicleHeading += (steering * 7.0f - vehicleHeading) * 0.11f
@@ -2846,8 +2863,8 @@ class MainActivity : AppCompatActivity() {
                 if (ChildSafeEngagementPolicy.shouldSuggestBreak(sessionMinutes))
                     "Nice learning • Take a short break when you are ready"
                 else if (levelComplete) "Level complete • Tap NEXT LEVEL"
-                else if (running) "Driving • Tap again to stop"
-                else "Tap once to drive",
+                else if (running) "Drive • Touch left/right to steer • Tap centre to stop"
+                else "Tap centre to drive",
                 w/2f,h*.965f,text
             )
 
