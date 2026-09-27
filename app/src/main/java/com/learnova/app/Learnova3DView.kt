@@ -476,7 +476,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         // This keeps wheel rotation tied to actual vehicle travel rather than time.
         val wheelAngle = (vehicleDistance / wheelRadius).toFloat()
         val suspension = if (driving) {
-            kotlin.math.sin(vehicleDistance * 8.0).toFloat() * 0.025f
+            kotlin.math.sin(vehicleDistance * 8.0).toFloat() * 0.020f
         } else 0f
 
         tm.openLocalTransformTransaction()
