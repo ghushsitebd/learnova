@@ -280,3 +280,5 @@ if ASSETS.exists():
 # 394: add maximum asset count guard.
 
 # 395: add asset key filename consistency validation.
+
+# 396: add compressed asset gzip integrity validation.
