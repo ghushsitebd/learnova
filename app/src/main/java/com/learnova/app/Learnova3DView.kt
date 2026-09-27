@@ -16,6 +16,9 @@ import com.google.android.filament.Skybox
 import java.io.ByteArrayInputStream
 import java.util.zip.GZIPInputStream
 import java.nio.ByteBuffer
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Learnova's first production 3D rendering layer.
@@ -47,7 +50,12 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var targetSpeed = activeVehicle.targetSpeed
     private var wheelRadius = activeVehicle.wheelRadius
     private val vehicleAssetResolver = VehicleAssetResolver(context)
+    private val assetIoExecutor: ExecutorService = Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "LearnovaVehicleAssetIO").apply { isDaemon = true }
+    }
+    private val assetLoadGeneration = AtomicInteger(0)
     private var loadedVehicleAssetKey = "base"
+    private var requestedVehicleAssetKey = "base"
 
     init {
         addView(
@@ -165,30 +173,43 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
      * a blank scene or crashing.
      */
     private fun loadVehicleAsset(definition: VehicleDefinition) {
-        val requested = vehicleAssetResolver.load(definition.assetKey)
-        val requestedKey = if (requested != null) definition.assetKey else "base"
-
-        if (requestedKey != loadedVehicleAssetKey) {
-            val bytes = requested ?: decodeModel()
-            viewer.loadModelGlb(ByteBuffer.wrap(bytes))
-            loadedVehicleAssetKey = requestedKey
-
-            proceduralRoad?.destroy()
-            proceduralRoad = viewer.asset?.let {
-                ProceduralRoadMesh(viewer.engine, viewer.scene, it).also { road -> road.build() }
-            }
-
+        if (definition.assetKey == requestedVehicleAssetKey) {
             cacheWheelEntities()
             cacheVehicleRoot()
-        } else {
-            cacheWheelEntities()
-            cacheVehicleRoot()
+            return
         }
 
-        vehicleDistance = 0.0
-        vehicleSpeed = 0.0
-    }
+        requestedVehicleAssetKey = definition.assetKey
+        val generation = assetLoadGeneration.incrementAndGet()
 
+        // File I/O and GZIP decompression run off the UI thread. Filament
+        // ModelViewer mutation is returned to the main thread.
+        assetIoExecutor.execute {
+            val requested = vehicleAssetResolver.load(definition.assetKey)
+            val requestedKey = if (requested != null) definition.assetKey else "base"
+            val bytes = requested ?: decodeModel()
+
+            post {
+                if (!started || generation != assetLoadGeneration.get()) return@post
+
+                // ModelViewer.loadModelGlb() destroys the previous model before
+                // installing the new one, so switching vehicles does not retain
+                // the previous Filament asset.
+                viewer.loadModelGlb(ByteBuffer.wrap(bytes))
+                loadedVehicleAssetKey = requestedKey
+
+                proceduralRoad?.destroy()
+                proceduralRoad = viewer.asset?.let {
+                    ProceduralRoadMesh(viewer.engine, viewer.scene, it).also { road -> road.build() }
+                }
+
+                cacheWheelEntities()
+                cacheVehicleRoot()
+                vehicleDistance = 0.0
+                vehicleSpeed = 0.0
+            }
+        }
+    }
 
     /**
      * Real-time vehicle mechanics layer.
@@ -337,6 +358,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         started = false
         lastFrameNanos = 0L
         vehicleSpeed = 0.0
+        assetLoadGeneration.incrementAndGet()
         frameCallback?.let { choreographer.removeFrameCallback(it) }
         frameCallback = null
         proceduralRoad?.destroy()
@@ -347,6 +369,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             EntityManager.get().destroy(sunEntity)
             sunEntity = 0
         }
+        assetIoExecutor.shutdownNow()
         viewer.destroy()
         super.onDetachedFromWindow()
     }
