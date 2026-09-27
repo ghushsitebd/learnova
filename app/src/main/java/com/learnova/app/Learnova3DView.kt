@@ -684,8 +684,12 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 renderOriginDistance
             )
 
-            // Offset from road centerline into the banked road surface.
-            val lateralLift = Math.sin(sample.bank.toDouble()) * lateral
+            // Sample the actual tyre position, not just the road centreline.
+            // lateralOffset is the car's current position across the road; adding
+            // the wheel's own lateral position makes suspension react correctly
+            // when the child steers onto a banked road edge.
+            val tyreLateral = lateralOffset + lateral
+            val lateralLift = Math.sin(sample.bank.toDouble()) * tyreLateral
             val contactY = sample.y.toDouble() + lateralLift
             contactHeights[entity] = contactY
 
