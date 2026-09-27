@@ -2408,6 +2408,31 @@ class MainActivity : AppCompatActivity() {
                 lesson.prompt,
                 w / 2f, top + 103f, text
             )
+
+            // Quran levels use three large, touch-only choices below the learning card.
+            // No joystick, keyboard or precise gesture is required.
+            if (isQuranLevel()) {
+                val choices = quranChoiceLabels()
+                val buttonTop = h * 0.735f
+                val buttonBottom = h * 0.885f
+                val gap = 8f
+                val buttonW = (w - 36f - gap * 2f) / 3f
+                for (i in 0..2) {
+                    val l = 18f + i * (buttonW + gap)
+                    paint.color = Color.argb(242, 247, 250, 248)
+                    c.drawRoundRect(RectF(l, buttonTop, l + buttonW, buttonBottom), 18f, 18f, paint)
+                    text.textAlign = Paint.Align.CENTER
+                    text.color = Color.rgb(32, 86, 66)
+                    text.textSize = if (choices[i].length > 10) 11f else 14f
+                    c.drawText(choices[i], l + buttonW / 2f, buttonTop + 57f, text)
+                }
+                text.color = Color.rgb(70, 88, 82)
+                text.textSize = 10f
+                c.drawText(
+                    if (lessonStage == 1) "একটি সঠিক উত্তর ছুঁয়ে দাও" else "শিখতে ছুঁয়ে দাও",
+                    w / 2f, h * 0.925f, text
+                )
+            }
         }
 
         private fun speakCurrentLesson() {
