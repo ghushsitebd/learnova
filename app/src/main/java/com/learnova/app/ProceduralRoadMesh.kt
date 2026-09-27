@@ -200,19 +200,26 @@ internal class ProceduralRoadMesh(
             val shoulder = 2.4
             val lx = cos(yaw)
             val lz = -sin(yaw)
-            val outerLeftX = sample.x + lx * (halfRoad + shoulder)
-            val outerLeftZ = sample.z + lz * (halfRoad + shoulder)
+            val outerOffset = halfRoad + shoulder
+            val outerLeftX = sample.x + lx * outerOffset
+            val outerLeftZ = sample.z + lz * outerOffset
             val innerLeftX = sample.x + lx * halfRoad
             val innerLeftZ = sample.z + lz * halfRoad
             val innerRightX = sample.x - lx * halfRoad
             val innerRightZ = sample.z - lz * halfRoad
-            val outerRightX = sample.x - lx * (halfRoad + shoulder)
-            val outerRightZ = sample.z - lz * (halfRoad + shoulder)
+            val outerRightX = sample.x - lx * outerOffset
+            val outerRightZ = sample.z - lz * outerOffset
 
-            putVertex(data, outerLeftX.toFloat(), (sample.y - 0.018).toFloat(), outerLeftZ.toFloat(), yaw, sample.bank.toDouble(), 0f, distance.toFloat() / 8f)
-            putVertex(data, innerLeftX.toFloat(), (sample.y - 0.012).toFloat(), innerLeftZ.toFloat(), yaw, sample.bank.toDouble(), 1f, distance.toFloat() / 8f)
-            putVertex(data, innerRightX.toFloat(), (sample.y - 0.012).toFloat(), innerRightZ.toFloat(), yaw, sample.bank.toDouble(), 0f, distance.toFloat() / 8f)
-            putVertex(data, outerRightX.toFloat(), (sample.y - 0.018).toFloat(), outerRightZ.toFloat(), yaw, sample.bank.toDouble(), 1f, distance.toFloat() / 8f)
+            // Carry the road's cross-slope into the verge. A real road does not
+            // suddenly become flat at the edge; this also keeps the shoulder from
+            // visually floating on banked curves.
+            val innerLift = sin(sample.bank.toDouble()) * halfRoad
+            val outerLift = sin(sample.bank.toDouble()) * outerOffset
+
+            putVertex(data, outerLeftX.toFloat(), (sample.y + outerLift - 0.018).toFloat(), outerLeftZ.toFloat(), yaw, sample.bank.toDouble(), 0f, distance.toFloat() / 8f)
+            putVertex(data, innerLeftX.toFloat(), (sample.y + innerLift - 0.012).toFloat(), innerLeftZ.toFloat(), yaw, sample.bank.toDouble(), 1f, distance.toFloat() / 8f)
+            putVertex(data, innerRightX.toFloat(), (sample.y - innerLift - 0.012).toFloat(), innerRightZ.toFloat(), yaw, sample.bank.toDouble(), 0f, distance.toFloat() / 8f)
+            putVertex(data, outerRightX.toFloat(), (sample.y - outerLift - 0.018).toFloat(), outerRightZ.toFloat(), yaw, sample.bank.toDouble(), 1f, distance.toFloat() / 8f)
         }
         data.flip()
         shoulderVertexBuffer?.setBufferAt(engine, 0, data)
