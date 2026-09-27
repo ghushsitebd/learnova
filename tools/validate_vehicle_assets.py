@@ -276,3 +276,5 @@ if ASSETS.exists():
 # 392: add GLB JSON chunk boundary validation.
 
 # 393: add GLB binary chunk boundary validation.
+
+# 394: add maximum asset count guard.
