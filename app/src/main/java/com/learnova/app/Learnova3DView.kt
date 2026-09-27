@@ -56,6 +56,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var wheelRadius = activeVehicle.wheelRadius
     private var suspensionDisplacement = 0.0
     private var suspensionVelocity = 0.0
+    private var previousRoadYaw = 0.0
+    private var roadYawRate = 0.0
     private var renderProfile = VehicleRenderProfile.forType(activeVehicle.type)
     private val vehicleAssetResolver = VehicleAssetResolver(context)
     private var assetIoExecutor: ExecutorService = newAssetIoExecutor()
@@ -518,6 +520,15 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         suspensionDisplacement = suspensionDisplacement.coerceIn(-0.045, 0.045)
         val suspension = suspensionDisplacement.toFloat()
 
+        // Steering is automatic and spline-derived: the child keeps one simple
+        // control, while the vehicle body smoothly anticipates road curvature.
+        val yawDelta = Math.atan2(
+            Math.sin(road.yaw - previousRoadYaw),
+            Math.cos(road.yaw - previousRoadYaw)
+        )
+        roadYawRate += (yawDelta / dt - roadYawRate) * (dt * 7.0).coerceAtMost(1.0)
+        previousRoadYaw = road.yaw
+
         tm.openLocalTransformTransaction()
         try {
             val baseRoot = vehicleRootBaseTransform
@@ -533,7 +544,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                             0f, 0f, 0f, 1f
                         ) *
                         rotation(Float3(0.0f, 1.0f, 0.0f), road.yaw) *
-                        rotation(Float3(0.0f, 0.0f, 1.0f), road.bank) *
+                        rotation(Float3(0.0f, 0.0f, 1.0f), (road.bank + roadYawRate * 0.018).coerceIn(-0.10, 0.10).toFloat()) *
                         rotation(Float3(1.0f, 0.0f, 0.0f), road.grade)
                 tm.setTransform(tm.getInstance(vehicleRootEntity), chassis.toFloatArray())
             }
@@ -594,6 +605,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         started = false
         lastFrameNanos = 0L
         vehicleSpeed = 0.0
+        previousRoadYaw = 0.0
+        roadYawRate = 0.0
         assetLoadGeneration.incrementAndGet()
         frameCallback?.let { choreographer.removeFrameCallback(it) }
         frameCallback = null
