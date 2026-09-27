@@ -88,6 +88,22 @@ internal class VehicleInteractionController {
 
     fun isInside(): Boolean = state == State.OCCUPIED
 
+    /**
+     * Normalized door animation progress.
+     * 0 = closed, 1 = fully open. Entry/occupied keeps the door open;
+     * exit/closing moves it back toward closed.
+     */
+    fun doorProgress(profile: VehicleInteractionProfile): Float {
+        if (profile.doorAnimation == "none") return 0f
+        val duration = doorDuration(profile)
+        if (duration <= 0f) return 0f
+        return when (state) {
+            State.OUTSIDE, State.DOOR_OPENING -> (elapsed / duration).coerceIn(0f, 1f)
+            State.ENTERING, State.OCCUPIED, State.EXITING -> 1f
+            State.DOOR_CLOSING -> (1f - elapsed / duration).coerceIn(0f, 1f)
+        }
+    }
+
     fun reset() {
         elapsed = 0f
         state = State.OUTSIDE
