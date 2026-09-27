@@ -120,6 +120,7 @@ class MainActivity : AppCompatActivity() {
                     if (now - lastTap > 220L) {
                         lastTap = now
                         running = !running
+                        threeDWorld.setDriving(running)
                         if (running) {
                             voice.speakInstruction(true)
                         } else {
