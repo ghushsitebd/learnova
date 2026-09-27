@@ -268,3 +268,5 @@ if ASSETS.exists():
         if candidate.is_symlink():
             print(f"::error::Vehicle asset must not be a symlink: {candidate.name}")
             sys.exit(1)
+
+# 390: add deterministic asset inventory ordering validation.
