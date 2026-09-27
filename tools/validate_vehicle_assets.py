@@ -304,3 +304,5 @@ if ASSETS.exists():
 # CI validation 405: gzip integrity validation.
 
 # CI validation 406: asset size guard.
+
+# CI validation 407: filename safety validation.
