@@ -128,6 +128,7 @@ class MainActivity : AppCompatActivity() {
             // unique GLB assets can be streamed in later without changing the UI contract.
             val mapped = (definition.id - 1) % LearnovaUnlimitedWorld.vehicles.size
             vehicle = mapped
+            threeDWorld.setVehicle(definition)
             prefs.edit()
                 .putInt("vehicle", mapped)
                 .putInt("garage_vehicle_id", definition.id)
