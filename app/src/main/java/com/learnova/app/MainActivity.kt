@@ -1204,6 +1204,31 @@ class MainActivity : AppCompatActivity() {
             }
             c.restore()
 
+            // Vehicle lighting: subtle forward beams at night and red brake lamps
+            // make the vehicle read more naturally without adding bitmap assets.
+            if (selected.kind != "air" && selected.kind != "space" && (worldSceneId > 0)) {
+                if (LearnovaUnlimitedWorld.scene(worldSceneId).time == "Night") {
+                    paint.color = Color.argb(32, 255, 244, 190)
+                    val beam = Path()
+                    beam.moveTo(cx - 42f * scale, cy - 12f * scale)
+                    beam.lineTo(cx - 150f * scale, cy - 48f * scale)
+                    beam.lineTo(cx - 150f * scale, cy + 18f * scale)
+                    beam.close()
+                    c.drawPath(beam, paint)
+                    val beam2 = Path()
+                    beam2.moveTo(cx + 42f * scale, cy - 12f * scale)
+                    beam2.lineTo(cx + 150f * scale, cy - 48f * scale)
+                    beam2.lineTo(cx + 150f * scale, cy + 18f * scale)
+                    beam2.close()
+                    c.drawPath(beam2, paint)
+                }
+                if (!running && speed > 0.001f) {
+                    paint.color = Color.argb(205, 230, 45, 38)
+                    c.drawCircle(cx - 48f * scale, cy + 13f * scale, 4f * scale, paint)
+                    c.drawCircle(cx + 48f * scale, cy + 13f * scale, 4f * scale, paint)
+                }
+            }
+
             // Tiny speed streaks only at higher speed.
             if (running && speed > 0.010f && selected.kind != "air" && selected.kind != "space") {
                 paint.color = Color.argb(38, 255, 255, 255)
