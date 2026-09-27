@@ -63,6 +63,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var vehicleRootEntity = 0
     private var vehicleRootBaseTransform: FloatArray? = null
     private var sunEntity = 0
+    private var activeSkyBiome: WorldDirector.Biome? = null
     private var proceduralRoad: ProceduralRoadMesh? = null
     private var terrainMesh: LearnovaTerrainMesh? = null
     private var activeVehicle: VehicleDefinition = VehicleCatalog.byId(1)
@@ -113,10 +114,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             terrainMesh = LearnovaTerrainMesh(viewer.engine, viewer.scene, asset).also { it.build() }
         }
         configureRealisticSunLight()
-        viewer.scene.skybox = Skybox.Builder()
-            .color(0.25f, 0.50f, 0.90f, 1.0f)
-            .showSun(true)
-            .build(viewer.engine)
+        updateSkybox(WorldDirector.profile(0.0), force = true)
         cacheWheelEntities()
         cacheVehicleRoot()
         cacheDoorEntities()
@@ -754,12 +752,30 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         }
     }
 
+    /**
+     * Keeps the distant atmosphere coherent with the biome.
+     *
+     * The skybox is rebuilt only when the journey crosses a biome chapter, not
+     * every frame. This gives forest, river, mountain, desert, village and coast
+     * genuinely different depth cues while keeping the runtime allocation small.
+     */
+    private fun updateSkybox(world: WorldDirector.Profile, force: Boolean = false) {
+        if (!force && activeSkyBiome == world.biome) return
+        activeSkyBiome = world.biome
+
+        viewer.scene.skybox = Skybox.Builder()
+            .color(world.skyR, world.skyG, world.skyB, world.skyA)
+            .showSun(true)
+            .build(viewer.engine)
+    }
+
     private fun updateDriveScene() {
         // The camera now reads a deterministic world profile as the child travels:
         // forest -> river -> mountain -> desert -> plateau -> market -> village -> coast.
         // This changes the visual rhythm without loading a large environment pack.
         val travel = vehicleDistance
         val world = WorldDirector.profile(travel)
+        updateSkybox(world)
         val road = RoadSpline.sampleRelative(travel, renderOriginDistance)
         // Adaptive look-ahead increases with speed, so the child sees curves and
         // the surrounding world early without turning the camera into an arcade view.
