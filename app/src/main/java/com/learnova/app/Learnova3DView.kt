@@ -9,6 +9,9 @@ import com.google.android.filament.utils.Float3
 import com.google.android.filament.utils.ModelViewer
 import com.google.android.filament.utils.Mat4
 import com.google.android.filament.utils.rotation
+import com.google.android.filament.Colors
+import com.google.android.filament.EntityManager
+import com.google.android.filament.LightManager
 import java.io.ByteArrayInputStream
 import java.util.zip.GZIPInputStream
 import java.nio.ByteBuffer
@@ -37,6 +40,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private val wheelBaseTransforms = HashMap<Int, FloatArray>()
     private var vehicleRootEntity = 0
     private var vehicleRootBaseTransform: FloatArray? = null
+    private var sunEntity = 0
 
     init {
         addView(
@@ -47,6 +51,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
         val modelBytes = decodeModel()
         viewer.loadModelGlb(ByteBuffer.wrap(modelBytes))
+        configureRealisticSunLight()
         cacheWheelEntities()
         cacheVehicleRoot()
 
@@ -102,6 +107,27 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             }
             choreographer.postFrameCallback(frameCallback)
         }
+    }
+
+    /**
+     * Physically plausible daylight foundation for the 3D world.
+     *
+     * Filament uses real-world photometric units for directional light intensity,
+     * so this is deliberately expressed as sunlight-like illuminance rather than
+     * an arbitrary game brightness value. The light is created once and reused.
+     */
+    private fun configureRealisticSunLight() {
+        if (sunEntity != 0) return
+
+        sunEntity = EntityManager.get().create()
+        val (r, g, b) = Colors.cct(5_500.0f)
+        LightManager.Builder(LightManager.Type.SUN)
+            .color(r, g, b)
+            .intensity(100_000.0f)
+            .direction(-0.35f, -1.0f, -0.55f)
+            .castShadows(true)
+            .build(viewer.engine, sunEntity)
+        viewer.scene.addEntity(sunEntity)
     }
 
     fun setDriving(value: Boolean) {
@@ -259,6 +285,12 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         vehicleSpeed = 0.0
         frameCallback?.let { choreographer.removeFrameCallback(it) }
         frameCallback = null
+        if (sunEntity != 0) {
+            viewer.scene.removeEntity(sunEntity)
+            viewer.engine.lightManager.destroy(sunEntity)
+            EntityManager.get().destroy(sunEntity)
+            sunEntity = 0
+        }
         viewer.destroy()
         super.onDetachedFromWindow()
     }
