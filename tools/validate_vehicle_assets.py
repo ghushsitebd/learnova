@@ -300,3 +300,5 @@ if ASSETS.exists():
 # CI validation 403: GLB JSON chunk validation.
 
 # CI validation 404: GLB binary chunk validation.
+
+# CI validation 405: gzip integrity validation.
