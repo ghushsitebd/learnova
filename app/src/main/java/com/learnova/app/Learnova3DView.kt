@@ -750,6 +750,12 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         try {
             val baseRoot = vehicleRootBaseTransform
             if (vehicleRootEntity != 0 && baseRoot != null && tm.hasComponent(vehicleRootEntity)) {
+                // Subtle steering yaw: the chassis points into the child's
+                // turn before the lateral position catches up, like a real car.
+                val steeringYaw = (steeringInput * 0.095 *
+                    (vehicleSpeed / targetSpeed.coerceAtLeast(0.1)).coerceIn(0.0, 1.0))
+                    .coerceIn(-0.095, 0.095)
+                val chassisYaw = road.yaw + steeringYaw
                 val chassis = Mat4.of(*baseRoot) *
                     Mat4.of(
                         1f, 0f, 0f, (road.x + kotlin.math.cos(road.yaw) * lateralOffset).toFloat(),
@@ -757,7 +763,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                         0f, 0f, 1f, (road.z - kotlin.math.sin(road.yaw) * lateralOffset).toFloat(),
                         0f, 0f, 0f, 1f
                     ) *
-                    rotation(Float3(0.0f, 1.0f, 0.0f), road.yaw) *
+                    rotation(Float3(0.0f, 1.0f, 0.0f), chassisYaw) *
                     rotation(
                         Float3(0.0f, 0.0f, 1.0f),
                         (road.bank + chassisRoll + roadYawRate * 0.010)
