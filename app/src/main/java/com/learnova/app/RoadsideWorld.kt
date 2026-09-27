@@ -40,6 +40,16 @@ internal class RoadsideWorld(
     private var material: com.google.android.filament.MaterialInstance? = null
     private var lastCenter = Double.NaN
 
+    // Reused CPU staging buffers: roadside props are streamed repeatedly as the
+    // vehicle moves, so allocating fresh direct buffers on every stream update
+    // creates avoidable GC pressure on low-memory phones.
+    private val vertexStaging = ByteBuffer
+        .allocate(MAX_PROPS * 8 * VERTEX_STRIDE)
+        .order(ByteOrder.nativeOrder())
+    private val indexStaging = ByteBuffer
+        .allocate(MAX_PROPS * 36 * 2)
+        .order(ByteOrder.nativeOrder())
+
     fun build(): Boolean {
         if (entity != 0) return true
         material = findMaterial() ?: return false
@@ -73,8 +83,8 @@ internal class RoadsideWorld(
         if (entity == 0 || vb == null || ib == null) return
         if (!lastCenter.isNaN() && kotlin.math.abs(centerDistance - lastCenter) < 7.0) return
 
-        val vertices = ByteBuffer.allocate(MAX_PROPS * 8 * VERTEX_STRIDE).order(ByteOrder.nativeOrder())
-        val indices = ByteBuffer.allocate(MAX_PROPS * 36 * 2).order(ByteOrder.nativeOrder())
+        val vertices = vertexStaging.apply { clear() }
+        val indices = indexStaging.apply { clear() }
         var vertexCount = 0
         var indexCount = 0
 
