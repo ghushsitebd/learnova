@@ -131,10 +131,10 @@ internal class LearnovaTerrainMesh(
             val leftBankInner = sin(bank) * INNER
             val leftBankOuter = sin(bank) * OUTER
 
-            putVertex(data, innerLeftX, sample.y + leftBankInner - 0.03 + wave, innerLeftZ, yaw, bank, 0f, distance / 8.0)
-            putVertex(data, outerLeftX, sample.y + leftBankOuter + wave + cross, outerLeftZ, yaw, bank, 1f, distance / 8.0)
-            putVertex(data, innerRightX, sample.y - leftBankInner - 0.03 + wave, innerRightZ, yaw, bank, 0f, distance / 8.0)
-            putVertex(data, outerRightX, sample.y - leftBankOuter + wave - cross, outerRightZ, yaw, bank, 1f, distance / 8.0)
+            putVertex(data, innerLeftX.toFloat(), (sample.y + leftBankInner - 0.03 + wave).toFloat(), innerLeftZ.toFloat(), yaw, bank, 0f, distance / 8.0)
+            putVertex(data, outerLeftX.toFloat(), (sample.y + leftBankOuter + wave + cross).toFloat(), outerLeftZ.toFloat(), yaw, bank, 1f, distance / 8.0)
+            putVertex(data, innerRightX.toFloat(), (sample.y - leftBankInner - 0.03 + wave).toFloat(), innerRightZ.toFloat(), yaw, bank, 0f, distance / 8.0)
+            putVertex(data, outerRightX.toFloat(), (sample.y - leftBankOuter + wave - cross).toFloat(), outerRightZ.toFloat(), yaw, bank, 1f, distance / 8.0)
         }
 
         data.flip()
