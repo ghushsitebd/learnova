@@ -288,3 +288,5 @@ if ASSETS.exists():
 # 398: add validator deterministic exit summary.
 
 # 399: add malformed filename rejection hardening.
+
+# 399: reject malformed vehicle asset filenames before packaging.
