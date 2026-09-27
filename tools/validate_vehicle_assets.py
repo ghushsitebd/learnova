@@ -87,6 +87,12 @@ if any(key == "" for key in asset_keys):
     print("::error::Vehicle asset keys must be non-empty.")
     sys.exit(1)
 
+if ASSETS.exists():
+    for candidate in ASSETS.iterdir():
+        if candidate.is_file() and candidate.name.lower() != candidate.name:
+            print(f"::error::Vehicle asset filename must be lowercase: {candidate.name}")
+            sys.exit(1)
+
 if not ASSETS.exists():
     print("::notice::No real vehicle GLB assets are committed yet; catalog/resolver fallback remains active.")
     sys.exit(0)
