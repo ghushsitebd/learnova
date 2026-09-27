@@ -381,13 +381,37 @@ class MainActivity : AppCompatActivity() {
         }
 
         private fun drawPerson(c:Canvas,x:Float,y:Float,s:Float,walk:Float) {
-            paint.color=Color.rgb(45,78,128)
-            c.drawRoundRect(RectF(x-5f*s,y-28f*s,x+5f*s,y),3f*s,3f*s,paint)
-            paint.color=Color.rgb(226,180,142)
-            c.drawCircle(x,y-38f*s,7f*s,paint)
-            paint.color=Color.rgb(35,35,35)
-            c.drawLine(x-2f*s,y,x-7f*s,y+18f*s+walk,paint)
-            c.drawLine(x+2f*s,y,x+7f*s,y+18f*s-walk,paint)
+            // Islamic village/market population: modest, child-safe clothing.
+            // Men: thobe/panjabi silhouettes with kufi/tupi. Women: long modest
+            // abaya/hijab silhouettes. Colors vary deterministically by scene.
+            val variant = abs((x.toInt() * 13 + frame.toInt() / 60)) % 4
+            val isWoman = variant == 1 || variant == 3
+            val garment = if (isWoman) Color.rgb(92 + variant*18, 84 + variant*16, 116 + variant*12)
+                           else Color.rgb(224 - variant*18, 216 - variant*12, 198 - variant*10)
+
+            if (isWoman) {
+                paint.color = garment
+                c.drawRoundRect(RectF(x-9f*s,y-30f*s,x+9f*s,y+2f*s),7f*s,7f*s,paint)
+                c.drawCircle(x,y-39f*s,10f*s,paint)
+                // Hijab/head covering and long modest silhouette.
+                paint.color = Color.rgb(48,48,52)
+                c.drawArc(RectF(x-12f*s,y-51f*s,x+12f*s,y-27f*s),180f,180f,true,paint)
+                c.drawRoundRect(RectF(x-11f*s,y-29f*s,x+11f*s,y+5f*s),8f*s,8f*s,paint)
+            } else {
+                paint.color = garment
+                c.drawRoundRect(RectF(x-7f*s,y-31f*s,x+7f*s,y+2f*s),4f*s,4f*s,paint)
+                paint.color = Color.rgb(226,181,143)
+                c.drawCircle(x,y-40f*s,7f*s,paint)
+                // Tupi/kufi cap.
+                paint.color = Color.rgb(245,245,238)
+                c.drawOval(RectF(x-7f*s,y-48f*s,x+7f*s,y-41f*s),paint)
+            }
+            // Natural walking legs/arms kept subtle and non-exaggerated.
+            paint.color = Color.rgb(42,42,44)
+            c.drawLine(x-2f*s,y+1f*s,x-7f*s,y+18f*s+walk,paint)
+            c.drawLine(x+2f*s,y+1f*s,x+7f*s,y+18f*s-walk,paint)
+            c.drawLine(x-5f*s,y-20f*s,x-12f*s,y-7f*s-walk*.5f,paint)
+            c.drawLine(x+5f*s,y-20f*s,x+12f*s,y-7f*s+walk*.5f,paint)
         }
 
         private fun drawShop(c:Canvas,x:Float,y:Float,s:Float,seed:Int) {
