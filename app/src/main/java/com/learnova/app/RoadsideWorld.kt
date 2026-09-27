@@ -27,10 +27,10 @@ internal class RoadsideWorld(
     private val asset: FilamentAsset
 ) {
     private companion object {
-        const val BEHIND = 18.0
-        const val AHEAD = 155.0
-        const val STEP = 9.0
-        const val MAX_PROPS = 120
+        const val BEHIND = 24.0
+        const val AHEAD = 220.0
+        const val STEP = 10.0
+        const val MAX_PROPS = 150
         const val VERTEX_STRIDE = 36
     }
 
