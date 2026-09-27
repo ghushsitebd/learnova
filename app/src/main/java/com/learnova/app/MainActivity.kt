@@ -303,7 +303,6 @@ class MainActivity : AppCompatActivity() {
             if (!isQuranLevel() || y < h * 0.72f || y > h * 0.90f || x < 18f || x > w - 18f) return false
             val choice = quranChoiceIndex(x, w)
             val current = LearnovaQuranCatalog.lesson(level - 68)
-            val choices = quranChoiceLabels()
             val correct = when (current.mode) {
                 "Find the Surah", "Match Words" -> choice == 0
                 "Put in Order" -> choice == 0
@@ -2454,7 +2453,8 @@ class MainActivity : AppCompatActivity() {
                 text.textSize = 10f
                 c.drawText(
                     if (quranFeedback.isNotEmpty()) quranFeedback
-                    else if (lessonStage == 1) "একটি সঠিক উত্তর ছুঁয়ে দাও" else "শিখতে ছুঁয়ে দাও",
+                    else if (lessonStage == 1) LearnovaQuranCatalog.lesson(level - 68).prompt
+                    else "শিখতে ছুঁয়ে দাও",
                     w / 2f, h * 0.925f, text
                 )
             }
