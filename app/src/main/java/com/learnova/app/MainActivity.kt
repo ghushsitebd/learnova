@@ -273,10 +273,17 @@ class MainActivity : AppCompatActivity() {
             val current = LearnovaQuranCatalog.lesson(level - 68)
             val all = LearnovaQuranCatalog.lessons
             val index = all.indexOfFirst { it.name == current.name }.coerceAtLeast(0)
-            return when (lessonStage) {
-                0 -> listOf("শুনছি", "অনুসরণ", "আবার শুনি")
-                1 -> listOf(current.name, all[(index + 1) % all.size].name, all[(index + 7) % all.size].name)
-                else -> listOf(current.name, "আরও একবার", "শেষ করি")
+            val mode = current.mode
+            return when (mode) {
+                "Find the Surah" -> listOf(
+                    current.name,
+                    all[(index + 1) % all.size].name,
+                    all[(index + 7) % all.size].name
+                )
+                "Put in Order" -> listOf("১ → ২ → ৩", "২ → ১ → ৩", "৩ → ২ → ১")
+                "Match Words" -> listOf(current.name, current.name.replace("سورة ", ""), "الفاتحة")
+                "Complete the Line" -> listOf("শুরু", "মাঝের অংশ", "শেষ")
+                else -> listOf("শুনছি", "অনুসরণ", "আবার শুনি")
             }
         }
 
@@ -293,7 +300,13 @@ class MainActivity : AppCompatActivity() {
             val choice = quranChoiceIndex(x, w)
             val current = LearnovaQuranCatalog.lesson(level - 68)
             val choices = quranChoiceLabels()
-            if (lessonStage == 1 && choices[choice] == current.name) {
+            val correct = when (current.mode) {
+                "Find the Surah", "Match Words" -> choice == 0
+                "Put in Order" -> choice == 0
+                "Complete the Line" -> choice == 2
+                else -> choice == 0
+            }
+            if (lessonStage == 1 && correct) {
                 levelProgress = (levelProgress + 0.34f).coerceAtMost(1f)
                 completedLessons += 1
                 val reward = ChildSafeEngagementPolicy.rewardForCorrectLesson(completedLessons)
@@ -305,15 +318,9 @@ class MainActivity : AppCompatActivity() {
                 voice.speakQuranStage(current.name, current.mode, 2)
                 saveProgress()
             } else if (lessonStage == 1) {
-                voice.speak("Try again. Find ${current.name}.", java.util.Locale.US)
-            } else if (lessonStage == 2 && choice == 0) {
+                voice.speak("Try again. Listen and choose carefully.", java.util.Locale.US)
+            } else if (lessonStage == 2 && correct) {
                 levelProgress = (levelProgress + 0.34f).coerceAtMost(1f)
-                completedLessons += 1
-                val reward = ChildSafeEngagementPolicy.rewardForCorrectLesson(completedLessons)
-                learningPoints += reward.points
-                if (reward.celebration != ChildSafeEngagementPolicy.Celebration.NONE) {
-                    celebrationUntil = System.currentTimeMillis() + 1400L
-                }
                 if (levelProgress >= 0.999f) levelComplete = true
                 voice.speakQuranStage(current.name, current.mode, 2)
                 saveProgress()
