@@ -761,8 +761,12 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         val travel = vehicleDistance
         val world = WorldDirector.profile(travel)
         val road = RoadSpline.sampleRelative(travel, renderOriginDistance)
-        val lookAhead = RoadSpline.sampleRelative(travel + 18.0, renderOriginDistance)
-        val bodyBob = if (driving) kotlin.math.sin(travel * 3.4) * 0.018 else 0.0
+        // Adaptive look-ahead increases with speed, so the child sees curves and
+        // the surrounding world early without turning the camera into an arcade view.
+        val speedRatio = (vehicleSpeed / targetSpeed.coerceAtLeast(0.1)).coerceIn(0.0, 1.0)
+        val lookAheadDistance = 16.0 + 12.0 * speedRatio
+        val lookAhead = RoadSpline.sampleRelative(travel + lookAheadDistance, renderOriginDistance)
+        val bodyBob = if (driving) kotlin.math.sin(travel * 3.4) * 0.012 else 0.0
 
         // Inertial camera: yaw and bank are filtered from the same road spline that
         // drives the chassis. This gives a believable driver's-eye response on curves
@@ -779,9 +783,12 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
         // A lightly damped camera offset avoids a robotic snap while keeping
         // the road center visible for the child's one-tap driving interaction.
-        val cameraX = road.x + kotlin.math.sin(travel * 0.18) * 0.07
-        val cameraZ = road.z - 6.8
-        val cameraY = world.cameraHeight + lookAhead.y + bodyBob
+        // Keep the vehicle visually centered while exposing more of the real road
+        // corridor and distant horizon. The lateral offset is deliberately tiny.
+        val cameraLateralOffset = kotlin.math.sin(road.yaw) * 0.10
+        val cameraX = road.x + cameraLateralOffset + kotlin.math.sin(travel * 0.18) * 0.045
+        val cameraZ = road.z - 6.9
+        val cameraY = world.cameraHeight + road.y + bodyBob
         val upX = -kotlin.math.sin(cameraBank)
         val upY = kotlin.math.cos(cameraBank)
         val upZ = 0.0
@@ -795,8 +802,10 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         // Speed provides a restrained FOV change; each biome adds only a subtle
         // composition bias so the child notices a new place without nausea.
         val speedRatio = (vehicleSpeed / targetSpeed.coerceAtLeast(0.1)).coerceIn(0.0, 1.0)
-        val dynamicFov = 48.0 + world.fovBias + 3.5 * speedRatio
-        viewer.camera.setLensProjection(dynamicFov, 1.0, 0.10, 700.0)
+        val dynamicFov = 48.0 + world.fovBias + 3.0 * speedRatio
+        // Preserve distant mountains, forest and settlement silhouettes while the
+        // floating origin keeps depth precision stable near the vehicle.
+        viewer.camera.setLensProjection(dynamicFov, 1.0, 0.08, 1000.0)
         viewer.camera.setExposure(world.exposure, 1.0f / 120.0f, 100.0f)
     }
 
