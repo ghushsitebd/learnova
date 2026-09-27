@@ -268,3 +268,5 @@ if ASSETS.exists():
         if candidate.is_symlink():
             print(f"::error::Vehicle asset must not be a symlink: {candidate.name}")
             sys.exit(1)
+
+# CI hardening checkpoint 308: keep the production 3D asset pipeline deterministic and mobile-safe.
