@@ -29,6 +29,8 @@ internal class WorldLifeSimulation(
         const val AHEAD = 600.0
         const val STEP = 12.0
         const val MAX_AGENTS = 112
+        const val NEAR_RADIUS = 85.0
+        const val MID_RADIUS = 240.0
         const val VERTICES_PER_AGENT = 8
         const val INDICES_PER_AGENT = 36
         const val STRIDE = 36
@@ -80,20 +82,45 @@ internal class WorldLifeSimulation(
         while (d <= centerDistance + AHEAD && vCount + 8 <= MAX_AGENTS * 8) {
             val seed = stableSeed(d)
             val sample = RoadSpline.sampleRelative(d, centerDistance)
-            val lane = when ((seed ushr 3) % 7L) {
-                0L -> -6.2
-                1L -> 6.2
-                2L -> -12.0
-                3L -> 12.0
-                5L -> -20.0
-                else -> 20.0
+            // Keep nearby traffic in believable lanes while allowing distant
+            // activity to spread wider into the landscape.
+            val distanceFromPlayer = kotlin.math.abs(d - centerDistance)
+            val lane = when {
+                distanceFromPlayer < NEAR_RADIUS -> when ((seed ushr 3) % 5L) {
+                    0L -> -6.2
+                    1L -> 6.2
+                    2L -> -12.0
+                    3L -> 12.0
+                    else -> 18.0
+                }
+                distanceFromPlayer < MID_RADIUS -> when ((seed ushr 3) % 6L) {
+                    0L -> -6.2
+                    1L -> 6.2
+                    2L -> -12.0
+                    3L -> 12.0
+                    4L -> -18.0
+                    else -> 18.0
+                }
+                else -> when ((seed ushr 3) % 7L) {
+                    0L -> -6.2
+                    1L -> 6.2
+                    2L -> -12.0
+                    3L -> 12.0
+                    5L -> -20.0
+                    else -> 20.0
+                }
             }
             val side = if ((seed and 1L) == 0L) -1.0 else 1.0
             val x = sample.x + cos(sample.yaw) * lane * side
             val z = sample.z - sin(sample.yaw) * lane * side
-            val moving = (seed ushr 9) % 4L != 0L
-            val phase = ((seed ushr 17) % 1000L) / 1000.0
             val biome = WorldDirector.profile(d).biome
+            val isBusyBiome = biome == WorldDirector.Biome.MARKET || biome == WorldDirector.Biome.VILLAGE
+            val moving = when {
+                distanceFromPlayer < NEAR_RADIUS && isBusyBiome -> (seed ushr 9) % 5L != 0L
+                distanceFromPlayer < MID_RADIUS -> (seed ushr 9) % 4L != 0L
+                else -> (seed ushr 9) % 3L != 0L
+            }
+            val phase = ((seed ushr 17) % 1000L) / 1000.0
             val baseDrift = if (moving) sin(centerDistance * 0.035 + phase * 6.283) * 1.8 else 0.0
             // Walkers use a slower, shorter gait: lateral sway + subtle body
             // bounce makes them read as living people instead of sliding blocks.
