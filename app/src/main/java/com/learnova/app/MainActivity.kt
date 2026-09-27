@@ -147,6 +147,7 @@ class MainActivity : AppCompatActivity() {
 
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
+                    if (handleQuranChoice(x, y, w, h)) return true
                     // The vehicle badge opens the real 100-slot garage.
                     if (y < h * 0.22f && x > w * 0.76f) {
                         steeringTouchActive = false
@@ -213,11 +214,7 @@ class MainActivity : AppCompatActivity() {
                             // The first tap starts the lesson; later taps advance its guided stages.
                             lessonStage = (lessonStage + 1) % 3
                             voice.speakQuranStage(quran.name, quran.mode, lessonStage)
-                            if (lessonStage == 2) {
-                                levelProgress = (levelProgress + 0.34f).coerceAtMost(1f)
-                                if (levelProgress >= 0.999f) levelComplete = true
-                                saveProgress()
-                            }
+
                         } else {
                             lessonStage = (lessonStage + 1) % 3
                             voice.speakSmartLesson(SmartLearningEngine.lesson(question))
@@ -267,6 +264,49 @@ class MainActivity : AppCompatActivity() {
 
         override fun performClick(): Boolean {
             super.performClick()
+            return true
+        }
+
+        private fun isQuranLevel(): Boolean = level in 69..250
+
+        private fun quranChoiceLabels(): List<String> {
+            val current = LearnovaQuranCatalog.lesson(level - 68)
+            val all = LearnovaQuranCatalog.lessons
+            val index = all.indexOfFirst { it.name == current.name }.coerceAtLeast(0)
+            return when (lessonStage) {
+                0 -> listOf("শুনছি", "অনুসরণ", "আবার শুনি")
+                1 -> listOf(current.name, all[(index + 1) % all.size].name, all[(index + 7) % all.size].name)
+                else -> listOf(current.name, "আরও একবার", "শেষ করি")
+            }
+        }
+
+        private fun quranChoiceIndex(x: Float, w: Float): Int {
+            val left = 18f
+            val gap = 8f
+            val usable = w - 36f - gap * 2f
+            val buttonW = usable / 3f
+            return ((x - left) / (buttonW + gap)).toInt().coerceIn(0, 2)
+        }
+
+        private fun handleQuranChoice(x: Float, y: Float, w: Float, h: Float): Boolean {
+            if (!isQuranLevel() || y < h * 0.72f || y > h * 0.90f || x < 18f || x > w - 18f) return false
+            val choice = quranChoiceIndex(x, w)
+            val current = LearnovaQuranCatalog.lesson(level - 68)
+            val choices = quranChoiceLabels()
+            if (lessonStage == 1 && choices[choice] == current.name) {
+                levelProgress = (levelProgress + 0.34f).coerceAtMost(1f)
+                if (levelProgress >= 0.999f) levelComplete = true
+                voice.speakQuranStage(current.name, current.mode, 2)
+                saveProgress()
+            } else if (lessonStage == 1) {
+                voice.speak("Try again. Find ${current.name}.", java.util.Locale.US)
+            } else if (lessonStage == 2 && choice == 0) {
+                levelProgress = (levelProgress + 0.34f).coerceAtMost(1f)
+                if (levelProgress >= 0.999f) levelComplete = true
+                voice.speakQuranStage(current.name, current.mode, 2)
+                saveProgress()
+            }
+            invalidate()
             return true
         }
 
