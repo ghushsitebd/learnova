@@ -86,6 +86,9 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     // progressively instead of snapping to the spline tangent.
     private var cameraBank = 0.0
     private var cameraYaw = 0.0
+    private var steeringInput = 0.0
+    private var lateralOffset = 0.0
+    private var lateralVelocity = 0.0
     private var renderProfile = VehicleRenderProfile.forType(activeVehicle.type)
     private val vehicleAssetResolver = VehicleAssetResolver(context)
     private var assetIoExecutor: ExecutorService = newAssetIoExecutor()
@@ -170,6 +173,13 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                     .coerceIn(-8.0, 8.0)
                 driveTime += dt * (if (vehicleSpeed > 0.02) 1.0 else 0.0)
                 vehicleDistance += vehicleSpeed * dt
+
+                val steerTarget = if (driving) steeringInput * 0.55 else 0.0
+                val steerBlend = (dt * 5.5).coerceAtMost(1.0)
+                lateralVelocity += (steerTarget - lateralVelocity) * steerBlend
+                lateralOffset += lateralVelocity * dt * (2.6 + vehicleSpeed * 0.08)
+                if (!driving) lateralOffset *= (1.0 - (dt * 2.8).coerceAtMost(0.9))
+                lateralOffset = lateralOffset.coerceIn(-5.0, 5.0)
 
                 updateDriveScene()
                 if (kotlin.math.abs(vehicleDistance - renderOriginDistance) >= 4.0) {
@@ -317,6 +327,12 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         if (value && vehicleInteraction.state != VehicleInteractionController.State.OUTSIDE) return
         driving = value
         if (!value && vehicleSpeed < 0.02) vehicleSpeed = 0.0
+        if (!value) steeringInput = 0.0
+    }
+
+    /** One-touch steering: -1 left, +1 right, 0 recentres naturally. */
+    fun setSteeringInput(value: Float) {
+        steeringInput = value.coerceIn(-1.0f, 1.0f).toDouble()
     }
 
     /**
@@ -724,9 +740,9 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             if (vehicleRootEntity != 0 && baseRoot != null && tm.hasComponent(vehicleRootEntity)) {
                 val chassis = Mat4.of(*baseRoot) *
                     Mat4.of(
-                        1f, 0f, 0f, road.x.toFloat(),
+                        1f, 0f, 0f, (road.x + kotlin.math.cos(road.yaw) * lateralOffset).toFloat(),
                         0f, 1f, 0f, road.y.toFloat() + suspensionDisplacement.toFloat(),
-                        0f, 0f, 1f, road.z.toFloat(),
+                        0f, 0f, 1f, (road.z - kotlin.math.sin(road.yaw) * lateralOffset).toFloat(),
                         0f, 0f, 0f, 1f
                     ) *
                     rotation(Float3(0.0f, 1.0f, 0.0f), road.yaw) *
@@ -866,8 +882,10 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         // This removes the subtle snap that appears when the road curvature changes.
         val forwardX = kotlin.math.sin(cameraYaw)
         val forwardZ = kotlin.math.cos(cameraYaw)
-        val cameraX = road.x - forwardX * 6.9 + kotlin.math.sin(travel * 0.18) * 0.035
-        val cameraZ = road.z - forwardZ * 6.9
+        val roadRightX = kotlin.math.cos(cameraYaw)
+        val roadRightZ = -kotlin.math.sin(cameraYaw)
+        val cameraX = road.x + roadRightX * lateralOffset - forwardX * 6.9 + kotlin.math.sin(travel * 0.18) * 0.035
+        val cameraZ = road.z + roadRightZ * lateralOffset - forwardZ * 6.9
 
         // Small grade and acceleration cues make the camera feel attached to the
         // vehicle mass without introducing uncomfortable child-facing motion.
@@ -883,7 +901,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
         viewer.camera.lookAt(
             cameraX, cameraY, cameraZ,
-            lookAhead.x, lookAhead.y + world.lookAheadLift, lookAhead.z,
+            lookAhead.x + roadRightX * lateralOffset, lookAhead.y + world.lookAheadLift, lookAhead.z + roadRightZ * lateralOffset,
             upX, upY, upZ
         )
 
@@ -913,6 +931,9 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         roadYawRate = 0.0
         cameraBank = 0.0
         cameraYaw = 0.0
+        steeringInput = 0.0
+        lateralOffset = 0.0
+        lateralVelocity = 0.0
         lastSkyR = Float.NaN
         lastSkyG = Float.NaN
         lastSkyB = Float.NaN
