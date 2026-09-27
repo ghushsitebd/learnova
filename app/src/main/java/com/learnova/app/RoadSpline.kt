@@ -64,7 +64,7 @@ internal object RoadSpline {
      */
     private fun elevation(distance: Double): Double =
         sin(distance * 0.044 + 0.7) * 0.70 +
-        sin(distance * 0.017 + 1.9) * 0.34 +
+        sin(distance * 0.016 + 1.9) * 0.34 +
         sin(distance * 0.009 + 3.1) * 0.18
 }
 
