@@ -318,10 +318,18 @@ class MainActivity : AppCompatActivity() {
         }
 
         private fun drawTrees(c: Canvas, w: Float, h: Float) {
-            val xs = floatArrayOf(.05f, .16f, .29f, .71f, .84f, .95f)
-            for (i in xs.indices) {
-                val scale = 0.65f + (i % 3) * .12f
-                drawTree(c, w * xs[i], h * (.66f + (i % 2) * .025f), scale)
+            val baseXs = floatArrayOf(.04f, .12f, .22f, .31f, .69f, .78f, .88f, .96f)
+            val count = when (renderQuality.level()) {
+                0 -> 5
+                1 -> 6
+                2 -> 7
+                else -> 8
+            }
+            for (i in 0 until count) {
+                val xNorm = baseXs[i]
+                val scale = (0.58f + (i % 4) * .11f) * renderQuality.treeDetail()
+                val depthY = .65f + (i % 3) * .022f
+                drawTree(c, w * xNorm, h * depthY, scale)
             }
         }
 
@@ -890,7 +898,7 @@ class MainActivity : AppCompatActivity() {
             val scale = depthScale * species.scale
             val shadowWidth = 22f + 28f * scale
 
-            paint.color = Color.argb((45f + depth * 45f).toInt(), 0, 0, 0)
+            paint.color = Color.argb(renderQuality.shadowAlpha() + (depth * 18f).toInt(), 0, 0, 0)
             c.drawOval(
                 RectF(
                     wrappedX - shadowWidth,
