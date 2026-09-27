@@ -207,8 +207,9 @@ internal class RoadsideWorld(
         val sx = sin(yaw); val sz = cos(yaw)
         // Props follow the local verge slope instead of standing perfectly
         // vertical on a banked/uneven shoulder.
-        val bankRotation = rotation2D(bank);
-
+        // Roll the prop across the local verge so its base follows the same
+        // bank as the terrain. The longitudinal axis remains aligned to the road.
+        val bankSlope = kotlin.math.tan(bank).coerceIn(-0.25, 0.25)
 
         // Give each roadside family a recognisable silhouette while retaining
         // one fixed 8-vertex/36-index budget. Trees taper toward the crown,
@@ -236,23 +237,17 @@ internal class RoadsideWorld(
         )
         for (c in corners) {
             val lx = c[0]; val lz = c[2]
-            val slopedY = c[1] * height + lx * bankRotation.second
-            val slopedLateral = lz * bankRotation.first
+            val slopedY = c[1] * height + lx * bankSlope
 
             putVertex(vertices,
                 (x + lx*cx - lz*sx).toFloat(),
                 (ground + slopedY).toFloat(),
-                (z + (lx*cx - slopedLateral*sx)).toFloat(),
+                (z + lx*sz + lz*cz).toFloat(),
                 yaw.toFloat(), 0f, ((c[0]+halfW)/(2*halfW)).toFloat(), c[2].toFloat())
         }
         val faces = intArrayOf(0,1,2,0,2,3,4,6,5,4,7,6,0,4,5,0,5,1,1,5,6,1,6,2,2,6,7,2,7,3,4,0,3,4,3,7)
         for (i in faces) indices.putShort((base+i).toShort())
     }
-
-
-    private fun rotation2D(angle: Double): Pair<Double, Double> =
-        Pair(cos(angle), sin(angle))
-
     private fun terrainSlopeAt(
         distance: Double,
         lateral: Double,
