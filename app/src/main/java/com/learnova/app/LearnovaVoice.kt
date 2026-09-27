@@ -33,15 +33,21 @@ class LearnovaVoice(context: Context) : TextToSpeech.OnInitListener {
     }
 
     fun speakLesson(lesson: String) {
-        val arabic = lesson.any { it in '\u0600'..'\u06FF' }
-        val englishLetter = lesson.length == 1 && lesson[0] in 'A'..'Z'
-        val spoken = when {
-            englishLetter -> "Letter $lesson"
-            arabic && lesson == "الفاتحة" -> "الفاتحة"
-            arabic -> "Arabic letter $lesson"
-            else -> lesson
+        SmartLearningEngine.lessonForDisplay(lesson)?.let { smart ->
+            speakSmartLesson(smart)
+            return
         }
-        val locale = if (arabic) Locale("ar") else Locale.US
+        speak(lesson, if (lesson.any { it in '\u0600'..'\u06FF' }) Locale("ar") else Locale.US)
+    }
+
+    fun speakSmartLesson(lesson: SmartLesson) {
+        val spoken = when (lesson.domain) {
+            "English" -> "Letter " + lesson.display + ". " + lesson.example + "."
+            "Arabic" -> lesson.display + ". " + lesson.spokenName + ". " + lesson.example + "."
+            "Quran" -> lesson.spokenName + ". " + lesson.sound + "."
+            else -> lesson.display + ". " + lesson.example + "."
+        }
+        val locale = if (lesson.rtl) Locale("ar") else Locale.US
         speak(spoken, locale)
     }
 
