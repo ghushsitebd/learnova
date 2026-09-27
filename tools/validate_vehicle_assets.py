@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+"""Validate Learnova garage asset contracts without requiring all 100 models yet."""
+
+from pathlib import Path
+import gzip
+import re
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+CATALOG = ROOT / "app/src/main/java/com/learnova/app/VehicleCatalog.kt"
+ASSETS = ROOT / "app/src/main/assets/vehicles"
+
+text = CATALOG.read_text(encoding="utf-8")
+keys = re.findall(r'VehicleDefinition\(\s*(\d+)\s*,\s*"[^"]+"\s*,\s*"[^"]+"\s*,\s*"([^"]+)"', text)
+
+if len(keys) != 100:
+    print(f"::error::Expected 100 vehicle catalog entries, found {len(keys)}.")
+    sys.exit(1)
+
+ids = [int(i) for i, _ in keys]
+if ids != list(range(1, 101)):
+    print(f"::error::Vehicle IDs are not exactly 1..100: {ids}")
+    sys.exit(1)
+
+if not ASSETS.exists():
+    print("::notice::No real vehicle GLB assets are committed yet; catalog/resolver fallback remains active.")
+    sys.exit(0)
+
+errors = []
+found = 0
+for vehicle_id, key in keys:
+    glb = ASSETS / f"{key}.glb"
+    gz = ASSETS / f"{key}.glb.gz"
+    candidates = [p for p in (glb, gz) if p.is_file()]
+    if not candidates:
+        continue
+
+    if len(candidates) > 1:
+        errors.append(f"{key}: both .glb and .glb.gz exist; keep exactly one.")
+        continue
+
+    path = candidates[0]
+    try:
+        if path.suffix == ".gz":
+            with gzip.open(path, "rb") as stream:
+                header = stream.read(4)
+        else:
+            with path.open("rb") as stream:
+                header = stream.read(4)
+    except OSError as exc:
+        errors.append(f"{key}: cannot read asset: {exc}")
+        continue
+
+    if header != b"glTF":
+        errors.append(f"{key}: invalid GLB header.")
+        continue
+
+    found += 1
+    print(f"OK vehicle {vehicle_id:03d}: {path.relative_to(ROOT)}")
+
+print(f"Validated {found} real vehicle asset(s) out of 100 catalog slots.")
+
+if errors:
+    for error in errors:
+        print(f"::error::{error}")
+    sys.exit(1)
+
+if found == 0:
+    print("::notice::Asset directory exists but contains no recognized vehicle GLB files.")
