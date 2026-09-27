@@ -187,8 +187,8 @@ internal class ProceduralRoadMesh(
             EntityManager.get().destroy(entity)
             entity = 0
         }
-        vertexBuffer?.let { engine.destroy(it) }
-        indexBuffer?.let { engine.destroy(it) }
+        vertexBuffer?.let { engine.destroyVertexBuffer(it) }
+        indexBuffer?.let { engine.destroyIndexBuffer(it) }
         vertexBuffer = null
         indexBuffer = null
         lastCenter = Double.NaN
