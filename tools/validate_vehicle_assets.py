@@ -136,6 +136,11 @@ for vehicle_id, key in keys:
         errors.append(f"{key}: invalid GLB header.")
         continue
 
+    container_error = validate_glb_container(path) if path.suffix == ".glb" else None
+    if container_error:
+        errors.append(f"{key}: {container_error}.")
+        continue
+
     found += 1
     print(f"OK vehicle {vehicle_id:03d}: {path.relative_to(ROOT)}")
 
