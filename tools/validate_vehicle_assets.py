@@ -292,3 +292,5 @@ if ASSETS.exists():
 # 399: reject malformed vehicle asset filenames before packaging.
 
 # 400: finalize deterministic vehicle asset contract validation.
+
+# CI validation 401: asset inventory determinism.
