@@ -54,7 +54,7 @@ internal object RoadSpline {
 
     private fun lateralOffset(distance: Double): Double =
         sin(distance * 0.225) * 2.15 +
-        sin(distance * 0.075 + 0.8) * 0.85 +
+        sin(distance * 0.073 + 0.8) * 0.85 +
         sin(distance * 0.031 + 2.1) * 0.45
 
     /**
