@@ -18,6 +18,10 @@ if len(keys) != 100:
     sys.exit(1)
 
 ids = [int(i) for i, _ in keys]
+if any(not key.strip() for _, key in keys):
+    print("::error::Vehicle asset keys must not be blank.")
+    sys.exit(1)
+
 if ids != list(range(1, 101)):
     print(f"::error::Vehicle IDs are not exactly 1..100: {ids}")
     sys.exit(1)
