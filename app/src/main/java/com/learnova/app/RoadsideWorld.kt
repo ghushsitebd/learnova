@@ -117,7 +117,7 @@ internal class RoadsideWorld(
                     3 -> 1.35 * scale
                     else -> 1.6 * scale
                 }
-                addProp(vertices, indices, x, sample.y, z, yaw, w, h, type)
+                addProp(vertices, indices, x, sample.y.toDouble(), z, yaw, w, h, type)
                 vertexCount += 8
                 indexCount += 36
             }
@@ -125,7 +125,7 @@ internal class RoadsideWorld(
         }
 
         while (vertexCount < MAX_PROPS * 8) {
-            repeat(8) { putVertex(vertices, 0f, -1000f, 0f, 0f, 0f, 0f) }
+            repeat(8) { putVertex(vertices, 0f, -1000f, 0f, 0f, 0f, 0f, 0f) }
             vertexCount += 8
         }
         while (indexCount < MAX_PROPS * 36) {
@@ -151,8 +151,6 @@ internal class RoadsideWorld(
         val halfW = width
         val halfD = depth
         val ground = y + when (type) { 3 -> 0.02; else -> 0.0 }
-        val top = ground + height
-
         val cx = cos(yaw); val cz = -sin(yaw)
         val sx = sin(yaw); val sz = cos(yaw)
 
@@ -173,20 +171,20 @@ internal class RoadsideWorld(
             else -> 0.94
         }
         val corners = arrayOf(
-            floatArrayOf(-halfW,0.0,-halfD), floatArrayOf(halfW,0.0,-halfD),
-            floatArrayOf(halfW,0.0,halfD), floatArrayOf(-halfW,0.0,halfD),
-            floatArrayOf(-halfW * topScale,1.0,-halfD * topDepthScale),
-            floatArrayOf(halfW * topScale,1.0,-halfD * topDepthScale),
-            floatArrayOf(halfW * topScale,1.0,halfD * topDepthScale),
-            floatArrayOf(-halfW * topScale,1.0,halfD * topDepthScale)
+            doubleArrayOf(-halfW,0.0,-halfD), doubleArrayOf(halfW,0.0,-halfD),
+            doubleArrayOf(halfW,0.0,halfD), doubleArrayOf(-halfW,0.0,halfD),
+            doubleArrayOf(-halfW * topScale,1.0,-halfD * topDepthScale),
+            doubleArrayOf(halfW * topScale,1.0,-halfD * topDepthScale),
+            doubleArrayOf(halfW * topScale,1.0,halfD * topDepthScale),
+            doubleArrayOf(-halfW * topScale,1.0,halfD * topDepthScale)
         )
         for (c in corners) {
-            val lx = c[0].toDouble(); val lz = c[2].toDouble()
+            val lx = c[0]; val lz = c[2]
             putVertex(vertices,
                 (x + lx*cx - lz*sx).toFloat(),
                 (ground + c[1]*height).toFloat(),
                 (z + lx*cz + lz*sz).toFloat(),
-                yaw.toFloat(), 0f, (c[0]+halfW).toFloat()/(2*halfW), c[2].toFloat())
+                yaw.toFloat(), 0f, ((c[0]+halfW)/(2*halfW)).toFloat(), c[2].toFloat())
         }
         val faces = intArrayOf(0,1,2,0,2,3,4,6,5,4,7,6,0,4,5,0,5,1,1,5,6,1,6,2,2,6,7,2,7,3,4,0,3,4,3,7)
         for (i in faces) indices.putShort((base+i).toShort())
