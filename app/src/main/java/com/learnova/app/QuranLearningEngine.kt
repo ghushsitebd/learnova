@@ -10,8 +10,7 @@ object QuranLearningEngine {
         "quran_kawthar", "quran_asr", "quran_nasr", "quran_kafirun",
         "quran_masad", "quran_quraish", "quran_fil", "quran_maun",
         "quran_humazah", "quran_takathur", "quran_qariah", "quran_adiyat",
-        "quran_zalzalah", "quran_bayyinah", "quran_qadr", "quran_tin",
-        "quran_sharh", "quran_duha"
+        "quran_zalzalah", "quran_bayyinah", "quran_qadr", "quran_alaq"
     )
 
     private val activitySets = arrayOf(
