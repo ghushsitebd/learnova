@@ -225,11 +225,13 @@ class MainActivity : AppCompatActivity() {
             drawRoadInfrastructure(canvas, w, h, world)
             if (world.region.contains("Village")) drawVillageRoadsideDepth(canvas, w, h, world)
             drawAtmosphere(canvas, w, h, world)
+            drawCinematicLighting(canvas, w, h, world)
             drawDistantWorld(canvas, w, h, world)
             drawRoadsideInteractions(canvas, w, h, world)
             drawEnvironmentMotion(canvas, w, h, world)
             drawAnimals(canvas, w, h, world)
             drawVehicle(canvas, w, h)
+            drawVehicleContactEffects(canvas, w, h, world)
             drawTopBar(canvas, w, h, world)
             drawLearningCard(canvas, w, h, world)
             drawHint(canvas, w, h)
@@ -1532,6 +1534,21 @@ class MainActivity : AppCompatActivity() {
                 "micro" -> drawMicro(c, cx, cy)
                 else -> drawCar(c, cx, cy, selected.id)
             }
+            // Glass/body highlight: a restrained specular pass makes the procedural
+            // vehicle read as a solid manufactured object instead of a flat silhouette.
+            paint.shader = LinearGradient(
+                cx - 70f * scale, cy - 82f * scale,
+                cx + 70f * scale, cy + 12f * scale,
+                Color.argb(72, 255, 255, 255),
+                Color.argb(0, 255, 255, 255),
+                Shader.TileMode.CLAMP
+            )
+            c.drawOval(
+                RectF(cx - 78f * scale, cy - 74f * scale, cx + 78f * scale, cy + 10f * scale),
+                paint
+            )
+            paint.shader = null
+
             c.restore()
 
             // Vehicle lighting: subtle forward beams at night and red brake lamps
@@ -2596,6 +2613,100 @@ class MainActivity : AppCompatActivity() {
             if (world.time == "Night") {
                 paint.color = Color.argb(18, 20, 35, 70)
                 c.drawRect(0f, h * 0.45f, w, h, paint)
+            }
+        }
+
+        /**
+         * Cinematic lighting pass: adds depth, atmospheric perspective and a soft
+         * road light response without shipping large bitmap textures. Android's
+         * hardware Canvas is used by the View, so the pass stays GPU friendly.
+         */
+        private fun drawCinematicLighting(c: Canvas, w: Float, h: Float, world: SmartScene) {
+            val horizon = h * 0.60f
+            val warm = world.time == "Sunset"
+            val night = world.time == "Night"
+
+            if (!night) {
+                val lightColor = if (warm) Color.rgb(255, 190, 120) else Color.rgb(255, 238, 190)
+                paint.shader = RadialGradient(
+                    if (warm) w * .72f else w * .83f,
+                    if (warm) h * .30f else h * .15f,
+                    maxOf(w, h) * .42f,
+                    Color.argb(if (warm) 38 else 26, Color.red(lightColor), Color.green(lightColor), Color.blue(lightColor)),
+                    Color.argb(0, Color.red(lightColor), Color.green(lightColor), Color.blue(lightColor)),
+                    Shader.TileMode.CLAMP
+                )
+                c.drawRect(0f, 0f, w, h * .78f, paint)
+                paint.shader = null
+            }
+
+            // Distant haze separates the road/world planes and reduces the flat-Cartoon look.
+            val haze = when {
+                night -> 8
+                world.weather == "Rainy" -> 22
+                world.weather == "Cloudy" -> 16
+                else -> 10
+            }
+            paint.shader = LinearGradient(
+                0f, horizon - h * .10f, 0f, horizon + h * .22f,
+                Color.argb(0, 225, 238, 242),
+                Color.argb(haze, 225, 238, 242),
+                Shader.TileMode.CLAMP
+            )
+            c.drawRect(0f, horizon - h * .10f, w, horizon + h * .22f, paint)
+            paint.shader = null
+
+            // Very subtle screen-space vignette: keeps the child's attention on the
+            // road and learning area while remaining gentle and readable.
+            paint.shader = LinearGradient(
+                0f, 0f, 0f, h,
+                Color.argb(10, 0, 0, 0),
+                Color.argb(0, 0, 0, 0),
+                Shader.TileMode.CLAMP
+            )
+            c.drawRect(0f, 0f, w, h, paint)
+            paint.shader = null
+        }
+
+        /**
+         * Contact cues make the vehicle feel attached to the road rather than floating:
+         * soft tire shadows, reflected body light and a tiny road spray/dust response.
+         */
+        private fun drawVehicleContactEffects(c: Canvas, w: Float, h: Float, world: SmartScene) {
+            val selected = LearnovaUnlimitedWorld.vehicles[vehicle]
+            if (selected.kind == "air" || selected.kind == "space") return
+
+            val p = vehicleProgress.coerceIn(0f, 1f)
+            val roadX = roadCenterAt(p, w, worldSceneId)
+            val cx = roadX + laneOffset * w * (0.10f + 0.34f * p)
+            val cy = h * (0.66f + 0.22f * p) +
+                suspensionOffset +
+                if (running) sin(frame / 4.5).toFloat() * (0.65f + 2.6f * p) else 0f
+            val scale = 0.42f + 0.80f * p
+
+            paint.color = Color.argb((42 + 24 * p).toInt(), 8, 10, 11)
+            c.drawOval(
+                RectF(cx - 72f * scale, cy + 36f * scale, cx + 72f * scale, cy + 48f * scale),
+                paint
+            )
+
+            if (world.weather == "Rainy") {
+                paint.color = Color.argb(45, 220, 240, 245)
+                paint.strokeWidth = maxOf(1f, 1.2f * scale)
+                for (side in -1..1 step 2) {
+                    c.drawLine(
+                        cx + side * 38f * scale,
+                        cy + 43f * scale,
+                        cx + side * 58f * scale,
+                        cy + 52f * scale,
+                        paint
+                    )
+                }
+            } else if (running && speed > 0.006f) {
+                paint.color = Color.argb(22, 235, 225, 205)
+                for (side in -1..1 step 2) {
+                    c.drawCircle(cx + side * 48f * scale, cy + 43f * scale, 2f + 3f * p, paint)
+                }
             }
         }
 
