@@ -75,3 +75,5 @@ internal object RoadSpline {
 // Realism stage: long-radius route variation.
 
 // Realism stage: refine banking response.
+
+// Realism stage: stable terrain grade transitions.
