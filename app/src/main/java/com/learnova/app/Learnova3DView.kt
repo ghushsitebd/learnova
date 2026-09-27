@@ -49,6 +49,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var activeVehicle: VehicleDefinition = VehicleCatalog.byId(1)
     private var targetSpeed = activeVehicle.targetSpeed
     private var wheelRadius = activeVehicle.wheelRadius
+    private var renderProfile = VehicleRenderProfile.forType(activeVehicle.type)
     private val vehicleAssetResolver = VehicleAssetResolver(context)
     private val assetIoExecutor: ExecutorService = Executors.newSingleThreadExecutor { runnable ->
         Thread(runnable, "LearnovaVehicleAssetIO").apply { isDaemon = true }
@@ -160,6 +161,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
      */
     internal fun setVehicle(definition: VehicleDefinition) {
         activeVehicle = definition
+        renderProfile = VehicleRenderProfile.forType(definition.type)
         targetSpeed = definition.targetSpeed.coerceIn(2.0, 18.0)
         wheelRadius = definition.wheelRadius.coerceIn(0.12, 0.80)
         loadVehicleAsset(definition)
@@ -309,6 +311,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                         rotation(Float3(0.0f, 0.0f, 1.0f), road.bank)
                 tm.setTransform(tm.getInstance(vehicleRootEntity), chassis.toFloatArray())
             }
+
+            if (!renderProfile.enableWheelAnimation) return@try
 
             for (entity in wheelEntities) {
                 val base = wheelBaseTransforms[entity] ?: continue
