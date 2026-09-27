@@ -200,10 +200,30 @@ internal class LearnovaTerrainMesh(
             val innerLift = sin(bank) * FAR_INNER
             val outerLift = sin(bank) * FAR_OUTER
 
+            // Distant landforms rise progressively toward the horizon. The lift is
+            // biome-shaped rather than a single artificial wall, which keeps the
+            // long-view silhouette natural while the road corridor stays level.
+            val horizonLift = when (biome) {
+                WorldDirector.Biome.MOUNTAIN -> {
+                    val ridge = kotlin.math.abs(sin(distance * 0.018 + 0.7)) * 7.5 +
+                        kotlin.math.abs(cos(distance * 0.006)) * 3.5
+                    ridge * ((FAR_OUTER - FAR_INNER) / (FAR_OUTER - FAR_INNER))
+                }
+                WorldDirector.Biome.PLATEAU -> 3.0 + kotlin.math.abs(sin(distance * 0.012)) * 2.0
+                WorldDirector.Biome.FOREST, WorldDirector.Biome.VILLAGE -> 0.9 +
+                    kotlin.math.abs(sin(distance * 0.020)) * 1.2
+                WorldDirector.Biome.DESERT -> 0.5 +
+                    kotlin.math.abs(sin(distance * 0.016)) * 1.5
+                WorldDirector.Biome.RIVER, WorldDirector.Biome.COAST -> -0.15
+                else -> 0.6
+            }
+            val horizonFactor = ((FAR_OUTER - FAR_INNER) / (FAR_OUTER - FAR_INNER)).coerceIn(0.0, 1.0)
+            val outerLandLift = horizonLift * horizonFactor
+
             putVertex(data, innerLeftX.toFloat(), (sample.y + innerLift + shape).toFloat(), innerLeftZ.toFloat(), yaw, bank, 0f, distance / 32.0)
-            putVertex(data, outerLeftX.toFloat(), (sample.y + outerLift + shape).toFloat(), outerLeftZ.toFloat(), yaw, bank, 1f, distance / 32.0)
+            putVertex(data, outerLeftX.toFloat(), (sample.y + outerLift + shape + outerLandLift).toFloat(), outerLeftZ.toFloat(), yaw, bank, 1f, distance / 32.0)
             putVertex(data, innerRightX.toFloat(), (sample.y - innerLift + shape).toFloat(), innerRightZ.toFloat(), yaw, bank, 0f, distance / 32.0)
-            putVertex(data, outerRightX.toFloat(), (sample.y - outerLift + shape).toFloat(), outerRightZ.toFloat(), yaw, bank, 1f, distance / 32.0)
+            putVertex(data, outerRightX.toFloat(), (sample.y - outerLift + shape + outerLandLift).toFloat(), outerRightZ.toFloat(), yaw, bank, 1f, distance / 32.0)
         }
         data.flip()
         vb.setBufferAt(engine, 0, data)
