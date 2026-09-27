@@ -86,6 +86,7 @@ class MainActivity : AppCompatActivity() {
         private var learningPoints = 0
         private var celebrationUntil = 0L
         private var quranFeedback = ""
+        private var quranStageSolved = false
         private val sessionStartedAt = System.currentTimeMillis()
         private var worldSceneId = 1
         private var question = 0
@@ -214,6 +215,8 @@ class MainActivity : AppCompatActivity() {
                             val quran = LearnovaQuranCatalog.lesson(level - 68)
                             // The first tap starts the lesson; later taps advance its guided stages.
                             lessonStage = (lessonStage + 1) % 3
+                            quranStageSolved = false
+                            quranFeedback = ""
                             voice.speakQuranStage(quran.name, quran.mode, lessonStage)
 
                         } else {
@@ -307,25 +310,23 @@ class MainActivity : AppCompatActivity() {
                 "Complete the Line" -> choice == 2
                 else -> choice == 0
             }
-            if (lessonStage == 1 && correct) {
-                levelProgress = (levelProgress + 0.34f).coerceAtMost(1f)
-                completedLessons += 1
-                val reward = ChildSafeEngagementPolicy.rewardForCorrectLesson(completedLessons)
-                learningPoints += reward.points
-                if (reward.celebration != ChildSafeEngagementPolicy.Celebration.NONE) {
-                    celebrationUntil = System.currentTimeMillis() + 1400L
-                }
-                if (levelProgress >= 0.999f) levelComplete = true
-                quranFeedback = "✓ ঠিক হয়েছে — এবার এগিয়ে যাও"
+            if (lessonStage == 1 && correct && !quranStageSolved) {
+                // Solve each Quran stage only once. This prevents repeated taps from
+                // farming progress or rewards while keeping the interaction simple.
+                quranStageSolved = true
+                levelProgress = (levelProgress + 0.5f).coerceAtMost(1f)
+                quranFeedback = "✓ ঠিক হয়েছে — এবার শেখাটা মনে রাখো"
+                lessonStage = 2
                 voice.speakQuranStage(current.name, current.mode, 2)
                 saveProgress()
             } else if (lessonStage == 1) {
                 quranFeedback = "আবার চেষ্টা করো — মন দিয়ে শোনো"
                 voice.speak("Try again. Listen and choose carefully.", java.util.Locale.US)
-            } else if (lessonStage == 2 && correct) {
-                quranFeedback = "✓ দারুণ — শেখাটা মনে রাখো"
-                levelProgress = (levelProgress + 0.34f).coerceAtMost(1f)
-                if (levelProgress >= 0.999f) levelComplete = true
+            } else if (lessonStage == 2 && correct && !quranStageSolved) {
+                quranStageSolved = true
+                quranFeedback = "✓ দারুণ — এই অংশটি শেষ হয়েছে"
+                levelProgress = 1f
+                levelComplete = true
                 voice.speakQuranStage(current.name, current.mode, 2)
                 saveProgress()
             }
@@ -2473,6 +2474,8 @@ class MainActivity : AppCompatActivity() {
             }
             question = (question + 1) % lessons.size
             lessonStage = 0
+            quranStageSolved = false
+            quranFeedback = ""
             level += 1
             worldSceneId += 1
             levelProgress = 0f
