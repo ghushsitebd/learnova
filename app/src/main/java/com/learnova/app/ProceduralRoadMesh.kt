@@ -198,7 +198,17 @@ internal class ProceduralRoadMesh(
             val sample = RoadSpline.sampleRelative(distance, centerDistance)
             val yaw = sample.yaw.toDouble()
             val halfRoad = ROAD_WIDTH * 0.5
-            val shoulder = 2.4
+            // Real roads do not have a perfectly uniform verge. Widen the
+            // usable shoulder slightly in settlements and flatten it near water,
+            // while keeping the driving lane unchanged.
+            val biome = WorldDirector.profile(distance).biome
+            val shoulder = when (biome) {
+                WorldDirector.Biome.MARKET, WorldDirector.Biome.VILLAGE -> 3.0
+                WorldDirector.Biome.RIVER, WorldDirector.Biome.COAST -> 2.7
+                WorldDirector.Biome.MOUNTAIN -> 2.2
+                WorldDirector.Biome.DESERT -> 2.5
+                else -> 2.4
+            }
             val lx = cos(yaw)
             val lz = -sin(yaw)
             val outerOffset = halfRoad + shoulder
@@ -216,8 +226,15 @@ internal class ProceduralRoadMesh(
             // visually floating on banked curves.
             val innerLift = sin(sample.bank.toDouble()) * halfRoad
             val outerLift = sin(sample.bank.toDouble()) * outerOffset
+            // A shallow drainage fall makes the edge read like a real roadside
+            // verge instead of a mathematically flat green strip.
+            val drainage = when (biome) {
+                WorldDirector.Biome.RIVER, WorldDirector.Biome.COAST -> 0.055
+                WorldDirector.Biome.MARKET, WorldDirector.Biome.VILLAGE -> 0.035
+                else -> 0.045
+            }
 
-            putVertex(data, outerLeftX.toFloat(), (sample.y + outerLift - 0.018).toFloat(), outerLeftZ.toFloat(), yaw, sample.bank.toDouble(), 0f, distance.toFloat() / 8f)
+            putVertex(data, outerLeftX.toFloat(), (sample.y + outerLift - drainage).toFloat(), outerLeftZ.toFloat(), yaw, sample.bank.toDouble(), 0f, distance.toFloat() / 8f)
             putVertex(data, innerLeftX.toFloat(), (sample.y + innerLift - 0.012).toFloat(), innerLeftZ.toFloat(), yaw, sample.bank.toDouble(), 1f, distance.toFloat() / 8f)
             putVertex(data, innerRightX.toFloat(), (sample.y - innerLift - 0.012).toFloat(), innerRightZ.toFloat(), yaw, sample.bank.toDouble(), 0f, distance.toFloat() / 8f)
             putVertex(data, outerRightX.toFloat(), (sample.y - outerLift - 0.018).toFloat(), outerRightZ.toFloat(), yaw, sample.bank.toDouble(), 1f, distance.toFloat() / 8f)
