@@ -148,3 +148,5 @@ if errors:
 
 if found == 0:
     print("::notice::Asset directory exists but contains no recognized vehicle GLB files.")
+
+# Engineering checkpoint 256: keep CI asset-contract validation reproducible.
