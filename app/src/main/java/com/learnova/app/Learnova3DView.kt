@@ -1060,6 +1060,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         shorelineWorld?.destroy()
         worldLife?.destroy()
         worldLife = null
+        childNPC?.destroy()
+        childNPC = null
         roadsideWorld = null
         waterSurfaceWorld = null
         if (sunEntity != 0) {
