@@ -79,6 +79,7 @@ class MainActivity : AppCompatActivity() {
         private var worldSceneId = 1
         private var question = 0
         private var lastTap = 0L
+        private var salamPlayedForSession = false
         private val prefs: SharedPreferences = getSharedPreferences("learnova_progress", MODE_PRIVATE)
         private val renderQuality = LearnovaRenderQuality(this@MainActivity)
 
@@ -161,7 +162,12 @@ class MainActivity : AppCompatActivity() {
                         running = !running
                         threeDWorld.setDriving(running)
                         if (running) {
-                            voice.speakInstruction(true)
+                            if (!salamPlayedForSession) {
+                                salamPlayedForSession = true
+                                voice.playSalamExchange()
+                            } else {
+                                voice.playChildLesson(SmartLearningEngine.lesson(question))
+                            }
                         } else {
                             voice.speakInstruction(false)
                         }
