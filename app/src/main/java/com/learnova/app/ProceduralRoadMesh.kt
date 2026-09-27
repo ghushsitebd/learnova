@@ -40,6 +40,7 @@ internal class ProceduralRoadMesh(
     private var indexBuffer: IndexBuffer? = null
     private var lastCenter = Double.NaN
     private var sourceRoadEntity = 0
+    private var renderOriginDistance = 0.0
 
     fun build(): Boolean {
         if (entity != 0) return true
@@ -104,7 +105,7 @@ internal class ProceduralRoadMesh(
 
         for (i in 0 until 127) {
             val distance = start + i * SAMPLE_STEP
-            val sample = RoadSpline.sample(distance)
+            val sample = RoadSpline.sampleRelative(distance, centerDistance)
             val yaw = sample.yaw.toDouble()
             val bank = sample.bank.toDouble()
 
@@ -197,5 +198,6 @@ internal class ProceduralRoadMesh(
         indexBuffer = null
         lastCenter = Double.NaN
         sourceRoadEntity = 0
+        renderOriginDistance = 0.0
     }
 }
