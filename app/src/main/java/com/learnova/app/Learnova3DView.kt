@@ -85,7 +85,12 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
         val modelBytes = decodeModel()
         viewer.loadModelGlb(ByteBuffer.wrap(modelBytes))
-        proceduralRoad = ProceduralRoadMesh(viewer.engine, viewer.scene, viewer.asset!!).also { it.build() }
+        // Never force-unwrap the parsed asset during Activity startup. A malformed
+        // or unsupported GLB must degrade to a renderer without the road mesh rather
+        // than crashing the entire app before the child can reach the learning screen.
+        viewer.asset?.let { asset ->
+            proceduralRoad = ProceduralRoadMesh(viewer.engine, viewer.scene, asset).also { it.build() }
+        }
         configureRealisticSunLight()
         viewer.scene.skybox = Skybox.Builder()
             .color(0.25f, 0.50f, 0.90f, 1.0f)
