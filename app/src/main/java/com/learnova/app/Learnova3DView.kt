@@ -31,6 +31,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var driving = false
     private var driveTime = 0.0
     private var vehicleDistance = 0.0
+    private var vehicleSpeed = 0.0
+    private var lastFrameNanos = 0L
     private var wheelEntities = IntArray(0)
     private val wheelBaseTransforms = HashMap<Int, FloatArray>()
 
@@ -72,10 +74,24 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             started = true
             frameCallback = Choreographer.FrameCallback { time ->
                 if (!started) return@FrameCallback
-                if (driving) {
-                    driveTime += 1.0 / 60.0
-                    vehicleDistance += 0.42 / 60.0
+
+                val dt = if (lastFrameNanos == 0L) {
+                    1.0 / 60.0
+                } else {
+                    ((time - lastFrameNanos).coerceIn(0L, 50_000_000L)).toDouble() / 1_000_000_000.0
                 }
+                lastFrameNanos = time
+
+                // Child-simple input, physically smoother motion: one tap starts,
+                // the next tap requests a controlled stop. Speed is integrated with
+                // acceleration/deceleration instead of assuming a fixed 60 FPS rate.
+                val targetSpeed = if (driving) 7.2 else 0.0
+                val response = if (driving) 2.8 else 6.5
+                val blend = (response * dt).coerceAtMost(1.0)
+                vehicleSpeed += (targetSpeed - vehicleSpeed) * blend
+                driveTime += dt * (if (vehicleSpeed > 0.02) 1.0 else 0.0)
+                vehicleDistance += vehicleSpeed * dt
+
                 updateDriveScene()
                 updateVehicleMechanics()
                 viewer.render(time)
@@ -85,7 +101,10 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         }
     }
 
-    fun setDriving(value: Boolean) { driving = value }
+    fun setDriving(value: Boolean) {
+        driving = value
+        if (!value && vehicleSpeed < 0.02) vehicleSpeed = 0.0
+    }
 
 
     /**
@@ -120,7 +139,9 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private fun updateVehicleMechanics() {
         if (wheelEntities.isEmpty()) return
         val tm = viewer.engine.transformManager
-        val wheelAngle = (vehicleDistance * 3.8).toFloat()
+        // Approximate a 0.30 m tyre radius: angular travel = distance / radius.
+        // This keeps wheel rotation tied to actual vehicle travel rather than time.
+        val wheelAngle = (vehicleDistance / 0.30).toFloat()
         val suspension = if (driving) {
             kotlin.math.sin(vehicleDistance * 8.0).toFloat() * 0.025f
         } else 0f
@@ -176,6 +197,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
     override fun onDetachedFromWindow() {
         started = false
+        lastFrameNanos = 0L
+        vehicleSpeed = 0.0
         frameCallback?.let { choreographer.removeFrameCallback(it) }
         frameCallback = null
         viewer.destroy()
