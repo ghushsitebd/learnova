@@ -325,121 +325,206 @@ class MainActivity : AppCompatActivity() {
         private fun drawHabitatDetails(c: Canvas, w: Float, h: Float, world: SmartScene) {
             val groundY = h * 0.64f
             val phase = if (running) frame.toFloat() * 0.03f else 0f
+            val seed = abs(world.id * 37 + 11)
 
-            when (world.region) {
-                "Farm" -> {
-                    paint.color = Color.rgb(181, 137, 70)
-                    for (i in 0..5) {
-                        val x = w * (0.08f + i * 0.17f)
-                        c.drawRoundRect(RectF(x, groundY + 22f, x + 5f, h * 0.86f), 2f, 2f, paint)
-                        paint.color = Color.rgb(86, 133, 52)
-                        c.drawCircle(x + 2.5f, groundY + 15f, 11f, paint)
-                        paint.color = Color.rgb(181, 137, 70)
-                    }
-                    paint.color = Color.rgb(232, 198, 116)
-                    c.drawRect(w * 0.05f, groundY + 58f, w * 0.34f, groundY + 63f, paint)
-                    c.drawRect(w * 0.05f, groundY + 83f, w * 0.34f, groundY + 88f, paint)
-                }
-                "Village", "City" -> {
-                    val heights = intArrayOf(42, 68, 52, 86, 58)
-                    for (i in heights.indices) {
-                        val x = w * (0.06f + i * 0.20f)
-                        val bh = heights[i].toFloat()
-                        paint.color = if (world.region == "City") Color.rgb(92, 108, 118) else Color.rgb(191, 155, 104)
-                        c.drawRoundRect(RectF(x, groundY - bh, x + w * 0.12f, groundY + 8f), 5f, 5f, paint)
-                        paint.color = Color.rgb(244, 214, 116)
-                        for (row in 0..1) {
-                            c.drawRect(x + 10f, groundY - bh + 12f + row * 20f, x + 22f, groundY - bh + 22f + row * 20f, paint)
-                        }
-                    }
-                    paint.color = Color.rgb(72, 78, 76)
-                    c.drawRect(w * 0.03f, groundY + 5f, w * 0.97f, groundY + 12f, paint)
-                }
-                "Desert" -> {
-                    paint.color = Color.rgb(220, 181, 91)
-                    for (i in 0..4) {
-                        val x = w * (0.10f + i * 0.20f)
-                        val y = groundY + 28f + sin(i.toDouble() + phase * 0.15).toFloat() * 5f
-                        c.drawOval(RectF(x - 38f, y - 10f, x + 42f, y + 10f), paint)
-                    }
-                    paint.color = Color.rgb(54, 125, 68)
-                    for (i in 0..2) {
-                        val x = w * (0.16f + i * 0.34f)
-                        c.drawRect(x - 5f, groundY - 5f, x + 5f, groundY + 38f, paint)
-                        c.drawCircle(x, groundY - 8f, 17f, paint)
-                    }
-                }
-                "Arctic" -> {
-                    paint.color = Color.rgb(238, 248, 252)
-                    c.drawRect(0f, groundY, w, h, paint)
-                    paint.color = Color.rgb(177, 215, 230)
-                    for (i in 0..5) {
-                        val x = w * (0.06f + i * 0.18f)
-                        c.drawCircle(x, groundY + 16f, 24f, paint)
-                        c.drawCircle(x + 22f, groundY + 22f, 18f, paint)
-                    }
-                }
-                "Ocean", "Island", "Wetland" -> {
-                    paint.color = Color.argb(105, 255, 255, 255)
-                    for (i in 0..4) {
-                        val x = (w * (0.12f + i * 0.22f) + phase * 7f) % (w + 80f) - 40f
-                        val y = groundY + 18f + (i % 2) * 28f
-                        c.drawOval(RectF(x, y, x + 62f, y + 8f), paint)
-                    }
-                    if (world.region == "Wetland") {
-                        paint.color = Color.rgb(71, 132, 67)
-                        for (i in 0..6) {
-                            val x = w * (0.05f + i * 0.15f)
-                            c.drawLine(x, groundY + 20f, x + 4f, groundY - 8f, paint)
-                        }
-                    }
-                }
-                "Dinosaur Valley" -> {
-                    paint.color = Color.rgb(117, 91, 58)
-                    for (i in 0..4) {
-                        val x = w * (0.08f + i * 0.21f)
-                        c.drawOval(RectF(x - 24f, groundY + 28f, x + 30f, groundY + 40f), paint)
-                    }
-                    paint.color = Color.rgb(77, 126, 64)
-                    for (i in 0..3) {
-                        val x = w * (0.12f + i * 0.25f)
-                        c.drawLine(x, groundY + 18f, x + 8f, groundY - 5f, paint)
-                    }
-                }
-                "Cave" -> {
-                    paint.color = Color.rgb(68, 72, 78)
-                    c.drawPath(Path().apply {
-                        moveTo(0f, groundY + 8f)
-                        lineTo(w * 0.20f, groundY - 35f)
-                        lineTo(w * 0.34f, groundY + 8f)
-                        close()
-                    }, paint)
-                    c.drawPath(Path().apply {
-                        moveTo(w, groundY + 8f)
-                        lineTo(w * 0.80f, groundY - 35f)
-                        lineTo(w * 0.66f, groundY + 8f)
-                        close()
-                    }, paint)
-                }
-                "Science Park", "Garden", "Quran Learning Garden", "Arabic Learning Garden", "Kindness Village" -> {
-                    paint.color = Color.rgb(218, 178, 78)
-                    for (i in 0..5) {
-                        val x = w * (0.08f + i * 0.17f)
-                        c.drawCircle(x, groundY + 22f, 5f, paint)
-                        paint.color = Color.rgb(67, 145, 76)
-                        c.drawRect(x - 2f, groundY + 25f, x + 2f, groundY + 43f, paint)
-                        paint.color = Color.rgb(218, 178, 78)
-                    }
-                }
-                "Sky", "Space" -> {
-                    paint.color = Color.argb(110, 255, 255, 255)
-                    for (i in 0..4) {
-                        val x = (w * (0.12f + i * 0.21f) + phase * 4f) % (w + 120f) - 60f
-                        c.drawOval(RectF(x, h * 0.52f + (i % 2) * 22f, x + 70f, h * 0.55f + (i % 2) * 22f), paint)
-                    }
+            // The world is deliberately built from reusable procedural features.
+            // This keeps the APK light while allowing hundreds of destinations to
+            // have distinct visual identities and deterministic layouts.
+            when {
+                world.region.contains("Village") || world.region == "Bangladesh Village" -> drawVillageWorld(c,w,h,groundY,seed)
+                world.region.contains("Market") || world.region.contains("Bazaar") || world.region == "Food Street" || world.region == "Night Market" -> drawMarketWorld(c,w,h,groundY,seed)
+                world.region == "Mosque Courtyard" || world.region == "Quran School" || world.region.contains("Quran Learning") || world.region.contains("Arabic Learning") -> drawLearningWorld(c,w,h,groundY,seed,true)
+                world.region == "School Campus" || world.region == "Library" || world.region == "Science Museum" || world.region == "Science Park" || world.region == "Space Center" || world.region == "Dinosaur Museum" -> drawLearningWorld(c,w,h,groundY,seed,false)
+                world.region == "Farm" || world.region == "Farmhouse" || world.region == "Rice Field" || world.region == "Tea Garden" -> drawFarmWorld(c,w,h,groundY,seed)
+                world.region == "Railway Station" || world.region == "Bus Terminal" || world.region == "Boat Terminal" || world.region == "Airport" -> drawTransportWorld(c,w,h,groundY,seed,world.region)
+                world.region == "Hospital District" || world.region == "Fire Station" || world.region == "Police Station" || world.region == "Construction Zone" || world.region == "Rescue District" -> drawServiceWorld(c,w,h,groundY,seed,world.region)
+                world.region == "Beach Town" || world.region == "Harbor" || world.region == "Fishing Village" || world.region == "Water Park" -> drawWaterfrontWorld(c,w,h,groundY,seed)
+                world.region == "Mountain Town" || world.region == "Mountain Pass" -> drawMountainWorld(c,w,h,groundY,seed)
+                world.region == "Forest Camp" || world.region == "Animal Rescue Center" || world.region == "Safari Lodge" || world.region == "Safari" -> drawWildlifeWorld(c,w,h,groundY,seed)
+                world.region == "Dinosaur Valley" -> drawDinosaurWorld(c,w,h,groundY,seed)
+                world.region == "City Center" || world.region == "City" || world.region == "Hospital District" -> drawCityWorld(c,w,h,groundY,seed)
+                world.region == "Arctic" -> drawArcticWorld(c,w,h,groundY,seed)
+                world.region == "Ocean" || world.region == "Island" || world.region == "Wetland" -> drawWaterWorld(c,w,h,groundY,seed)
+                world.region == "Desert" -> drawDesertWorld(c,w,h,groundY,seed)
+                else -> drawGardenWorld(c,w,h,groundY,seed)
+            }
+        }
+
+        private fun featureColor(seed:Int, shift:Int, a:Int, b:Int, d:Int):Int {
+            val v = abs(seed * 53 + shift * 97) % 32
+            return Color.rgb((a + v).coerceAtMost(255), (b + v/2).coerceAtMost(255), (d + v/3).coerceAtMost(255))
+        }
+
+        private fun drawBuilding(c:Canvas,x:Float,y:Float,width:Float,height:Float,body:Int,roof:Int,windows:Boolean=true) {
+            paint.color=body
+            c.drawRoundRect(RectF(x,y-height,x+width,y+8f),6f,6f,paint)
+            paint.color=roof
+            c.drawPath(Path().apply{moveTo(x-5f,y-height);lineTo(x+width/2f,y-height-18f);lineTo(x+width+5f,y-height);close()},paint)
+            if(windows){
+                paint.color=Color.rgb(180,220,228)
+                val cols=if(width>130f) 3 else 2
+                for(r in 0..2) for(k in 0 until cols){
+                    val wx=x+12f+k*(width-28f)/cols
+                    val wy=y-height+20f+r*24f
+                    c.drawRoundRect(RectF(wx,wy,wx+12f,wy+12f),2f,2f,paint)
                 }
             }
         }
+
+        private fun drawTree(c:Canvas,x:Float,y:Float,s:Float,seed:Int) {
+            paint.color=Color.rgb(105,72,42)
+            c.drawRoundRect(RectF(x-4f*s,y-38f*s,x+4f*s,y+8f*s),3f*s,3f*s,paint)
+            paint.color=featureColor(seed,9,48,125,55)
+            c.drawCircle(x,y-48f*s,22f*s,paint)
+            c.drawCircle(x-18f*s,y-38f*s,17f*s,paint)
+            c.drawCircle(x+18f*s,y-38f*s,18f*s,paint)
+        }
+
+        private fun drawPerson(c:Canvas,x:Float,y:Float,s:Float,walk:Float) {
+            paint.color=Color.rgb(45,78,128)
+            c.drawRoundRect(RectF(x-5f*s,y-28f*s,x+5f*s,y),3f*s,3f*s,paint)
+            paint.color=Color.rgb(226,180,142)
+            c.drawCircle(x,y-38f*s,7f*s,paint)
+            paint.color=Color.rgb(35,35,35)
+            c.drawLine(x-2f*s,y,x-7f*s,y+18f*s+walk,paint)
+            c.drawLine(x+2f*s,y,x+7f*s,y+18f*s-walk,paint)
+        }
+
+        private fun drawShop(c:Canvas,x:Float,y:Float,s:Float,seed:Int) {
+            drawBuilding(c,x,y,82f*s,55f*s,featureColor(seed,2,150,118,80),Color.rgb(120,70,42),false)
+            paint.color=Color.rgb(245,245,232)
+            c.drawRect(x+12f*s,y-39f*s,x+70f*s,y-8f*s,paint)
+            paint.color=featureColor(seed,4,220,80,55)
+            c.drawRect(x+7f*s,y-52f*s,x+75f*s,y-40f*s,paint)
+        }
+
+        private fun drawVillageWorld(c:Canvas,w:Float,h:Float,g:Float,seed:Int){
+            for(i in 0..5){ val x=w*(0.03f+i*.18f); drawBuilding(c,x,g+4f,105f,55f+(i%3)*12f,Color.rgb(188,151,103),Color.rgb(132,91,58)); drawTree(c,x+105f,g+4f,.72f,seed+i) }
+            for(i in 0..2) drawShop(c,w*(.12f+i*.34f),g+8f,.72f,seed+i)
+            paint.color=Color.rgb(92,150,91); c.drawOval(RectF(w*.60f,g+18f,w*.94f,g+75f),paint)
+            paint.color=Color.rgb(110,177,201); c.drawOval(RectF(w*.65f,g+28f,w*.88f,g+58f),paint)
+            for(i in 0..4) drawPerson(c,w*(.15f+i*.17f),g+18f,0.7f,if(running)sin(frame/8.0).toFloat()*2f else 0f)
+        }
+
+        private fun drawMarketWorld(c:Canvas,w:Float,h:Float,g:Float,seed:Int){
+            for(i in 0..4){
+                val x=w*(.04f+i*.22f)
+                drawShop(c,x,g+12f,.85f,seed+i)
+                paint.color=Color.rgb(220,70,65)
+                c.drawRect(x+8f,g-60f,x+86f,g-48f,paint)
+                paint.color=Color.rgb(242,201,91)
+                c.drawCircle(x+25f,g-18f,9f,paint); c.drawCircle(x+54f,g-18f,9f,paint)
+            }
+            for(i in 0..6) drawPerson(c,w*(.08f+i*.13f),g+28f,.58f,if(running)sin(frame/7.0+i).toFloat()*2f else 0f)
+        }
+
+        private fun drawLearningWorld(c:Canvas,w:Float,h:Float,g:Float,seed:Int,faith:Boolean){
+            val body=if(faith) Color.rgb(222,214,188) else Color.rgb(205,214,220)
+            drawBuilding(c,w*.16f,g+8f,w*.68f,110f,body,if(faith)Color.rgb(55,120,105) else Color.rgb(80,105,130))
+            if(faith){
+                paint.color=Color.rgb(220,215,190)
+                c.drawRect(w*.47f,g-155f,w*.53f,g-90f,paint)
+                c.drawCircle(w*.50f,g-158f,32f,paint)
+            } else {
+                paint.color=Color.rgb(92,145,175)
+                c.drawRoundRect(RectF(w*.28f,g-100f,w*.72f,g-54f),5f,5f,paint)
+                for(i in 0..3) drawPerson(c,w*(.25f+i*.17f),g+20f,.55f,0f)
+            }
+            paint.color=Color.rgb(115,170,105)
+            c.drawCircle(w*.10f,g+10f,32f,paint); c.drawCircle(w*.90f,g+10f,32f,paint)
+            for(i in 0..2) drawTree(c,w*(.08f+i*.42f),g+10f,.55f,seed+i)
+        }
+
+        private fun drawFarmWorld(c:Canvas,w:Float,h:Float,g:Float,seed:Int){
+            paint.color=Color.rgb(145,116,65)
+            for(i in 0..6) c.drawRect(w*.04f,g+18f+i*18f,w*.46f,g+25f+i*18f,paint)
+            paint.color=Color.rgb(84,150,65)
+            for(i in 0..10) c.drawLine(w*.05f+i*.038f*w,g+10f,w*.05f+i*.038f*w,g+115f,paint)
+            drawBuilding(c,w*.70f,g+4f,100f,65f,Color.rgb(184,139,82),Color.rgb(125,83,48))
+            for(i in 0..2) drawTree(c,w*(.55f+i*.16f),g+15f,.6f,seed+i)
+        }
+
+        private fun drawTransportWorld(c:Canvas,w:Float,h:Float,g:Float,seed:Int,type:String){
+            when(type){
+                "Railway Station" -> { drawBuilding(c,w*.15f,g+2f,w*.7f,90f,Color.rgb(175,182,187),Color.rgb(70,80,88)); paint.color=Color.DKGRAY; c.drawRect(w*.08f,g+35f,w*.92f,g+40f,paint); c.drawRect(w*.08f,g+58f,w*.92f,g+63f,paint) }
+                "Bus Terminal" -> { drawBuilding(c,w*.12f,g+2f,w*.76f,80f,Color.rgb(164,176,182),Color.rgb(64,86,96)); for(i in 0..2){paint.color=Color.rgb(230,230,220);c.drawRect(w*(.2f+i*.22f),g-28f,w*(.36f+i*.22f),g-18f,paint)} }
+                "Boat Terminal" -> { paint.color=Color.rgb(110,160,185);c.drawRect(0f,g+25f,w,h,paint); paint.color=Color.rgb(135,98,62);c.drawRect(w*.08f,g,w*.72f,g+15f,paint); drawShop(c,w*.72f,g+5f,.75f,seed) }
+                else -> { drawBuilding(c,w*.18f,g+2f,w*.64f,75f,Color.rgb(208,212,215),Color.rgb(70,90,105)); paint.color=Color.rgb(225,225,220); c.drawRect(w*.30f,g-45f,w*.70f,g-20f,paint) }
+            }
+            for(i in 0..2) drawPerson(c,w*(.22f+i*.22f),g+20f,.55f,0f)
+        }
+
+        private fun drawServiceWorld(c:Canvas,w:Float,h:Float,g:Float,seed:Int,type:String){
+            val body=when(type){"Hospital District"->Color.rgb(235,235,230);"Fire Station"->Color.rgb(190,70,62);"Police Station"->Color.rgb(78,104,145);else->Color.rgb(150,155,160)}
+            drawBuilding(c,w*.18f,g+5f,w*.64f,105f,body,Color.rgb(80,85,90))
+            paint.color=Color.WHITE
+            c.drawRect(w*.46f,g-74f,w*.54f,g-20f,paint); c.drawRect(w*.43f,g-58f,w*.57f,g-36f,paint)
+            for(i in 0..2) drawPerson(c,w*(.28f+i*.22f),g+22f,.58f,0f)
+        }
+
+        private fun drawWaterfrontWorld(c:Canvas,w:Float,h:Float,g:Float,seed:Int){
+            paint.color=Color.rgb(70,150,190); c.drawRect(0f,g+10f,w,h,paint)
+            paint.color=Color.rgb(240,240,235)
+            for(i in 0..5){val x=w*(.08f+i*.18f); c.drawOval(RectF(x,g+30f,x+65f,g+36f),paint)}
+            drawBuilding(c,w*.10f,g+8f,145f,62f,Color.rgb(222,198,154),Color.rgb(85,72,58))
+            for(i in 0..2) drawTree(c,w*(.60f+i*.15f),g+12f,.65f,seed+i)
+        }
+
+        private fun drawMountainWorld(c:Canvas,w:Float,h:Float,g:Float,seed:Int){
+            paint.color=Color.rgb(93,102,112)
+            for(i in 0..3){val x=w*(i*.30f-.08f); c.drawPath(Path().apply{moveTo(x,g+10f);lineTo(x+w*.18f,g-150f);lineTo(x+w*.38f,g+10f);close()},paint)}
+            paint.color=Color.rgb(78,128,72)
+            for(i in 0..5) drawTree(c,w*(.06f+i*.17f),g+18f,.55f,seed+i)
+        }
+
+        private fun drawWildlifeWorld(c:Canvas,w:Float,h:Float,g:Float,seed:Int){
+            paint.color=Color.rgb(112,145,75); c.drawRect(0f,g,w,h,paint)
+            for(i in 0..6) drawTree(c,w*(.04f+i*.15f),g+15f,.55f,seed+i)
+            drawBuilding(c,w*.68f,g+6f,125f,65f,Color.rgb(167,128,82),Color.rgb(91,68,45))
+        }
+
+        private fun drawDinosaurWorld(c:Canvas,w:Float,h:Float,g:Float,seed:Int){
+            paint.color=Color.rgb(125,95,62)
+            c.drawRect(0f,g+8f,w,h,paint)
+            for(i in 0..4) drawTree(c,w*(.08f+i*.22f),g+18f,.72f,seed+i)
+            paint.color=Color.rgb(77,126,64)
+            c.drawOval(RectF(w*.60f,g-25f,w*.84f,g+12f),paint)
+        }
+
+        private fun drawCityWorld(c:Canvas,w:Float,h:Float,g:Float,seed:Int){
+            for(i in 0..5){
+                val x=w*(.02f+i*.17f)
+                drawBuilding(c,x,g+5f,100f,75f+(i%3)*32f,Color.rgb(92+i*7,105+i*5,118+i*4),Color.rgb(55,65,72))
+            }
+            for(i in 0..3) drawTree(c,w*(.08f+i*.28f),g+12f,.45f,seed+i)
+        }
+
+        private fun drawArcticWorld(c:Canvas,w:Float,h:Float,g:Float,seed:Int){
+            paint.color=Color.rgb(238,248,252); c.drawRect(0f,g,w,h,paint)
+            paint.color=Color.rgb(177,215,230)
+            for(i in 0..6){val x=w*(.05f+i*.16f);c.drawCircle(x,g+18f,24f,paint);c.drawCircle(x+22f,g+23f,18f,paint)}
+        }
+
+        private fun drawWaterWorld(c:Canvas,w:Float,h:Float,g:Float,seed:Int){
+            paint.color=Color.rgb(73,151,188);c.drawRect(0f,g,w,h,paint)
+            paint.color=Color.argb(150,255,255,255)
+            for(i in 0..6){val x=(w*(.04f+i*.16f)+phaseForWorld(seed)*8f)%(w+80f)-40f;c.drawOval(RectF(x,g+18f+(i%3)*22f,x+60f,g+24f+(i%3)*22f),paint)}
+        }
+
+        private fun drawDesertWorld(c:Canvas,w:Float,h:Float,g:Float,seed:Int){
+            paint.color=Color.rgb(220,181,91);c.drawRect(0f,g,w,h,paint)
+            for(i in 0..4){val x=w*(.08f+i*.21f);c.drawOval(RectF(x-45f,g+20f,x+45f,g+42f),paint)}
+            for(i in 0..2){val x=w*(.16f+i*.34f);paint.color=Color.rgb(54,125,68);c.drawRect(x-5f,g-5f,x+5f,g+38f,paint);c.drawCircle(x,g-8f,17f,paint)}
+        }
+
+        private fun drawGardenWorld(c:Canvas,w:Float,h:Float,g:Float,seed:Int){
+            paint.color=Color.rgb(92,156,84);c.drawRect(0f,g,w,h,paint)
+            for(i in 0..7) drawTree(c,w*(.04f+i*.13f),g+16f,.48f,seed+i)
+            paint.color=Color.rgb(224,194,95)
+            for(i in 0..5){val x=w*(.08f+i*.17f);c.drawCircle(x,g+20f,5f,paint);c.drawLine(x,g+25f,x,g+42f,paint)}
+        }
+
+        private fun phaseForWorld(seed:Int):Float = if(running) frame.toFloat()+seed else seed.toFloat()
 
         private fun drawRoad(c: Canvas, w: Float, h: Float, world: SmartScene) {
             // Perspective road: the vanishing point stays near the horizon while the
