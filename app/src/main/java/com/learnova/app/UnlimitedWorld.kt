@@ -154,7 +154,10 @@ object LearnovaUnlimitedWorld {
             safe <= 26 -> "English alphabet"
             safe <= 52 -> "Arabic letters"
             safe <= 68 -> "Arabic sounds"
-            safe <= 100 -> "Quran learning"
+            safe <= 250 -> {
+                val surah = LearnovaQuranCatalog.lesson(safe - 68)
+                "Surah ${surah.name} — ${surah.mode}"
+            }
             safe % 9 == 0 -> "Arabic pronunciation"
             safe % 11 == 0 -> "Surah Fatiha"
             safe % 13 == 0 -> "Short Surah Practice"
