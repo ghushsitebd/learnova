@@ -1030,8 +1030,8 @@ class MainActivity : AppCompatActivity() {
             text.textSize = 15f
 
             c.drawText(
-                if (running) "গাড়ি চলছে • থামাতে আবার ট্যাপ করুন"
-                else "গাড়ি চালাতে একবার ট্যাপ করুন",
+                if (running) "Driving • Tap again to stop"
+                else "Tap once to drive",
                 w/2f,h*.965f,text
             )
 
