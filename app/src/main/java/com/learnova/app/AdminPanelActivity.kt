@@ -53,7 +53,7 @@ class AdminPanelActivity : Activity() {
             setTextColor(Color.rgb(18, 91, 61))
         })
         header.addView(TextView(this).apply {
-            text = "Advertisement Control Center"
+            text = "Advertisement Control Center • Separate from the game"
             textSize = 15f
             setTextColor(Color.rgb(90, 105, 100))
             setPadding(0, dp(5), 0, 0)
