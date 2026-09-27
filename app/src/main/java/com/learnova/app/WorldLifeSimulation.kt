@@ -129,10 +129,20 @@ internal class WorldLifeSimulation(
                 sin(centerDistance * 0.014 + trafficPhase * 6.283) * correctionBand
             } else 0.0
             val lane = baseLane + laneShift
-            val x = sample.x + cos(sample.yaw) * lane * side
-            val z = sample.z - sin(sample.yaw) * lane * side
             val biome = WorldDirector.profile(agentDistance).biome
             val isBusyBiome = biome == WorldDirector.Biome.MARKET || biome == WorldDirector.Biome.VILLAGE
+            // People and wildlife belong to the landscape, not the carriageway.
+            // Give them deterministic roadside corridors so they read as walkers
+            // and animals inhabiting the world rather than traffic-shaped blocks.
+            val isPedestrian = isBusyBiome && ((seed ushr 4) % 9L >= 6L)
+            val isWildlife = biome == WorldDirector.Biome.FOREST && ((seed ushr 4) % 8L >= 5L)
+            val roadsideOffset = when {
+                isPedestrian -> 27.0 + ((seed ushr 44) % 13L) / 10.0
+                isWildlife -> 34.0 + ((seed ushr 44) % 25L) / 10.0
+                else -> kotlin.math.abs(lane)
+            }
+            val x = sample.x + cos(sample.yaw) * roadsideOffset * side
+            val z = sample.z - sin(sample.yaw) * roadsideOffset * side
             val hasVisibleMotion = kotlin.math.abs(trafficMotion) > 0.75
             val moving = when {
                 distanceFromPlayer < NEAR_RADIUS && isBusyBiome -> (seed ushr 9) % 5L != 0L
@@ -147,10 +157,6 @@ internal class WorldLifeSimulation(
             val baseDrift = if (moving) sin(localTime + phase * 6.283) * (1.15 + ((seed ushr 30) % 80L) / 100.0) else 0.0
             // Walkers use a slower, shorter gait: lateral sway + subtle body
             // bounce makes them read as living people instead of sliding blocks.
-            val isPedestrian = (biome == WorldDirector.Biome.MARKET || biome == WorldDirector.Biome.VILLAGE) &&
-                ((seed ushr 4) % 9L >= 6L)
-            val isWildlife = biome == WorldDirector.Biome.FOREST &&
-                ((seed ushr 4) % 8L >= 5L)
             val walkPhase = centerDistance * (if (isWildlife) 0.11 else 0.22) + phase * 6.283
             val pedestrianSway = if (isPedestrian) sin(walkPhase) * 0.48 else 0.0
             val pedestrianDrift = if (isPedestrian && moving) sin(walkPhase * 0.5) * 0.55 else 0.0
