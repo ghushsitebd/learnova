@@ -62,6 +62,12 @@ jobs:
           test -n "${LEARNOVA_STORE_PASSWORD:-}" || { echo "::error::KEYSTORE_PASSWORD secret is missing."; exit 1; }
           test -n "${LEARNOVA_KEY_PASSWORD:-}" || { echo "::error::KEY_PASSWORD secret is missing."; exit 1; }
 
+          # Normalize accidental CR/LF characters from pasted GitHub secrets.
+          LEARNOVA_STORE_PASSWORD=$(printf '%s' "$LEARNOVA_STORE_PASSWORD" | tr -d '\r\n')
+          LEARNOVA_KEY_PASSWORD=$(printf '%s' "$LEARNOVA_KEY_PASSWORD" | tr -d '\r\n')
+          echo "LEARNOVA_STORE_PASSWORD=$LEARNOVA_STORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "LEARNOVA_KEY_PASSWORD=$LEARNOVA_KEY_PASSWORD" >> "$GITHUB_ENV"
+
           echo "Checking keystore password..."
           if ! keytool -list -v -keystore learnova-release.keystore -storepass "$LEARNOVA_STORE_PASSWORD" >/tmp/learnova-keytool.txt 2>/tmp/learnova-keytool.err; then
             echo "::error::KEYSTORE_PASSWORD does not unlock the restored keystore."
@@ -92,7 +98,12 @@ jobs:
           LEARNOVA_KEYSTORE_PATH: ${{ github.workspace }}/learnova-release.keystore
           LEARNOVA_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           LEARNOVA_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: gradle clean assembleRelease bundleRelease --stacktrace
+        run: |
+          set -euo pipefail
+          LEARNOVA_STORE_PASSWORD=$(printf '%s' "$LEARNOVA_STORE_PASSWORD" | tr -d '\r\n')
+          LEARNOVA_KEY_PASSWORD=$(printf '%s' "$LEARNOVA_KEY_PASSWORD" | tr -d '\r\n')
+          export LEARNOVA_STORE_PASSWORD LEARNOVA_KEY_PASSWORD
+          gradle clean assembleRelease bundleRelease --stacktrace
 
       - name: Find Generated APK and AAB
         id: find_outputs
