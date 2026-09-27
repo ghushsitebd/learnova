@@ -53,9 +53,9 @@ internal object WorldDirector {
         val eased = t * t * (3.0 - 2.0 * t)
 
         return current.copy(
-            skyR = lerp(current.skyR, next.skyR, eased).toFloat(),
-            skyG = lerp(current.skyG, next.skyG, eased).toFloat(),
-            skyB = lerp(current.skyB, next.skyB, eased).toFloat(),
+            skyR = lerp(current.skyR.toDouble(), next.skyR.toDouble(), eased).toFloat(),
+            skyG = lerp(current.skyG.toDouble(), next.skyG.toDouble(), eased).toFloat(),
+            skyB = lerp(current.skyB.toDouble(), next.skyB.toDouble(), eased).toFloat(),
             exposure = lerp(current.exposure.toDouble(), next.exposure.toDouble(), eased).toFloat(),
             cameraHeight = lerp(current.cameraHeight, next.cameraHeight, eased),
             lookAheadLift = lerp(current.lookAheadLift, next.lookAheadLift, eased),
