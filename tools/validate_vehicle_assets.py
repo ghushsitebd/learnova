@@ -298,3 +298,5 @@ if ASSETS.exists():
 # CI validation 402: duplicate payload detection.
 
 # CI validation 403: GLB JSON chunk validation.
+
+# CI validation 404: GLB binary chunk validation.
