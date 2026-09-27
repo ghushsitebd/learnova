@@ -26,6 +26,10 @@ if ids != list(range(1, 101)):
     print(f"::error::Vehicle IDs are not exactly 1..100: {ids}")
     sys.exit(1)
 
+if any(key != key.strip() for _, key in keys):
+    print("::error::Vehicle asset keys must not contain leading/trailing whitespace.")
+    sys.exit(1)
+
 if not ASSETS.exists():
     print("::notice::No real vehicle GLB assets are committed yet; catalog/resolver fallback remains active.")
     sys.exit(0)
