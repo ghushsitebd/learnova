@@ -35,6 +35,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var lastFrameNanos = 0L
     private var wheelEntities = IntArray(0)
     private val wheelBaseTransforms = HashMap<Int, FloatArray>()
+    private var vehicleRootEntity = 0
+    private var vehicleRootBaseTransform: FloatArray? = null
 
     init {
         addView(
@@ -46,6 +48,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         val modelBytes = decodeModel()
         viewer.loadModelGlb(ByteBuffer.wrap(modelBytes))
         cacheWheelEntities()
+        cacheVehicleRoot()
 
         viewer.camera.lookAt(
             4.8, 2.8, 6.8,
@@ -136,8 +139,50 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         }
     }
 
+    private fun cacheVehicleRoot() {
+        val asset = viewer.asset ?: return
+        val tm = viewer.engine.transformManager
+        val wheelParents = wheelEntities.mapNotNull { entity ->
+            if (tm.hasComponent(entity)) tm.getParent(tm.getInstance(entity)) else null
+        }.filter { it != 0 }.distinct()
+
+        fun commonAncestor(a: Int, b: Int): Int {
+            val seen = HashSet<Int>()
+            var current = a
+            while (current != 0 && seen.add(current)) {
+                current = tm.getParent(tm.getInstance(current))
+            }
+            current = b
+            val visited = HashSet<Int>()
+            while (current != 0 && visited.add(current)) {
+                if (seen.contains(current)) return current
+                current = tm.getParent(tm.getInstance(current))
+            }
+            return 0
+        }
+
+        var candidate = if (wheelParents.size >= 2) wheelParents.reduce(::commonAncestor) else 0
+        if (candidate == asset.root) candidate = 0
+
+        if (candidate == 0) {
+            val fallbackNames = arrayOf("Vehicle", "Car", "CarRoot", "VehicleRoot", "Body", "CarBody")
+            for (name in fallbackNames) {
+                val entity = asset.getFirstEntityByName(name)
+                if (entity != 0 && entity != asset.root && tm.hasComponent(entity)) {
+                    candidate = entity
+                    break
+                }
+            }
+        }
+
+        vehicleRootEntity = candidate
+        if (vehicleRootEntity != 0 && tm.hasComponent(vehicleRootEntity)) {
+            vehicleRootBaseTransform = tm.getTransform(tm.getInstance(vehicleRootEntity), null)
+        }
+    }
+
     private fun updateVehicleMechanics() {
-        if (wheelEntities.isEmpty()) return
+        if (wheelEntities.isEmpty() && vehicleRootEntity == 0) return
         val tm = viewer.engine.transformManager
         // Approximate a 0.30 m tyre radius: angular travel = distance / radius.
         // This keeps wheel rotation tied to actual vehicle travel rather than time.
@@ -148,12 +193,31 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
         tm.openLocalTransformTransaction()
         try {
+            val baseRoot = vehicleRootBaseTransform
+            if (vehicleRootEntity != 0 && baseRoot != null && tm.hasComponent(vehicleRootEntity)) {
+                val travel = vehicleDistance
+                val pathX = kotlin.math.sin(travel * 0.23) * 2.15 +
+                        kotlin.math.sin(travel * 0.075 + 0.8) * 0.85
+                val pathAhead = kotlin.math.sin((travel + 0.25) * 0.23) * 2.15 +
+                        kotlin.math.sin((travel + 0.25) * 0.075 + 0.8) * 0.85
+                val yaw = kotlin.math.atan2(pathAhead - pathX, 0.25).toFloat()
+                val chassis = Mat4.of(*baseRoot) *
+                        Mat4.of(
+                            1f, 0f, 0f, pathX.toFloat(),
+                            0f, 1f, 0f, if (driving) kotlin.math.sin(travel * 4.2).toFloat() * 0.012f else 0f,
+                            0f, 0f, 1f, travel.toFloat(),
+                            0f, 0f, 0f, 1f
+                        ) *
+                        rotation(Float3(0.0f, 1.0f, 0.0f), yaw)
+                tm.setTransform(tm.getInstance(vehicleRootEntity), chassis.toFloatArray())
+            }
+
             for (entity in wheelEntities) {
                 val base = wheelBaseTransforms[entity] ?: continue
                 if (!tm.hasComponent(entity)) continue
                 val wheelRotation = rotation(
-                    wheelAngle,
-                    Float3(1.0f, 0.0f, 0.0f)
+                    Float3(1.0f, 0.0f, 0.0f),
+                    wheelAngle
                 )
                 val bob = Mat4.of(
                     1f, 0f, 0f, 0f,
