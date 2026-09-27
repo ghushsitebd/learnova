@@ -830,9 +830,16 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             if (vehicleRootEntity != 0 && baseRoot != null && tm.hasComponent(vehicleRootEntity)) {
                 // Subtle steering yaw: the chassis points into the child's
                 // turn before the lateral position catches up, like a real car.
-                val steeringYaw = (steeringInput * 0.095 *
+                val steeringClassGain = when (activeVehicle.type) {
+                    "motorcycle", "cycle" -> 0.11
+                    "sport", "concept" -> 0.085
+                    "truck", "bus", "construction", "farm" -> 0.070
+                    "offroad", "safari" -> 0.090
+                    else -> 0.095
+                }
+                val steeringYaw = (steeringInput * steeringClassGain *
                     (vehicleSpeed / targetSpeed.coerceAtLeast(0.1)).coerceIn(0.0, 1.0))
-                    .coerceIn(-0.095, 0.095)
+                    .coerceIn(-steeringClassGain, steeringClassGain)
                 val chassisYaw = road.yaw + steeringYaw
                 val chassis = Mat4.of(*baseRoot) *
                     Mat4.of(
@@ -872,7 +879,17 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                         kotlin.math.cos(roadAhead.yaw - roadBehind.yaw)
                     )
                     val steeringTarget = kotlin.math.atan(2.30 * (curvatureYaw / 3.6))
-                    val playerSteer = if (driving) steeringInput * 0.34 else 0.0
+                    // Different vehicle classes have different steering sensitivity.
+                    // The control stays identical for the child, while the vehicle
+                    // responds like its real-world class.
+                    val steeringGain = when (activeVehicle.type) {
+                        "motorcycle", "cycle" -> 0.40
+                        "sport", "concept" -> 0.30
+                        "truck", "bus", "construction", "farm" -> 0.25
+                        "offroad", "safari" -> 0.32
+                        else -> 0.34
+                    }
+                    val playerSteer = if (driving) steeringInput * steeringGain else 0.0
                     val steerTarget = if (isFrontWheel) {
                         // Ackermann-inspired geometry: the inside front wheel
                         // turns slightly more than the outside wheel.
