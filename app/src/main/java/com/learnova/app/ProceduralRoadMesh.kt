@@ -127,8 +127,13 @@ internal class ProceduralRoadMesh(
             val bankLift = sin(bank) * half
 
             val centerY = sample.y
-            putVertex(data, leftX.toFloat(), (centerY + bankLift).toFloat(), leftZ.toFloat(), yaw, bank, 0.0f, distance.toFloat() / 8.0f)
-            putVertex(data, rightX.toFloat(), (centerY - bankLift).toFloat(), rightZ.toFloat(), yaw, bank, 1.0f, distance.toFloat() / 8.0f)
+            // Real paved roads usually have a very shallow crown for water
+            // drainage. Keep it subtle so the vehicle still reads as planted,
+            // while the surface no longer looks like a mathematically flat strip.
+            val crown = ROAD_WIDTH * 0.0048f
+            val edgeY = centerY
+            putVertex(data, leftX.toFloat(), (edgeY + bankLift).toFloat(), leftZ.toFloat(), yaw, bank, 0.0f, distance.toFloat() / 8.0f)
+            putVertex(data, rightX.toFloat(), (edgeY - bankLift).toFloat(), rightZ.toFloat(), yaw, bank, 1.0f, distance.toFloat() / 8.0f)
         }
 
         data.flip()
