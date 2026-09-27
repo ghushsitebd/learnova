@@ -57,12 +57,12 @@ jobs:
         env:
           LEARNOVA_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           LEARNOVA_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          LEARNOVA_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          LEARNOVA_KEY_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
           set -euo pipefail
           test -n "${LEARNOVA_STORE_PASSWORD:-}" || { echo "::error::KEYSTORE_PASSWORD secret is missing."; exit 1; }
           test -n "${LEARNOVA_KEY_ALIAS:-}" || { echo "::error::KEY_ALIAS secret is missing."; exit 1; }
-          test -n "${LEARNOVA_KEY_PASSWORD:-}" || { echo "::error::KEY_PASSWORD secret is missing."; exit 1; }
+          test -n "${LEARNOVA_KEY_PASSWORD:-}" || { echo "::error::KEYSTORE_PASSWORD secret is missing."; exit 1; }
 
           echo "Checking keystore password..."
           if ! keytool -list -keystore learnova-release.keystore -storepass "$LEARNOVA_STORE_PASSWORD" >/tmp/learnova-keytool.txt 2>/tmp/learnova-keytool.err; then
