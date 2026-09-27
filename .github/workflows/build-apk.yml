@@ -56,27 +56,27 @@ jobs:
       - name: Verify signing configuration
         env:
           LEARNOVA_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          LEARNOVA_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          LEARNOVA_KEY_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          LEARNOVA_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           set -euo pipefail
           test -n "${LEARNOVA_STORE_PASSWORD:-}" || { echo "::error::KEYSTORE_PASSWORD secret is missing."; exit 1; }
-          test -n "${LEARNOVA_KEY_ALIAS:-}" || { echo "::error::KEY_ALIAS secret is missing."; exit 1; }
-          test -n "${LEARNOVA_KEY_PASSWORD:-}" || { echo "::error::KEYSTORE_PASSWORD secret is missing."; exit 1; }
+          test -n "${LEARNOVA_KEY_PASSWORD:-}" || { echo "::error::KEY_PASSWORD secret is missing."; exit 1; }
 
           echo "Checking keystore password..."
-          if ! keytool -list -keystore learnova-release.keystore -storepass "$LEARNOVA_STORE_PASSWORD" >/tmp/learnova-keytool.txt 2>/tmp/learnova-keytool.err; then
+          if ! keytool -list -v -keystore learnova-release.keystore -storepass "$LEARNOVA_STORE_PASSWORD" >/tmp/learnova-keytool.txt 2>/tmp/learnova-keytool.err; then
             echo "::error::KEYSTORE_PASSWORD does not unlock the restored keystore."
             cat /tmp/learnova-keytool.err
             exit 1
           fi
 
-          echo "Checking key alias..."
-          if ! grep -Fqi "alias name: $LEARNOVA_KEY_ALIAS" /tmp/learnova-keytool.txt; then
-            echo "::error::KEY_ALIAS does not match an alias in the keystore."
-            grep -i "alias name:" /tmp/learnova-keytool.txt || true
+          echo "Detecting signing alias..."
+          LEARNOVA_KEY_ALIAS=$(awk -F': ' '/^Alias name: / {print $2; exit}' /tmp/learnova-keytool.txt)
+          if [ -z "${LEARNOVA_KEY_ALIAS:-}" ]; then
+            echo "::error::No signing alias was found in the keystore."
             exit 1
           fi
+          echo "Detected signing alias: [hidden]"
+          echo "LEARNOVA_KEY_ALIAS=$LEARNOVA_KEY_ALIAS" >> "$GITHUB_ENV"
 
           echo "Checking key password..."
           if ! keytool -certreq -keystore learnova-release.keystore -storepass "$LEARNOVA_STORE_PASSWORD" -alias "$LEARNOVA_KEY_ALIAS" -keypass "$LEARNOVA_KEY_PASSWORD" -file /tmp/learnova-test.csr -dname "CN=Learnova CI Test" >/tmp/learnova-csr.out 2>/tmp/learnova-csr.err; then
@@ -87,7 +87,6 @@ jobs:
           fi
           rm -f /tmp/learnova-test.csr
           echo "Signing configuration verified."
-
       - name: Build Release APK and AAB
         env:
           LEARNOVA_KEYSTORE_PATH: ${{ github.workspace }}/learnova-release.keystore
