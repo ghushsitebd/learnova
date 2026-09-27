@@ -334,7 +334,9 @@ class MainActivity : AppCompatActivity() {
             when {
                 world.region.contains("Village") || world.region == "Bangladesh Village" -> drawVillageWorld(c,w,h,groundY,seed)
                 world.region.contains("Market") || world.region.contains("Bazaar") || world.region == "Food Street" || world.region == "Night Market" -> drawMarketWorld(c,w,h,groundY,seed)
-                world.region == "Mosque Courtyard" || world.region == "Quran School" || world.region.contains("Quran Learning") || world.region.contains("Arabic Learning") -> drawLearningWorld(c,w,h,groundY,seed,true)
+                world.region == "Mosque Courtyard" || world.region == "Quran School" || world.region.contains("Quran Learning") || world.region.contains("Arabic Learning") || world.region == "Islamic Library" || world.region == "Wudu Garden" || world.region == "Islamic History Museum" || world.region == "Charity Center" -> drawLearningWorld(c,w,h,groundY,seed,true)
+                world.region == "Ramadan Community Market" || world.region == "Halal Food Street" || world.region == "Calligraphy Market" -> drawMarketWorld(c,w,h,groundY,seed)
+                world.region == "Eid Festival Ground" -> drawGardenWorld(c,w,h,groundY,seed)
                 world.region == "School Campus" || world.region == "Library" || world.region == "Science Museum" || world.region == "Science Park" || world.region == "Space Center" || world.region == "Dinosaur Museum" -> drawLearningWorld(c,w,h,groundY,seed,false)
                 world.region == "Farm" || world.region == "Farmhouse" || world.region == "Rice Field" || world.region == "Tea Garden" -> drawFarmWorld(c,w,h,groundY,seed)
                 world.region == "Railway Station" || world.region == "Bus Terminal" || world.region == "Boat Terminal" || world.region == "Airport" -> drawTransportWorld(c,w,h,groundY,seed,world.region)
