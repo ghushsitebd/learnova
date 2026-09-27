@@ -530,7 +530,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         val road = RoadSpline.sample(travel)
         val lookAhead = RoadSpline.sample(travel + 7.0)
         val bodyBob = if (driving) kotlin.math.sin(travel * 3.4) * 0.025 else 0.0
-        val cameraX = road.x + kotlin.math.sin(travel * 0.18) * 0.10
+        val cameraX = road.x + kotlin.math.sin(travel * 0.18) * 0.07
         val cameraZ = road.z - 6.8
 
         viewer.camera.lookAt(
