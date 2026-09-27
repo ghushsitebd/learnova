@@ -53,13 +53,13 @@ internal class ChildNPCWorld(
                 val off=if(b==WorldDirector.Biome.VILLAGE||b==WorldDirector.Biome.MARKET) 7.0 else 9.0+((seed ushr 7)%35)/10.0
                 val x=s.x+cos(s.yaw)*side*off; val z=s.z-sin(s.yaw)*side*off; val y=s.y+sin(s.bank)*side*off+sin(d*.07)*.07
                 val q=.78+((seed ushr 13)%35)/100.0; val walk=sin(center*.18+n)
-                box(sv,si,x,y+1.22*q,z,s.yaw,.25*q,.27*q,.25*q)
-                box(sv,si,x-sin(s.yaw)*.28*q,y+.73*q,z-cos(s.yaw)*.28*q,s.yaw,.085*q,.20*q,.11*q+maxOf(0.0,walk)*.025*q)
-                box(sv,si,x+sin(s.yaw)*.28*q,y+.73*q,z+cos(s.yaw)*.28*q,s.yaw,.085*q,.20*q,.11*q)
-                box(cv,ci,x,y+.80*q,z,s.yaw,.23*q,.34*q,.14*q)
+                box(sv,si,x,y+1.22*q,z,s.yaw.toDouble(),.25*q,.27*q,.25*q)
+                box(sv,si,x-sin(s.yaw.toDouble())*.28*q,y+.73*q,z-cos(s.yaw.toDouble())*.28*q,s.yaw.toDouble(),.085*q,.20*q,.11*q+maxOf(0.0,walk)*.025*q)
+                box(sv,si,x+sin(s.yaw.toDouble())*.28*q,y+.73*q,z+cos(s.yaw.toDouble())*.28*q,s.yaw.toDouble(),.085*q,.20*q,.11*q)
+                box(cv,ci,x,y+.80*q,z,s.yaw.toDouble(),.23*q,.34*q,.14*q)
                 box(cv,ci,x-.075*q,y+.38*q,z+walk*.045*q,s.yaw,.07*q,.34*q,.095*q)
                 box(cv,ci,x+.075*q,y+.38*q,z-walk*.045*q,s.yaw,.07*q,.34*q,.095*q)
-                box(hv,hi,x,y+1.49*q,z,s.yaw,.29*q,.09*q,.29*q)
+                box(hv,hi,x,y+1.49*q,z,s.yaw.toDouble(),.29*q,.09*q,.29*q)
                 n++
             }
             d+=STEP
@@ -71,7 +71,7 @@ internal class ChildNPCWorld(
 
     private fun hide(v:ByteBuffer,i:ByteBuffer){
         val used=v.position()/STRIDE; var p=i.position()/2/36
-        while(p<PARTS){ val base=p*8; repeat(12){i.putShort(base.toShort());i.putShort(base.toShort());i.putShort(base.toShort())}; repeat(8){put(v,0f,-5000f,0f,0f,0f)}; p++ }
+        while(p<PARTS){ val base=p*8; repeat(12){i.putShort(base.toShort());i.putShort(base.toShort());i.putShort(base.toShort())}; repeat(8){put(v,0f,-5000f,0f,0f,0f,0f,0f)}; p++ }
     }
 
     private fun box(v:ByteBuffer,i:ByteBuffer,x:Double,y:Double,z:Double,yaw:Double,w:Double,h:Double,dep:Double){
