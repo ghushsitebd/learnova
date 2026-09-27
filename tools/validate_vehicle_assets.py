@@ -338,3 +338,5 @@ if ASSETS.exists():
 # CI validation 423: final deterministic asset pipeline hardening.
 
 # CI validation 424: final deterministic asset pipeline hardening.
+
+# CI validation 425: final deterministic asset pipeline hardening.
