@@ -68,7 +68,7 @@ object LearnovaUnlimitedWorld {
         "Forest","River","Mountain","Safari","Ocean","Island","Desert","Arctic",
         "Farm","Village","City","Wetland","Cave","Dinosaur Valley","Sky",
         "Space","Garden","Quran Learning Garden","Arabic Learning Garden",
-        "Kindness Village","Science Park","Discovery Island","Bangladesh Village","Village Market","River Bazaar","Town Market","City Center","School Campus","Mosque Courtyard","Quran School","Library","Farmhouse","Rice Field","Tea Garden","Fishing Village","Boat Terminal","Railway Station","Bus Terminal","Hospital District","Fire Station","Police Station","Construction Zone","Harbor","Beach Town","Mountain Town","Forest Camp","Safari Lodge","Animal Rescue Center","Dinosaur Museum","Science Museum","Space Center","Airport","Amusement Park","Childrens Park","Sports Ground","Food Street","Craft Village","Night Market","Festival Ground","Water Park","Eco Village"
+        "Kindness Village","Science Park","Discovery Island","Bangladesh Village","Village Market","River Bazaar","Town Market","City Center","School Campus","Mosque Courtyard","Quran School","Library","Farmhouse","Rice Field","Tea Garden","Fishing Village","Boat Terminal","Railway Station","Bus Terminal","Hospital District","Fire Station","Police Station","Construction Zone","Harbor","Beach Town","Mountain Town","Forest Camp","Safari Lodge","Animal Rescue Center","Dinosaur Museum","Science Museum","Space Center","Airport","Amusement Park","Childrens Park","Sports Ground","Food Street","Craft Village","Night Market","Festival Ground","Water Park","Eco Village","Islamic Library","Wudu Garden","Ramadan Community Market","Halal Food Street","Eid Festival Ground","Islamic History Museum","Calligraphy Market","Charity Center"
     )
     private val environments = listOf(
         "green valley","wide river","quiet lake","open road","animal meadow",
@@ -80,7 +80,7 @@ object LearnovaUnlimitedWorld {
     private val activities = listOf(
         "animal discovery","alphabet practice","number practice","Arabic letters",
         "Quran learning","adab and kindness","nature discovery","road safety",
-        "colors and shapes","science discovery","memory challenge","vehicle adventure","market discovery","village life","community helpers","mosque manners","Quran reading","Arabic vocabulary","nature stewardship","animal care","farm discovery","water safety","travel discovery","kindness challenge","clean environment","food and nutrition","history discovery","science experiment"
+        "colors and shapes","science discovery","memory challenge","vehicle adventure","market discovery","village life","community helpers","mosque manners","Quran reading","Arabic vocabulary","nature stewardship","animal care","farm discovery","water safety","travel discovery","kindness challenge","clean environment","food and nutrition","history discovery","science experiment","Arabic pronunciation","Surah Fatiha","Short Surah Practice","Islamic manners","Mosque manners","Wudu learning","Charity and kindness","Halal food discovery","Arabic calligraphy","Islamic history"
     )
 
     fun scene(id: Int): SmartScene {
@@ -121,6 +121,15 @@ object LearnovaUnlimitedWorld {
             safe <= 52 -> "Arabic letters"
             safe <= 68 -> "Arabic sounds"
             safe <= 100 -> "Quran learning"
+            safe % 9 == 0 -> "Arabic pronunciation"
+            safe % 11 == 0 -> "Surah Fatiha"
+            safe % 13 == 0 -> "Short Surah Practice"
+            safe % 17 == 0 -> "Islamic manners"
+            safe % 19 == 0 -> "Wudu learning"
+            safe % 23 == 0 -> "Charity and kindness"
+            safe % 29 == 0 -> "Halal food discovery"
+            safe % 31 == 0 -> "Arabic calligraphy"
+            safe % 37 == 0 -> "Islamic history"
             else -> activities[(safe * 13) % activities.size]
         }
         return LevelInfo(safe, chapter, stage, target, difficulty, lessonType)
