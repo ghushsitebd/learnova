@@ -134,7 +134,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 vehicleInteraction.update(dt.toFloat(), interactionProfile)
                 updateVehicleInteractionVisuals()
                 viewer.render(time)
-                adaptiveQuality.sample(dt * 1000.0, constrainedDevice)?.let { applyQualityTier(it) }
+                adaptiveQuality.sample(dt * 1000.0, constrainedDevice || thermalConstrained)?.let { applyQualityTier(it) }
                 choreographer.postFrameCallback(frameCallback)
             }
             choreographer.postFrameCallback(frameCallback)
