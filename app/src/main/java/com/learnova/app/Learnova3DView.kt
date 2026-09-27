@@ -738,7 +738,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         val travel = vehicleDistance
         val world = WorldDirector.profile(travel)
         val road = RoadSpline.sampleRelative(travel, renderOriginDistance)
-        val lookAhead = RoadSpline.sampleRelative(travel + 7.0, renderOriginDistance)
+        val lookAhead = RoadSpline.sampleRelative(travel + 18.0, renderOriginDistance)
         val bodyBob = if (driving) kotlin.math.sin(travel * 3.4) * 0.018 else 0.0
 
         // Inertial camera: yaw and bank are filtered from the same road spline that
@@ -772,8 +772,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         // Speed provides a restrained FOV change; each biome adds only a subtle
         // composition bias so the child notices a new place without nausea.
         val speedRatio = (vehicleSpeed / targetSpeed.coerceAtLeast(0.1)).coerceIn(0.0, 1.0)
-        val dynamicFov = 48.0 + world.fovBias + 4.0 * speedRatio
-        viewer.camera.setLensProjection(dynamicFov, 1.0, 0.10, 260.0)
+        val dynamicFov = 48.0 + world.fovBias + 3.5 * speedRatio
+        viewer.camera.setLensProjection(dynamicFov, 1.0, 0.10, 700.0)
         viewer.camera.setExposure(world.exposure, 1.0f / 120.0f, 100.0f)
     }
 
