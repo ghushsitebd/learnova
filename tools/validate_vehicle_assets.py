@@ -284,3 +284,5 @@ if ASSETS.exists():
 # 396: add compressed asset gzip integrity validation.
 
 # 397: add compressed asset uncompressed-size guard.
+
+# 398: add validator deterministic exit summary.
