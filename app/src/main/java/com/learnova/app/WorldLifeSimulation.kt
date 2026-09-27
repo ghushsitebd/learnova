@@ -42,6 +42,10 @@ internal class WorldLifeSimulation(
     private var material: com.google.android.filament.MaterialInstance? = null
     private var lastCenter = Double.NaN
     private var lastAnimationNanos = 0L
+    // Reuse the population buffers instead of allocating large direct ByteBuffers
+    // every simulation tick. This keeps GC pressure low on memory-constrained phones.
+    private val vertexBufferData = ByteBuffer.allocate(MAX_AGENTS * VERTICES_PER_AGENT * STRIDE).order(ByteOrder.nativeOrder())
+    private val indexBufferData = ByteBuffer.allocate(MAX_AGENTS * INDICES_PER_AGENT * 2).order(ByteOrder.nativeOrder())
 
     fun build(): Boolean {
         if (entity != 0) return true
@@ -80,8 +84,8 @@ internal class WorldLifeSimulation(
         if (!lastCenter.isNaN() && kotlin.math.abs(centerDistance - lastCenter) < 9.0 &&
             now - lastAnimationNanos < 140_000_000L) return
 
-        val vertices = ByteBuffer.allocate(MAX_AGENTS * VERTICES_PER_AGENT * STRIDE).order(ByteOrder.nativeOrder())
-        val indices = ByteBuffer.allocate(MAX_AGENTS * INDICES_PER_AGENT * 2).order(ByteOrder.nativeOrder())
+        val vertices = vertexBufferData.apply { clear() }
+        val indices = indexBufferData.apply { clear() }
         var vCount = 0
         var iCount = 0
         var d = kotlin.math.floor((centerDistance - BEHIND) / STEP) * STEP
