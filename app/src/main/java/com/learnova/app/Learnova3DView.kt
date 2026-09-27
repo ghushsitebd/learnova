@@ -67,13 +67,6 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             0.0, 1.0, 14.0,
             0.0, 1.0, 0.0
         )
-        viewer.camera.setProjection(
-            62.0,
-            0.10,
-            250.0,
-            1.0
-        )
-
         viewer.view.dynamicResolutionOptions = viewer.view.dynamicResolutionOptions.apply {
             enabled = true
             quality = com.google.android.filament.View.QualityLevel.MEDIUM
@@ -139,10 +132,6 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
         // Keep the shadow map useful for the actual driving corridor while
         // avoiding unnecessarily large GPU work on lower-end devices.
-        viewer.view.directionalShadowOptions = viewer.view.directionalShadowOptions.apply {
-            enabled = true
-            shadowCascades = 3
-        }
     }
 
     fun setDriving(value: Boolean) {
@@ -175,7 +164,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         wheelBaseTransforms.clear()
         for (entity in wheelEntities) {
             if (tm.hasComponent(entity)) {
-                wheelBaseTransforms[entity] = tm.getTransform(tm.getInstance(entity), null)
+                wheelBaseTransforms[entity] = tm.getTransform(tm.getInstance(entity), FloatArray(16))
             }
         }
     }
@@ -183,9 +172,9 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private fun cacheVehicleRoot() {
         val asset = viewer.asset ?: return
         val tm = viewer.engine.transformManager
-        val wheelParents = wheelEntities.mapNotNull { entity ->
+        val wheelParents = wheelEntities.asSequence().mapNotNull { entity ->
             if (tm.hasComponent(entity)) tm.getParent(tm.getInstance(entity)) else null
-        }.filter { it != 0 }.distinct()
+        }.filter { it != 0 }.distinct().toList()
 
         fun commonAncestor(a: Int, b: Int): Int {
             val seen = HashSet<Int>()
@@ -218,7 +207,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
         vehicleRootEntity = candidate
         if (vehicleRootEntity != 0 && tm.hasComponent(vehicleRootEntity)) {
-            vehicleRootBaseTransform = tm.getTransform(tm.getInstance(vehicleRootEntity), null)
+            vehicleRootBaseTransform = tm.getTransform(tm.getInstance(vehicleRootEntity), FloatArray(16))
         }
     }
 
@@ -291,7 +280,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         // Small banking cue follows road direction instead of using random sway.
         // This keeps the motion physically coherent without adding input complexity.
         viewer.camera.setLensProjection(48.0, 1.0, 0.10, 250.0)
-        viewer.camera.setExposure(14.0, 1.0 / 125.0, 100.0)
+        viewer.camera.setExposure(14.0f, 1.0f / 125.0f, 100.0f)
     }
 
     override fun onDetachedFromWindow() {
