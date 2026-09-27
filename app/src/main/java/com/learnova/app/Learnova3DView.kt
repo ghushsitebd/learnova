@@ -519,10 +519,25 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         // curvature instead of using a purely time-based bounce. This keeps the
         // chassis settled over crests/dips and remains deterministic at any FPS.
         val road = RoadSpline.sampleRelative(vehicleDistance, renderOriginDistance)
-        val roadAhead = RoadSpline.sampleRelative(vehicleDistance + 0.45, renderOriginDistance)
-        val roadBehind = RoadSpline.sampleRelative(vehicleDistance - 0.45, renderOriginDistance)
-        val verticalCurvature = roadAhead.y - 2.0 * road.y + roadBehind.y
-        val targetCompression = (-verticalCurvature * 0.10).coerceIn(-0.035, 0.035)
+        // Evaluate the road at the approximate front/rear axle centers instead of
+        // using a tiny time-based bounce. The chassis therefore follows the actual
+        // longitudinal road slope and reacts naturally to crests and dips.
+        val axleHalfLength = 1.15
+        val frontRoad = RoadSpline.sampleRelative(
+            vehicleDistance + axleHalfLength,
+            renderOriginDistance
+        )
+        val rearRoad = RoadSpline.sampleRelative(
+            vehicleDistance - axleHalfLength,
+            renderOriginDistance
+        )
+        val axleAverageHeight = (frontRoad.y + rearRoad.y) * 0.5
+        val verticalCurvature = axleAverageHeight - road.y
+        val targetCompression = (-verticalCurvature * 0.32).coerceIn(-0.045, 0.045)
+        val axlePitch = Math.atan2(
+            frontRoad.y - rearRoad.y,
+            axleHalfLength * 2.0
+        ).coerceIn(-0.16, 0.16).toFloat()
         // Use the exact Choreographer delta already used by speed integration.
         // Sampling the clock again here can produce a near-zero delta and make
         // the suspension appear unnaturally stiff or frame-rate dependent.
@@ -557,7 +572,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                         ) *
                         rotation(Float3(0.0f, 1.0f, 0.0f), road.yaw) *
                         rotation(Float3(0.0f, 0.0f, 1.0f), (road.bank + roadYawRate * 0.018).coerceIn(-0.10, 0.10).toFloat()) *
-                        rotation(Float3(1.0f, 0.0f, 0.0f), road.grade)
+                        rotation(Float3(1.0f, 0.0f, 0.0f), axlePitch)
                 tm.setTransform(tm.getInstance(vehicleRootEntity), chassis.toFloatArray())
             }
 
