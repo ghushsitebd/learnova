@@ -170,3 +170,5 @@ if found == 0:
 # Engineering checkpoint 265: keep CI asset-contract validation reproducible.
 
 # Engineering checkpoint 266: keep CI asset-contract validation reproducible.
+
+# Engineering checkpoint 267: keep CI asset-contract validation reproducible.
