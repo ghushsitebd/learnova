@@ -46,6 +46,10 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var vehicleSpeed = 0.0
     private var previousVehicleSpeed = 0.0
     private var vehicleAcceleration = 0.0
+    // Tyre spin is integrated from actual vehicle speed instead of being keyed directly
+    // to travelled distance. This keeps wheel motion smooth during acceleration/braking.
+    private var wheelSpinAngle = 0.0
+    private var wheelSpinRate = 0.0
     private var chassisPitch = 0.0
     private var chassisRoll = 0.0
     private var lastFrameNanos = 0L
@@ -643,7 +647,16 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
         val tm = viewer.engine.transformManager
         val dt = frameDeltaSeconds.coerceIn(1.0 / 240.0, 0.05)
-        val wheelAngle = (vehicleDistance / wheelRadius).toFloat()
+        // Free-rolling tyre model: angular speed follows the real linear speed,
+        // with a small response filter so acceleration and braking do not make the
+        // wheel visually snap. Radius comes from the active vehicle definition.
+        val targetWheelSpinRate = vehicleSpeed / wheelRadius.coerceAtLeast(0.12)
+        wheelSpinRate += (targetWheelSpinRate - wheelSpinRate) * (dt * 14.0).coerceAtMost(1.0)
+        wheelSpinAngle += wheelSpinRate * dt
+        if (wheelSpinAngle > Math.PI * 2.0 || wheelSpinAngle < -Math.PI * 2.0) {
+            wheelSpinAngle %= Math.PI * 2.0
+        }
+        val wheelAngle = wheelSpinAngle.toFloat()
 
         val road = RoadSpline.sampleRelative(vehicleDistance, renderOriginDistance)
         val roadAhead = RoadSpline.sampleRelative(
@@ -988,6 +1001,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         vehicleSpeed = 0.0
         previousVehicleSpeed = 0.0
         vehicleAcceleration = 0.0
+        wheelSpinAngle = 0.0
+        wheelSpinRate = 0.0
         chassisPitch = 0.0
         chassisRoll = 0.0
         previousRoadYaw = 0.0
