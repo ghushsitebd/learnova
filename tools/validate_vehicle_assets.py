@@ -278,3 +278,5 @@ if ASSETS.exists():
 # 393: add GLB binary chunk boundary validation.
 
 # 394: add maximum asset count guard.
+
+# 395: add asset key filename consistency validation.
