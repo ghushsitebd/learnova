@@ -295,6 +295,12 @@ class MainActivity : AppCompatActivity() {
             val choices = quranChoiceLabels()
             if (lessonStage == 1 && choices[choice] == current.name) {
                 levelProgress = (levelProgress + 0.34f).coerceAtMost(1f)
+                completedLessons += 1
+                val reward = ChildSafeEngagementPolicy.rewardForCorrectLesson(completedLessons)
+                learningPoints += reward.points
+                if (reward.celebration != ChildSafeEngagementPolicy.Celebration.NONE) {
+                    celebrationUntil = System.currentTimeMillis() + 1400L
+                }
                 if (levelProgress >= 0.999f) levelComplete = true
                 voice.speakQuranStage(current.name, current.mode, 2)
                 saveProgress()
@@ -302,6 +308,12 @@ class MainActivity : AppCompatActivity() {
                 voice.speak("Try again. Find ${current.name}.", java.util.Locale.US)
             } else if (lessonStage == 2 && choice == 0) {
                 levelProgress = (levelProgress + 0.34f).coerceAtMost(1f)
+                completedLessons += 1
+                val reward = ChildSafeEngagementPolicy.rewardForCorrectLesson(completedLessons)
+                learningPoints += reward.points
+                if (reward.celebration != ChildSafeEngagementPolicy.Celebration.NONE) {
+                    celebrationUntil = System.currentTimeMillis() + 1400L
+                }
                 if (levelProgress >= 0.999f) levelComplete = true
                 voice.speakQuranStage(current.name, current.mode, 2)
                 saveProgress()
