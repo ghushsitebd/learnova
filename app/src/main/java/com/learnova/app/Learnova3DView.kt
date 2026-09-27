@@ -46,6 +46,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var activeVehicle: VehicleDefinition = VehicleCatalog.byId(1)
     private var targetSpeed = activeVehicle.targetSpeed
     private var wheelRadius = activeVehicle.wheelRadius
+    private val vehicleAssetResolver = VehicleAssetResolver(context)
+    private var loadedVehicleAssetKey = "base"
 
     init {
         addView(
@@ -152,8 +154,39 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         activeVehicle = definition
         targetSpeed = definition.targetSpeed.coerceIn(2.0, 18.0)
         wheelRadius = definition.wheelRadius.coerceIn(0.12, 0.80)
-        cacheWheelEntities()
-        cacheVehicleRoot()
+        loadVehicleAsset(definition)
+    }
+
+    /**
+     * Streams only the selected garage vehicle into Filament.
+     *
+     * We deliberately do not preload 100 models. If a dedicated GLB is not
+     * present yet, the verified base vehicle remains active instead of showing
+     * a blank scene or crashing.
+     */
+    private fun loadVehicleAsset(definition: VehicleDefinition) {
+        val requested = vehicleAssetResolver.load(definition.assetKey)
+        val requestedKey = if (requested != null) definition.assetKey else "base"
+
+        if (requestedKey != loadedVehicleAssetKey) {
+            val bytes = requested ?: decodeModel()
+            viewer.loadModelGlb(ByteBuffer.wrap(bytes))
+            loadedVehicleAssetKey = requestedKey
+
+            proceduralRoad?.destroy()
+            proceduralRoad = viewer.asset?.let {
+                ProceduralRoadMesh(viewer.engine, viewer.scene, it).also { road -> road.build() }
+            }
+
+            cacheWheelEntities()
+            cacheVehicleRoot()
+        } else {
+            cacheWheelEntities()
+            cacheVehicleRoot()
+        }
+
+        vehicleDistance = 0.0
+        vehicleSpeed = 0.0
     }
 
 
