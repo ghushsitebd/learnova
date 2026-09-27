@@ -321,7 +321,7 @@ class MainActivity : AppCompatActivity() {
                 saveProgress()
             } else if (lessonStage == 1) {
                 quranFeedback = "আবার চেষ্টা করো — মন দিয়ে শোনো"
-                voice.speak("Try again. Listen and choose carefully.", java.util.Locale.US)
+                voice.speakInstruction(false)
             } else if (lessonStage == 2 && correct && !quranStageSolved) {
                 quranStageSolved = true
                 quranFeedback = "✓ দারুণ — এই অংশটি শেষ হয়েছে"
