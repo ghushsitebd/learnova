@@ -73,3 +73,5 @@ internal object RoadSpline {
 // Realism stage: smoother lateral curvature.
 
 // Realism stage: long-radius route variation.
+
+// Realism stage: refine banking response.
