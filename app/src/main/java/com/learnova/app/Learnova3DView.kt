@@ -624,32 +624,33 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     }
 
     private fun updateDriveScene() {
-        // Camera follows a shallow spline so the road reads as a real curved route,
-        // while the one-tap driving state advances continuously through the world.
-        // The curve is deliberately gentle for young players and low-end phones.
+        // The camera now reads a deterministic world profile as the child travels:
+        // forest -> river -> mountain -> desert -> plateau -> market -> village -> coast.
+        // This changes the visual rhythm without loading a large environment pack.
         val travel = vehicleDistance
+        val world = WorldDirector.profile(travel)
         val road = RoadSpline.sampleRelative(travel, renderOriginDistance)
         val lookAhead = RoadSpline.sampleRelative(travel + 7.0, renderOriginDistance)
         val bodyBob = if (driving) kotlin.math.sin(travel * 3.4) * 0.018 else 0.0
+
         // A lightly damped camera offset avoids a robotic snap while keeping
         // the road center visible for the child's one-tap driving interaction.
         val cameraX = road.x + kotlin.math.sin(travel * 0.18) * 0.07
         val cameraZ = road.z - 6.8
-        val cameraY = 2.82 + lookAhead.y + bodyBob
+        val cameraY = world.cameraHeight + lookAhead.y + bodyBob
 
         viewer.camera.lookAt(
             cameraX, cameraY, cameraZ,
-            lookAhead.x, lookAhead.y + 1.02, lookAhead.z,
+            lookAhead.x, lookAhead.y + world.lookAheadLift, lookAhead.z,
             0.0, 1.0, 0.0
         )
 
-        // A real driving camera widens its field of view slightly as speed rises.
-        // The change is deliberately small so children do not experience a
-        // distracting "zoom" effect on lower-end phones.
+        // Speed provides a restrained FOV change; each biome adds only a subtle
+        // composition bias so the child notices a new place without nausea.
         val speedRatio = (vehicleSpeed / targetSpeed.coerceAtLeast(0.1)).coerceIn(0.0, 1.0)
-        val dynamicFov = 48.0 + 4.0 * speedRatio
+        val dynamicFov = 48.0 + world.fovBias + 4.0 * speedRatio
         viewer.camera.setLensProjection(dynamicFov, 1.0, 0.10, 260.0)
-        viewer.camera.setExposure(14.0f, 1.0f / 120.0f, 100.0f)
+        viewer.camera.setExposure(world.exposure, 1.0f / 120.0f, 100.0f)
     }
 
     override fun onDetachedFromWindow() {
