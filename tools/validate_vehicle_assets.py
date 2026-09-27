@@ -294,3 +294,5 @@ if ASSETS.exists():
 # 400: finalize deterministic vehicle asset contract validation.
 
 # CI validation 401: asset inventory determinism.
+
+# CI validation 402: duplicate payload detection.
