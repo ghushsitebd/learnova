@@ -46,6 +46,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     // Shared render-loop timestep keeps vehicle physics deterministic across devices.
     private var frameDeltaSeconds = 1.0 / 60.0
     private var wheelEntities = IntArray(0)
+    private val frontWheelEntities = HashSet<Int>()
     private val wheelBaseTransforms = HashMap<Int, FloatArray>()
     private var vehicleRootEntity = 0
     private var vehicleRootBaseTransform: FloatArray? = null
@@ -376,6 +377,12 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             if (entity != 0 && !found.contains(entity)) found.add(entity)
         }
         wheelEntities = found.toIntArray()
+        frontWheelEntities.clear()
+        val frontNames = setOf("Wheel_FL", "Wheel_FR", "wheel_fl", "wheel_fr", "FrontLeftWheel", "FrontRightWheel")
+        for (name in frontNames) {
+            val entity = asset.getFirstEntityByName(name)
+            if (entity != 0) frontWheelEntities.add(entity)
+        }
         val tm = viewer.engine.transformManager
         wheelBaseTransforms.clear()
         for (entity in wheelEntities) {
@@ -556,10 +563,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
                     // Front wheels steer automatically from the road curvature.
                     // Use semantic wheel names rather than GLB list order.
-                    val wheelName = tm.getName(entity).lowercase()
-                    val isFrontWheel = wheelName.contains("front") ||
-                        wheelName.contains("_fl") || wheelName.contains("_fr") ||
-                        wheelName.contains("wheel_fl") || wheelName.contains("wheel_fr")
+                    val isFrontWheel = frontWheelEntities.contains(entity)
                     val steerAngle = if (isFrontWheel) {
                         road.yaw.coerceIn(-0.42f, 0.42f)
                     } else {
