@@ -57,6 +57,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private val assetLoadGeneration = AtomicInteger(0)
     private var loadedVehicleAssetKey = "base"
     private var requestedVehicleAssetKey = "base"
+    private val adaptiveQuality = LearnovaAdaptiveQuality()
+    private var constrainedDevice = false
 
     init {
         addView(
@@ -116,6 +118,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 proceduralRoad?.update(vehicleDistance)
                 updateVehicleMechanics()
                 viewer.render(time)
+                adaptiveQuality.sample(dt * 1000.0, constrainedDevice)?.let { applyQualityTier(it) }
                 choreographer.postFrameCallback(frameCallback)
             }
             choreographer.postFrameCallback(frameCallback)
@@ -136,6 +139,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         val memoryClassMb = (context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager)
             ?.memoryClass ?: 128
         val constrained = memoryClassMb < 192
+        constrainedDevice = constrained
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             surface.setFrameRate(
@@ -167,6 +171,47 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
      * so this is deliberately expressed as sunlight-like illuminance rather than
      * an arbitrary game brightness value. The light is created once and reused.
      */
+    private fun applyQualityTier(tier: LearnovaAdaptiveQuality.Tier) {
+        when (tier) {
+            LearnovaAdaptiveQuality.Tier.HIGH -> {
+                viewer.view.dynamicResolutionOptions = viewer.view.dynamicResolutionOptions.apply {
+                    enabled = true
+                    quality = com.google.android.filament.View.QualityLevel.HIGH
+                }
+                viewer.view.ambientOcclusionOptions = viewer.view.ambientOcclusionOptions.apply {
+                    enabled = true
+                }
+                viewer.view.bloomOptions = viewer.view.bloomOptions.apply {
+                    enabled = true
+                }
+            }
+            LearnovaAdaptiveQuality.Tier.MEDIUM -> {
+                viewer.view.dynamicResolutionOptions = viewer.view.dynamicResolutionOptions.apply {
+                    enabled = true
+                    quality = com.google.android.filament.View.QualityLevel.MEDIUM
+                }
+                viewer.view.ambientOcclusionOptions = viewer.view.ambientOcclusionOptions.apply {
+                    enabled = !constrainedDevice
+                }
+                viewer.view.bloomOptions = viewer.view.bloomOptions.apply {
+                    enabled = !constrainedDevice
+                }
+            }
+            LearnovaAdaptiveQuality.Tier.LOW -> {
+                viewer.view.dynamicResolutionOptions = viewer.view.dynamicResolutionOptions.apply {
+                    enabled = true
+                    quality = com.google.android.filament.View.QualityLevel.LOW
+                }
+                viewer.view.ambientOcclusionOptions = viewer.view.ambientOcclusionOptions.apply {
+                    enabled = false
+                }
+                viewer.view.bloomOptions = viewer.view.bloomOptions.apply {
+                    enabled = false
+                }
+            }
+        }
+    }
+
     private fun configureRealisticSunLight() {
         if (sunEntity != 0) return
 
