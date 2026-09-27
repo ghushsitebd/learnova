@@ -17,6 +17,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var gameView: LearnovaGameView
     private lateinit var voice: LearnovaVoice
     private lateinit var threeDWorld: Learnova3DView
+    private lateinit var garageView: VehicleGarageView
+    private lateinit var rootLayout: FrameLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,10 +27,29 @@ class MainActivity : AppCompatActivity() {
         voice = LearnovaVoice(this)
         gameView = LearnovaGameView()
         threeDWorld = Learnova3DView(this)
-        val root = FrameLayout(this)
-        root.addView(threeDWorld, FrameLayout.LayoutParams(-1, -1))
-        root.addView(gameView, FrameLayout.LayoutParams(-1, -1))
-        setContentView(root)
+        rootLayout = FrameLayout(this)
+        rootLayout.addView(threeDWorld, FrameLayout.LayoutParams(-1, -1))
+        rootLayout.addView(gameView, FrameLayout.LayoutParams(-1, -1))
+        garageView = VehicleGarageView(
+            this,
+            onSelected = { definition -> gameView.selectVehicleFromGarage(definition) },
+            onClosed = { closeGarage() }
+        ).apply { visibility = View.GONE }
+        rootLayout.addView(garageView, FrameLayout.LayoutParams(-1, -1))
+        setContentView(rootLayout)
+    }
+
+    private fun openGarage() {
+        if (::gameView.isInitialized && ::garageView.isInitialized) {
+            gameView.setDrivingFromGarage(false)
+            garageView.setSelected(getSharedPreferences("learnova_progress", MODE_PRIVATE)
+                .getInt("garage_vehicle_id", 1))
+            garageView.visibility = View.VISIBLE
+        }
+    }
+
+    private fun closeGarage() {
+        if (::garageView.isInitialized) garageView.visibility = View.GONE
     }
 
     private inner class LearnovaGameView : View(this@MainActivity) {
@@ -95,6 +116,26 @@ class MainActivity : AppCompatActivity() {
             speakCurrentLesson()
         }
 
+        fun setDrivingFromGarage(value: Boolean) {
+            running = value
+            threeDWorld.setDriving(value)
+            invalidate()
+        }
+
+        fun selectVehicleFromGarage(definition: VehicleDefinition) {
+            // The catalog selection is stored independently from the current renderer's
+            // legacy 65-role vehicle set. This allows all 100 garage choices immediately;
+            // unique GLB assets can be streamed in later without changing the UI contract.
+            val mapped = (definition.id - 1) % LearnovaUnlimitedWorld.vehicles.size
+            vehicle = mapped
+            prefs.edit()
+                .putInt("vehicle", mapped)
+                .putInt("garage_vehicle_id", definition.id)
+                .apply()
+            voice.speakVehicle(definition.name)
+            invalidate()
+        }
+
         override fun onTouchEvent(event: MotionEvent): Boolean {
             val w = width.toFloat()
             val h = height.toFloat()
@@ -104,13 +145,10 @@ class MainActivity : AppCompatActivity() {
             val y = event.y
 
             if (event.actionMasked == MotionEvent.ACTION_DOWN) {
-                // Vehicle selector: a single tap on the vehicle badge cycles the active vehicle.
-                // The driving surface keeps the core one-tap drive/stop interaction unchanged.
+                // The vehicle badge now opens the real 100-slot garage.
+                // Driving remains intentionally simple: tap once to drive, tap again to stop.
                 if (y < h * 0.22f && x > w * 0.76f) {
-                    vehicle = (vehicle + 1) % LearnovaUnlimitedWorld.vehicles.size
-                    prefs.edit().putInt("vehicle", vehicle).apply()
-                    voice.speakVehicle(LearnovaUnlimitedWorld.vehicles[vehicle].name)
-                    invalidate()
+                    openGarage()
                     return true
                 }
 
@@ -1537,7 +1575,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         private fun drawVehicle(c: Canvas, w: Float, h: Float) {
-            val selected = LearnovaUnlimitedWorld.vehicles[vehicle]
+            val selected = LearnovaUnlimitedWorld.vehicles[vehicle.coerceIn(0, LearnovaUnlimitedWorld.vehicles.lastIndex)]
             val p = vehicleProgress.coerceIn(0f, 1f)
 
             // Camera-follow placement uses the exact road centerline used by the
