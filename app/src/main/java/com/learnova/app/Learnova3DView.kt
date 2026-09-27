@@ -770,7 +770,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                         0f, 0f, 1f, (road.z - kotlin.math.sin(road.yaw) * lateralOffset).toFloat(),
                         0f, 0f, 0f, 1f
                     ) *
-                    rotation(Float3(0.0f, 1.0f, 0.0f), chassisYaw) *
+                    rotation(Float3(0.0f, 1.0f, 0.0f), chassisYaw.toFloat()) *
                     // Apply each attitude component once. Road bank is the
                     // environment attitude; chassis roll/pitch are the vehicle's
                     // filtered response to suspension, steering and acceleration.
