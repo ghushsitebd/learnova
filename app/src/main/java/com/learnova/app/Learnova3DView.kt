@@ -554,11 +554,12 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                     val base = wheelBaseTransforms[entity] ?: continue
                     if (!tm.hasComponent(entity)) continue
 
-                    // Front wheels steer automatically from the same road spline.
-                    // The child only taps start/stop; steering remains invisible
-                    // and deterministic, so the vehicle stays naturally aligned
-                    // with curved roads.
-                    val isFrontWheel = index < 2
+                    // Front wheels steer automatically from the road curvature.
+                    // Use semantic wheel names rather than GLB list order.
+                    val wheelName = tm.getName(entity).lowercase()
+                    val isFrontWheel = wheelName.contains("front") ||
+                        wheelName.contains("_fl") || wheelName.contains("_fr") ||
+                        wheelName.contains("wheel_fl") || wheelName.contains("wheel_fr")
                     val steerAngle = if (isFrontWheel) {
                         road.yaw.coerceIn(-0.42f, 0.42f)
                     } else {
