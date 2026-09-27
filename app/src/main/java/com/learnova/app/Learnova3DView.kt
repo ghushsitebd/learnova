@@ -768,6 +768,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                         0f, 0f, 0f, 1f
                     ) *
                     rotation(Float3(0.0f, 1.0f, 0.0f), chassisYaw) *
+                    rotation(Float3(1.0f, 0.0f, 0.0f), chassisPitch.toFloat()) *
+                    rotation(Float3(0.0f, 0.0f, 1.0f), chassisRoll.toFloat()) *
                     rotation(
                         Float3(0.0f, 0.0f, 1.0f),
                         (road.bank + chassisRoll + roadYawRate * 0.010)
