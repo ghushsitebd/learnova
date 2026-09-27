@@ -79,6 +79,10 @@ if any(".." in key for key in asset_keys):
     print("::error::Vehicle asset keys must not contain path traversal segments.")
     sys.exit(1)
 
+if any(key.startswith("_") or key.endswith("_") for key in asset_keys):
+    print("::error::Vehicle asset keys must not start or end with an underscore.")
+    sys.exit(1)
+
 if not ASSETS.exists():
     print("::notice::No real vehicle GLB assets are committed yet; catalog/resolver fallback remains active.")
     sys.exit(0)
