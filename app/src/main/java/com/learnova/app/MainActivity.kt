@@ -208,11 +208,22 @@ class MainActivity : AppCompatActivity() {
 
                     // The learning card remains a simple three-stage touch interaction.
                     if (y >= h * 0.63f && y <= h * 0.91f && x < w * 0.76f) {
-                        lessonStage = (lessonStage + 1) % 3
                         if (level in 69..250) {
                             val quran = LearnovaQuranCatalog.lesson(level - 68)
+                            val lessonIndex = SmartLearningEngine.lessons.indexOfFirst { it.id == "quran_" + quran.name
+                                .lowercase()
+                                .replace(" ", "_")
+                                .replace("-", "_") }
+                            // The first tap starts the lesson; later taps advance its guided stages.
+                            lessonStage = (lessonStage + 1) % 3
                             voice.speakQuranStage(quran.name, quran.mode, lessonStage)
+                            if (lessonStage == 2) {
+                                levelProgress = (levelProgress + 0.34f).coerceAtMost(1f)
+                                if (levelProgress >= 0.999f) levelComplete = true
+                                saveProgress()
+                            }
                         } else {
+                            lessonStage = (lessonStage + 1) % 3
                             voice.speakSmartLesson(SmartLearningEngine.lesson(question))
                         }
                         invalidate()
