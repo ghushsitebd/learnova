@@ -75,6 +75,10 @@ if len(text.encode("utf-8")) > 512 * 1024:
     print("::error::Vehicle catalog source unexpectedly exceeds 512 KiB.")
     sys.exit(1)
 
+if any(".." in key for key in asset_keys):
+    print("::error::Vehicle asset keys must not contain path traversal segments.")
+    sys.exit(1)
+
 if not ASSETS.exists():
     print("::notice::No real vehicle GLB assets are committed yet; catalog/resolver fallback remains active.")
     sys.exit(0)
