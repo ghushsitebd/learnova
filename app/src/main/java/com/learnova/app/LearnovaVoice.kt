@@ -44,11 +44,11 @@ class LearnovaVoice(context: Context) : TextToSpeech.OnInitListener {
     }
 
     fun speakInstruction(running: Boolean) {
-        speak(
-            if (running) "Let go to stop."
-            else "Press and hold to drive.",
-            Locale.US
-        )
+        speak(if (running) "Tap to stop." else "Tap to drive.", Locale.US)
+    }
+
+    fun speakVehicle(name: String) {
+        speak(name, Locale.US)
     }
 
     private fun speak(value: String, locale: Locale) {
