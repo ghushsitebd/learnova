@@ -841,7 +841,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         // Adaptive look-ahead increases with speed, so the child sees curves and
         // the surrounding world early without turning the camera into an arcade view.
         val speedRatio = (vehicleSpeed / targetSpeed.coerceAtLeast(0.1)).coerceIn(0.0, 1.0)
-        val lookAheadDistance = 16.0 + 12.0 * speedRatio
+        val lookAheadDistance = 24.0 + 24.0 * speedRatio
         val lookAhead = RoadSpline.sampleRelative(travel + lookAheadDistance, renderOriginDistance)
         val bodyBob = if (driving) kotlin.math.sin(travel * 3.4) * 0.012 else 0.0
 
@@ -889,10 +889,15 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
         // Speed provides a restrained FOV change; each biome adds only a subtle
         // composition bias so the child notices a new place without nausea.
-        val dynamicFov = 48.0 + world.fovBias + 3.0 * speedRatio
-        // Preserve distant mountains, forest and settlement silhouettes while the
-        // floating origin keeps depth precision stable near the vehicle.
-        viewer.camera.setLensProjection(dynamicFov, 1.0, 0.08, 1000.0)
+        val focalLengthMm = 48.0 + world.fovBias + 3.0 * speedRatio
+        // Keep the physical camera lens while matching the real portrait viewport
+        // aspect ratio. A fixed 1:1 aspect compresses the world on tall phones.
+        // The 1000 m culling range preserves distant terrain/settlement silhouettes;
+        // the floating origin keeps depth precision stable during long journeys.
+        val aspect = if (surface.height > 0) {
+            surface.width.toDouble() / surface.height.toDouble()
+        } else 1.0
+        viewer.camera.setLensProjection(focalLengthMm, aspect, 0.08, 1000.0)
         viewer.camera.setExposure(world.exposure, 1.0f / 120.0f, 100.0f)
     }
 
