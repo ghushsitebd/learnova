@@ -19,6 +19,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var threeDWorld: Learnova3DView
     private lateinit var garageView: VehicleGarageView
     private lateinit var rootLayout: FrameLayout
+    private val natureAudio = LearnovaNatureAudio()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -167,6 +168,7 @@ class MainActivity : AppCompatActivity() {
                         running = !running
                         threeDWorld.setDriving(running)
                         if (running) {
+                            natureAudio.start()
                             if (!salamPlayedForSession) {
                                 salamPlayedForSession = true
                                 voice.playSalamExchange()
@@ -174,6 +176,7 @@ class MainActivity : AppCompatActivity() {
                                 voice.playChildLesson(SmartLearningEngine.lesson(question))
                             }
                         } else {
+                            natureAudio.stop()
                             voice.speakInstruction(false)
                         }
                         performClick()
@@ -271,6 +274,9 @@ class MainActivity : AppCompatActivity() {
             }
 
             val world = LearnovaUnlimitedWorld.scene(worldSceneId)
+            if (running) {
+                natureAudio.setEnvironment(world.region, world.weather, world.time)
+            }
 
             // The production 3D renderer now owns the physical world when enabled.
             // Keep the Android Canvas layer for the learning HUD, voice/lesson state and
@@ -2850,11 +2856,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onPause() {
+        natureAudio.stop()
         if (::voice.isInitialized) voice.stop()
         super.onPause()
     }
 
     override fun onDestroy() {
+        natureAudio.release()
         if (::voice.isInitialized) voice.shutdown()
         super.onDestroy()
     }
