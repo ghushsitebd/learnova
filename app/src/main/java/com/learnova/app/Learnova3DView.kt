@@ -69,6 +69,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var lastSkyB = Float.NaN
     private var proceduralRoad: ProceduralRoadMesh? = null
     private var terrainMesh: LearnovaTerrainMesh? = null
+    private var roadsideWorld: RoadsideWorld? = null
     private var activeVehicle: VehicleDefinition = VehicleCatalog.byId(1)
     private var targetSpeed = activeVehicle.targetSpeed
     private var wheelRadius = activeVehicle.wheelRadius
@@ -115,6 +116,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         viewer.asset?.let { asset ->
             proceduralRoad = ProceduralRoadMesh(viewer.engine, viewer.scene, asset).also { it.build() }
             terrainMesh = LearnovaTerrainMesh(viewer.engine, viewer.scene, asset).also { it.build() }
+            roadsideWorld = RoadsideWorld(viewer.engine, viewer.scene, asset).also { it.build() }
         }
         configureRealisticSunLight()
         updateSkybox(WorldDirector.atmosphere(0.0), force = true)
@@ -167,6 +169,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 }
                 proceduralRoad?.update(vehicleDistance)
                 terrainMesh?.update(vehicleDistance)
+                roadsideWorld?.update(vehicleDistance)
                 updateVehicleMechanics()
                 vehicleInteraction.update(dt.toFloat(), interactionProfile)
                 updateVehicleInteractionVisuals()
@@ -370,11 +373,16 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
                 proceduralRoad?.destroy()
                 terrainMesh?.destroy()
+                roadsideWorld?.destroy()
+                roadsideWorld = null
                 terrainMesh = viewer.asset?.let { asset ->
                     LearnovaTerrainMesh(viewer.engine, viewer.scene, asset).also { it.build() }
                 }
                 proceduralRoad = viewer.asset?.let {
                     ProceduralRoadMesh(viewer.engine, viewer.scene, it).also { road -> road.build() }
+                }
+                roadsideWorld = viewer.asset?.let {
+                    RoadsideWorld(viewer.engine, viewer.scene, it).also { world -> world.build() }
                 }
 
                 cacheWheelEntities()
