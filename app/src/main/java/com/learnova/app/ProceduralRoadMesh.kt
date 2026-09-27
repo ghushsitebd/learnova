@@ -1,6 +1,5 @@
 package com.learnova.app
 
-import com.google.android.filament.Box
 import com.google.android.filament.Engine
 import com.google.android.filament.IndexBuffer
 import com.google.android.filament.RenderableManager
@@ -31,10 +30,9 @@ internal class ProceduralRoadMesh(
         const val ROAD_WIDTH = 7.2f
         const val SAMPLE_STEP = 4.0
         const val BEHIND = 80.0
-        const val AHEAD = 420.0
         const val VERTEX_COUNT = 2 * 127
         const val INDEX_COUNT = 6 * 126
-        const val VERTEX_STRIDE = 12 * 4
+        const val VERTEX_STRIDE = 9 * 4
     }
 
     private var entity = 0
@@ -81,7 +79,7 @@ internal class ProceduralRoadMesh(
         RenderableManager.Builder(1)
             .material(0, material)
             .geometry(0, RenderableManager.PrimitiveType.TRIANGLES, vb, ib)
-            .culling(true)
+            .culling(false)
             .receiveShadows(true)
             .castShadows(false)
             .build(engine, entity)
