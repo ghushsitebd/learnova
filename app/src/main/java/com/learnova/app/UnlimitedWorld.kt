@@ -198,6 +198,10 @@ object LearnovaUnlimitedWorld {
         VehicleEntry(58,"Crossover","car","road safety"),
         VehicleEntry(59,"Off-Road Pickup","truck","nature discovery"),
         VehicleEntry(60,"Electric City Van","van","clean technology"),
-        VehicleEntry(61,"Passenger Train","train","travel discovery")
+        VehicleEntry(61,"Passenger Train","train","travel discovery"),
+        VehicleEntry(62,"6x6 Off-Road","sixWheel","off-road discovery"),
+        VehicleEntry(63,"6x6 Adventure Truck","sixWheel","nature discovery"),
+        VehicleEntry(64,"6x6 Rescue Vehicle","sixWheel","rescue"),
+        VehicleEntry(65,"6x6 Expedition Vehicle","sixWheel","travel discovery")
     )
 }
