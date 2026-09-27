@@ -406,3 +406,5 @@ if ASSETS.exists():
 # CI hardening checkpoint 375: deterministic mobile-safe asset delivery.
 
 # CI hardening checkpoint 376: deterministic mobile-safe asset delivery.
+
+# CI hardening checkpoint 377: deterministic mobile-safe asset delivery.
