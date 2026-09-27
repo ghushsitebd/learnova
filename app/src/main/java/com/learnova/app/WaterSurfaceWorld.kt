@@ -91,8 +91,8 @@ internal class WaterSurfaceWorld(
             val sample = RoadSpline.sampleRelative(d, centerDistance)
             val biome = WorldDirector.profile(d).biome
             if (biome != WorldDirector.Biome.RIVER && biome != WorldDirector.Biome.COAST) {
-                putVertex(data, 0f, -5000f, 0f, sample.yaw.toDouble(), 0f, 0f, 0f)
-                putVertex(data, 0f, -5000f, 0f, sample.yaw.toDouble(), 0f, 1f, 0f)
+                putVertex(data, 0f, -5000f, 0f, sample.yaw.toDouble(), 0.0, 0f, 0f)
+                putVertex(data, 0f, -5000f, 0f, sample.yaw.toDouble(), 0.0, 1f, 0f)
                 continue
             }
 
