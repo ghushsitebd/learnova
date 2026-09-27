@@ -38,14 +38,6 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var vehicleRootEntity = 0
     private var vehicleRootBaseTransform: FloatArray? = null
 
-    private data class RoadSample(
-        val x: Double,
-        val z: Double,
-        val yaw: Float,
-        val bank: Float
-    )
-
-
     init {
         addView(
             surface,
@@ -204,19 +196,16 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             val baseRoot = vehicleRootBaseTransform
             if (vehicleRootEntity != 0 && baseRoot != null && tm.hasComponent(vehicleRootEntity)) {
                 val travel = vehicleDistance
-                val pathX = kotlin.math.sin(travel * 0.23) * 2.15 +
-                        kotlin.math.sin(travel * 0.075 + 0.8) * 0.85
-                val pathAhead = kotlin.math.sin((travel + 0.25) * 0.23) * 2.15 +
-                        kotlin.math.sin((travel + 0.25) * 0.075 + 0.8) * 0.85
-                val yaw = kotlin.math.atan2(pathAhead - pathX, 0.25).toFloat()
+                val road = RoadSpline.sample(travel)
                 val chassis = Mat4.of(*baseRoot) *
                         Mat4.of(
-                            1f, 0f, 0f, pathX.toFloat(),
+                            1f, 0f, 0f, road.x.toFloat(),
                             0f, 1f, 0f, if (driving) kotlin.math.sin(travel * 4.2).toFloat() * 0.012f else 0f,
-                            0f, 0f, 1f, travel.toFloat(),
+                            0f, 0f, 1f, road.z.toFloat(),
                             0f, 0f, 0f, 1f
                         ) *
-                        rotation(Float3(0.0f, 1.0f, 0.0f), yaw)
+                        rotation(Float3(0.0f, 1.0f, 0.0f), road.yaw) *
+                        rotation(Float3(0.0f, 0.0f, 1.0f), road.bank)
                 tm.setTransform(tm.getInstance(vehicleRootEntity), chassis.toFloatArray())
             }
 
@@ -246,18 +235,15 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         // while the one-tap driving state advances continuously through the world.
         // The curve is deliberately gentle for young players and low-end phones.
         val travel = vehicleDistance
-        val pathZ = 6.8 + (travel % 18.0)
-        val curve = kotlin.math.sin(travel * 0.23) * 2.15 +
-                kotlin.math.sin(travel * 0.075 + 0.8) * 0.85
-        val curveAhead = kotlin.math.sin((travel + 2.8) * 0.23) * 2.15 +
-                kotlin.math.sin((travel + 2.8) * 0.075 + 0.8) * 0.85
+        val road = RoadSpline.sample(travel)
+        val lookAhead = RoadSpline.sample(travel + 7.0)
         val bodyBob = if (driving) kotlin.math.sin(travel * 3.4) * 0.025 else 0.0
-        val cameraX = curve + kotlin.math.sin(travel * 0.18) * 0.10
-        val targetX = curveAhead
+        val cameraX = road.x + kotlin.math.sin(travel * 0.18) * 0.10
+        val cameraZ = road.z - 6.8
 
         viewer.camera.lookAt(
-            cameraX, 2.82 + bodyBob, pathZ,
-            targetX, 1.02, pathZ + 7.0,
+            cameraX, 2.82 + bodyBob, cameraZ,
+            lookAhead.x, 1.02, lookAhead.z,
             0.0, 1.0, 0.0
         )
 
