@@ -221,6 +221,7 @@ class MainActivity : AppCompatActivity() {
             drawHabitatDetails(canvas, w, h, world)
             drawForestRouteDepth(canvas, w, h, world)
             drawRoad(canvas, w, h, world)
+            drawRoadMaterialPass(canvas, w, h, world)
             drawRoadReflections(canvas, w, h, world)
             drawRoadInfrastructure(canvas, w, h, world)
             if (world.region.contains("Village")) drawVillageRoadsideDepth(canvas, w, h, world)
@@ -837,6 +838,40 @@ class MainActivity : AppCompatActivity() {
                 c.drawLine(x-7f*t,y,x+11f*t,y+1.5f,paint)
             }
         }
+        /** Procedural road material pass: perspective bands, shoulder wear and wet highlights. */
+        private fun drawRoadMaterialPass(c: Canvas, w: Float, h: Float, world: SmartScene) {
+            val horizon = h * 0.585f
+            val bottom = h * 0.92f
+            val segments = 18
+            val wet = world.weather == "Rainy"
+            for (i in 0 until segments) {
+                val t0 = i.toFloat() / segments
+                val t1 = (i + 1).toFloat() / segments
+                val y0 = horizon + (bottom - horizon) * t0 * t0
+                val y1 = horizon + (bottom - horizon) * t1 * t1
+                val c0 = roadCenterAt(t0 * 0.92f, w, worldSceneId)
+                val c1 = roadCenterAt(t1 * 0.92f, w, worldSceneId)
+                val half0 = w * (0.045f + 0.39f * t0)
+                val half1 = w * (0.045f + 0.39f * t1)
+                val p = Path()
+                p.moveTo(c0 - half0, y0); p.lineTo(c0 + half0, y0)
+                p.lineTo(c1 + half1, y1); p.lineTo(c1 - half1, y1); p.close()
+                paint.color = if (i % 2 == 0) Color.argb(if (wet) 18 else 8,255,255,255)
+                    else Color.argb(if (wet) 12 else 5,20,25,28)
+                c.drawPath(p, paint)
+                paint.color = Color.argb(if (wet) 42 else 24,235,235,220)
+                paint.strokeWidth = 1.2f + 2.8f * t1
+                c.drawLine(c1-half1*.94f,y1,c1-half1*.99f,y1+1.5f,paint)
+                c.drawLine(c1+half1*.94f,y1,c1+half1*.99f,y1+1.5f,paint)
+                if (wet && i % 2 == 0) {
+                    paint.color=Color.argb(32,180,210,220)
+                    paint.strokeWidth=1f+2f*t1
+                    c.drawLine(c0-half0*.32f,y0,c1-half1*.32f,y1,paint)
+                    c.drawLine(c0+half0*.32f,y0,c1+half1*.32f,y1,paint)
+                }
+            }
+        }
+
         private fun drawRoad(c: Canvas, w: Float, h: Float, world: SmartScene) {
             // A deterministic road generator creates many distinct road families while
             // keeping the renderer asset-light: urban boulevard, highway, village road,
