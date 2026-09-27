@@ -1066,6 +1066,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         assetIoExecutor.shutdownNow()
         viewer.destroy()
         super.onDetachedFromWindow()
+    }
+
     private fun decodeModel(): ByteArray {
         val compressed = Base64.decode(MODEL_GZ, Base64.DEFAULT)
         return GZIPInputStream(ByteArrayInputStream(compressed)).use { input ->
