@@ -541,7 +541,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
         // Small banking cue follows road direction instead of using random sway.
         // This keeps the motion physically coherent without adding input complexity.
-        viewer.camera.setLensProjection(48.0, 1.0, 0.10, 250.0)
+        viewer.camera.setLensProjection(50.0, 1.0, 0.10, 260.0)
         viewer.camera.setExposure(14.0f, 1.0f / 125.0f, 100.0f)
     }
 
