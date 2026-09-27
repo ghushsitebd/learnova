@@ -67,6 +67,10 @@ if not CATALOG.is_file():
     print("::error::Vehicle catalog file is missing.")
     sys.exit(1)
 
+if any(int(i) < 1 or int(i) > 100 for i, _ in keys):
+    print("::error::Vehicle IDs must stay within the 1..100 production range.")
+    sys.exit(1)
+
 if not ASSETS.exists():
     print("::notice::No real vehicle GLB assets are committed yet; catalog/resolver fallback remains active.")
     sys.exit(0)
