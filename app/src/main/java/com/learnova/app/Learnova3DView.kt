@@ -26,6 +26,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private val choreographer = Choreographer.getInstance()
     private var frameCallback: Choreographer.FrameCallback? = null
     private var started = false
+    private var driving = false
+    private var driveTime = 0.0
 
     init {
         addView(
@@ -48,6 +50,14 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             250.0,
             1.0
         )
+
+        viewer.view.dynamicResolutionOptions = viewer.view.dynamicResolutionOptions.apply {
+            enabled = true
+            quality = com.google.android.filament.View.QualityLevel.MEDIUM
+        }
+        viewer.view.antiAliasing = com.google.android.filament.View.AntiAliasing.FXAA
+        viewer.view.ambientOcclusionOptions = viewer.view.ambientOcclusionOptions.apply { enabled = true }
+        viewer.view.bloomOptions = viewer.view.bloomOptions.apply { enabled = true }
     }
 
     override fun onAttachedToWindow() {
@@ -56,11 +66,21 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             started = true
             frameCallback = Choreographer.FrameCallback { time ->
                 if (!started) return@FrameCallback
+                if (driving) driveTime += 1.0 / 60.0
+                updateDriveScene()
                 viewer.render(time)
                 choreographer.postFrameCallback(frameCallback)
             }
             choreographer.postFrameCallback(frameCallback)
         }
+    }
+
+    fun setDriving(value: Boolean) { driving = value }
+
+    private fun updateDriveScene() {
+        val z = 6.8 + (if (driving) (driveTime * 0.42) % 1.8 else 0.0)
+        val yaw = if (driving) kotlin.math.sin(driveTime * 0.72) * 0.035 else 0.0
+        viewer.camera.lookAt(4.8 + yaw, 2.8, z, 0.0, 1.0, 14.0, 0.0, 1.0, 0.0)
     }
 
     override fun onDetachedFromWindow() {
