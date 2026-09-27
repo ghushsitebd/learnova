@@ -91,7 +91,6 @@ jobs:
         env:
           LEARNOVA_KEYSTORE_PATH: ${{ github.workspace }}/learnova-release.keystore
           LEARNOVA_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          LEARNOVA_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           LEARNOVA_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: gradle clean assembleRelease bundleRelease --stacktrace
 
