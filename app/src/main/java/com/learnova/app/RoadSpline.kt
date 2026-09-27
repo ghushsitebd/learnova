@@ -67,3 +67,5 @@ internal object RoadSpline {
         sin(distance * 0.017 + 1.9) * 0.34 +
         sin(distance * 0.009 + 3.1) * 0.18
 }
+
+// Realism stage: road crest and dip shaping.
