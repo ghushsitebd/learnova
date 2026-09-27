@@ -72,6 +72,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var proceduralRoad: ProceduralRoadMesh? = null
     private var terrainMesh: LearnovaTerrainMesh? = null
     private var roadsideWorld: RoadsideWorld? = null
+    private var waterSurfaceWorld: WaterSurfaceWorld? = null
     private var activeVehicle: VehicleDefinition = VehicleCatalog.byId(1)
     private var targetSpeed = activeVehicle.targetSpeed
     private var wheelRadius = activeVehicle.wheelRadius
@@ -119,6 +120,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             proceduralRoad = ProceduralRoadMesh(viewer.engine, viewer.scene, asset).also { it.build() }
             terrainMesh = LearnovaTerrainMesh(viewer.engine, viewer.scene, asset).also { it.build() }
             roadsideWorld = RoadsideWorld(viewer.engine, viewer.scene, asset).also { it.build() }
+            waterSurfaceWorld = WaterSurfaceWorld(viewer.engine, viewer.scene, asset).also { it.build() }
         }
         configureRealisticSunLight()
         updateSkybox(WorldDirector.atmosphere(0.0), force = true)
@@ -172,6 +174,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 proceduralRoad?.update(vehicleDistance)
                 terrainMesh?.update(vehicleDistance)
                 roadsideWorld?.update(vehicleDistance)
+                waterSurfaceWorld?.update(vehicleDistance)
                 updateVehicleMechanics()
                 vehicleInteraction.update(dt.toFloat(), interactionProfile)
                 updateVehicleInteractionVisuals()
@@ -376,12 +379,17 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 proceduralRoad?.destroy()
                 terrainMesh?.destroy()
                 roadsideWorld?.destroy()
+                waterSurfaceWorld?.destroy()
                 roadsideWorld = null
+                waterSurfaceWorld = null
                 terrainMesh = viewer.asset?.let { asset ->
                     LearnovaTerrainMesh(viewer.engine, viewer.scene, asset).also { it.build() }
                 }
                 proceduralRoad = viewer.asset?.let {
                     ProceduralRoadMesh(viewer.engine, viewer.scene, it).also { road -> road.build() }
+                }
+                waterSurfaceWorld = viewer.asset?.let {
+                    WaterSurfaceWorld(viewer.engine, viewer.scene, it).also { world -> world.build() }
                 }
                 roadsideWorld = viewer.asset?.let {
                     RoadsideWorld(viewer.engine, viewer.scene, it).also { world -> world.build() }
@@ -895,7 +903,9 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         terrainMesh?.destroy()
         terrainMesh = null
         roadsideWorld?.destroy()
+        waterSurfaceWorld?.destroy()
         roadsideWorld = null
+        waterSurfaceWorld = null
         if (sunEntity != 0) {
             viewer.scene.removeEntity(sunEntity)
             viewer.engine.lightManager.destroy(sunEntity)
