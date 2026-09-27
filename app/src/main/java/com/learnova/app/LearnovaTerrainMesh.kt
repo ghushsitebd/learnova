@@ -34,11 +34,22 @@ internal class LearnovaTerrainMesh(
         const val VERTICES = SAMPLE_COUNT * 4
         const val INDICES = (SAMPLE_COUNT - 1) * 12
         const val STRIDE = 9 * 4
+        // Low-frequency outer terrain LOD extends the visible 3D landscape
+        // without multiplying the detail density of the near driving corridor.
+        const val FAR_SAMPLE_COUNT = 73
+        const val FAR_STEP = 8.0
+        const val FAR_INNER = 34.0
+        const val FAR_OUTER = 112.0
+        const val FAR_VERTICES = FAR_SAMPLE_COUNT * 4
+        const val FAR_INDICES = (FAR_SAMPLE_COUNT - 1) * 12
     }
 
     private var entity = 0
     private var vertexBuffer: VertexBuffer? = null
     private var indexBuffer: IndexBuffer? = null
+    private var farEntity = 0
+    private var farVertexBuffer: VertexBuffer? = null
+    private var farIndexBuffer: IndexBuffer? = null
     private var material: com.google.android.filament.MaterialInstance? = null
     private var lastCenter = Double.NaN
 
@@ -97,8 +108,105 @@ internal class LearnovaTerrainMesh(
 
         vertexBuffer = vb
         indexBuffer = ib
+        buildFarHorizon()
         update(0.0)
         return true
+    }
+
+    /**
+     * Low-LOD outer landscape. The near ribbon carries the detailed road-side
+     * surface; this larger ring prevents the world from ending abruptly in the
+     * middle distance and keeps mountains/forest terrain visually connected.
+     */
+    private fun buildFarHorizon() {
+        val mat = material ?: return
+        if (farEntity != 0) return
+
+        val vb = VertexBuffer.Builder()
+            .vertexCount(FAR_VERTICES)
+            .bufferCount(1)
+            .attribute(VertexBuffer.VertexAttribute.POSITION, 0, VertexBuffer.AttributeType.FLOAT3, 0, STRIDE)
+            .attribute(VertexBuffer.VertexAttribute.TANGENTS, 0, VertexBuffer.AttributeType.FLOAT4, 12, STRIDE)
+            .attribute(VertexBuffer.VertexAttribute.UV0, 0, VertexBuffer.AttributeType.FLOAT2, 28, STRIDE)
+            .build(engine)
+
+        val ib = IndexBuffer.Builder()
+            .indexCount(FAR_INDICES)
+            .bufferType(IndexBuffer.Builder.IndexType.USHORT)
+            .build(engine)
+
+        val indices = ByteBuffer.allocate(FAR_INDICES * 2).order(ByteOrder.nativeOrder())
+        for (i in 0 until FAR_SAMPLE_COUNT - 1) {
+            val base = i * 4
+            val next = base + 4
+            indices.putShort(base.toShort()); indices.putShort(next.toShort()); indices.putShort((base + 1).toShort())
+            indices.putShort((base + 1).toShort()); indices.putShort(next.toShort()); indices.putShort((next + 1).toShort())
+
+            val r = base + 2
+            val rn = next + 2
+            indices.putShort(r.toShort()); indices.putShort((r + 1).toShort()); indices.putShort(rn.toShort())
+            indices.putShort((r + 1).toShort()); indices.putShort((rn + 1).toShort()); indices.putShort(rn.toShort())
+        }
+        indices.flip()
+        ib.setBuffer(engine, indices)
+
+        farEntity = EntityManager.get().create()
+        RenderableManager.Builder(1)
+            .material(0, mat)
+            .geometry(0, RenderableManager.PrimitiveType.TRIANGLES, vb, ib)
+            .culling(false)
+            .receiveShadows(true)
+            .castShadows(false)
+            .build(engine, farEntity)
+        scene.addEntity(farEntity)
+
+        farVertexBuffer = vb
+        farIndexBuffer = ib
+    }
+
+    private fun updateFarHorizon(centerDistance: Double) {
+        val vb = farVertexBuffer ?: return
+        if (farEntity == 0) return
+
+        val data = ByteBuffer.allocate(FAR_VERTICES * STRIDE).order(ByteOrder.nativeOrder())
+        val start = centerDistance
+        for (i in 0 until FAR_SAMPLE_COUNT) {
+            val distance = start + i * FAR_STEP
+            val sample = RoadSpline.sampleRelative(distance, centerDistance)
+            val yaw = sample.yaw.toDouble()
+            val bank = sample.bank.toDouble()
+            val lx = cos(yaw)
+            val lz = -sin(yaw)
+            val biome = WorldDirector.profile(distance).biome
+
+            val shape = when (biome) {
+                WorldDirector.Biome.FOREST -> sin(distance * 0.025) * 0.75 + cos(distance * 0.008) * 1.10
+                WorldDirector.Biome.MOUNTAIN -> sin(distance * 0.016) * 1.65 + cos(distance * 0.006) * 1.20
+                WorldDirector.Biome.DESERT -> sin(distance * 0.020) * 0.90 + cos(distance * 0.007) * 0.65
+                WorldDirector.Biome.PLATEAU -> sin(distance * 0.014) * 0.70 + cos(distance * 0.005) * 0.55
+                WorldDirector.Biome.RIVER, WorldDirector.Biome.COAST -> sin(distance * 0.018) * 0.35 + cos(distance * 0.006) * 0.45
+                else -> sin(distance * 0.022) * 0.45 + cos(distance * 0.007) * 0.35
+            }
+
+            val innerLeftX = sample.x + lx * FAR_INNER
+            val innerLeftZ = sample.z + lz * FAR_INNER
+            val outerLeftX = sample.x + lx * FAR_OUTER
+            val outerLeftZ = sample.z + lz * FAR_OUTER
+            val innerRightX = sample.x - lx * FAR_INNER
+            val innerRightZ = sample.z - lz * FAR_INNER
+            val outerRightX = sample.x - lx * FAR_OUTER
+            val outerRightZ = sample.z - lz * FAR_OUTER
+
+            val innerLift = sin(bank) * FAR_INNER
+            val outerLift = sin(bank) * FAR_OUTER
+
+            putVertex(data, innerLeftX.toFloat(), (sample.y + innerLift + shape).toFloat(), innerLeftZ.toFloat(), yaw, bank, 0f, distance / 32.0)
+            putVertex(data, outerLeftX.toFloat(), (sample.y + outerLift + shape).toFloat(), outerLeftZ.toFloat(), yaw, bank, 1f, distance / 32.0)
+            putVertex(data, innerRightX.toFloat(), (sample.y - innerLift + shape).toFloat(), innerRightZ.toFloat(), yaw, bank, 0f, distance / 32.0)
+            putVertex(data, outerRightX.toFloat(), (sample.y - outerLift + shape).toFloat(), outerRightZ.toFloat(), yaw, bank, 1f, distance / 32.0)
+        }
+        data.flip()
+        vb.setBufferAt(engine, 0, data)
     }
 
     fun update(centerDistance: Double) {
@@ -160,6 +268,7 @@ internal class LearnovaTerrainMesh(
 
         data.flip()
         vb.setBufferAt(engine, 0, data)
+        updateFarHorizon(centerDistance)
         lastCenter = centerDistance
     }
 
@@ -209,6 +318,17 @@ internal class LearnovaTerrainMesh(
     }
 
     fun destroy() {
+        if (farEntity != 0) {
+            scene.removeEntity(farEntity)
+            engine.renderableManager.destroy(farEntity)
+            EntityManager.get().destroy(farEntity)
+            farEntity = 0
+        }
+        farVertexBuffer?.let { engine.destroyVertexBuffer(it) }
+        farIndexBuffer?.let { engine.destroyIndexBuffer(it) }
+        farVertexBuffer = null
+        farIndexBuffer = null
+
         if (entity != 0) {
             scene.removeEntity(entity)
             engine.renderableManager.destroy(entity)
