@@ -222,6 +222,7 @@ class MainActivity : AppCompatActivity() {
             drawRoad(canvas, w, h, world)
             drawRoadReflections(canvas, w, h, world)
             drawRoadInfrastructure(canvas, w, h, world)
+            if (world.region.contains("Village")) drawVillageRoadsideDepth(canvas, w, h, world)
             drawAtmosphere(canvas, w, h, world)
             drawDistantWorld(canvas, w, h, world)
             drawEnvironmentMotion(canvas, w, h, world)
@@ -2262,6 +2263,47 @@ class MainActivity : AppCompatActivity() {
                     val x = w / 2f + sin(i * 1.7 + frame / 25.0).toFloat() * (18f + 70f * t)
                     val y = h * .78f + t * h * .15f
                     c.drawCircle(x, y, 1.5f + 2.5f * t, paint)
+                }
+            }
+        }
+
+        private fun drawVillageRoadsideDepth(c: Canvas, w: Float, h: Float, world: SmartScene) {
+            // Project roadside details from the same road curve used by the vehicle.
+            val horizon = h * .60f
+            val seed = abs(world.id * 13 + 5)
+            for (i in 0..5) {
+                val t = .16f + i * .13f
+                val y = horizon + (h - horizon) * t
+                val cx = roadCenterAt(t, w, worldSceneId)
+                val side = if ((i + seed) % 2 == 0) -1f else 1f
+                val roadHalf = w * (.022f + .36f * t.pow(1.10f))
+                val x = cx + side * (roadHalf + w * (.045f + .035f * t))
+                val s = .45f + .55f * t
+
+                paint.color = Color.rgb(137, 108, 70)
+                c.drawOval(RectF(x - 16f*s, y - 4f*s, x + 16f*s, y + 6f*s), paint)
+
+                // Small drainage/culvert detail beside the village road.
+                paint.color = Color.rgb(91, 102, 91)
+                c.drawRect(x - 11f*s, y - 8f*s, x + 11f*s, y + 2f*s, paint)
+                paint.color = Color.rgb(75, 135, 151)
+                c.drawRect(x - 7f*s, y - 6f*s, x + 7f*s, y - 2f*s, paint)
+
+                paint.color = Color.rgb(128, 91, 56)
+                paint.strokeWidth = 2f + 2f*t
+                c.drawLine(x + side * 15f*s, y, x + side * 15f*s, y - 18f*s, paint)
+                paint.color = Color.rgb(226, 202, 128)
+                c.drawRoundRect(RectF(x + side * 12f*s, y - 22f*s, x + side * 22f*s, y - 15f*s), 2f, 2f, paint)
+            }
+
+            if (world.time != "Night") {
+                paint.color = Color.argb(28, 25, 55, 28)
+                for (i in 0..4) {
+                    val t = .22f + i * .14f
+                    val y = horizon + (h - horizon) * t
+                    val cx = roadCenterAt(t, w, worldSceneId)
+                    val drift = sin(frame / 42.0 + i).toFloat() * (4f + 7f*t)
+                    c.drawOval(RectF(cx - 65f*t + drift, y + 7f, cx + 65f*t + drift, y + 15f), paint)
                 }
             }
         }
