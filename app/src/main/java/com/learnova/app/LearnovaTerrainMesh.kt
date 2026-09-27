@@ -126,15 +126,36 @@ internal class LearnovaTerrainMesh(
             val outerRightX = sample.x - leftX * OUTER
             val outerRightZ = sample.z - leftZ * OUTER
 
-            val wave = sin(distance * 0.075) * 0.13 + cos(distance * 0.021) * 0.20
-            val cross = sin(distance * 0.11) * 0.05
+            // Biome-aware micro-topography keeps the landscape from looking like
+            // one flat repeating plane. The road remains the authoritative surface;
+            // only the roadside landform changes by world region.
+            val biome = WorldDirector.profile(distance).biome
+            val terrainShape = when (biome) {
+                WorldDirector.Biome.FOREST ->
+                    sin(distance * 0.075) * 0.16 + cos(distance * 0.021) * 0.24
+                WorldDirector.Biome.RIVER ->
+                    sin(distance * 0.060) * 0.07 + cos(distance * 0.018) * 0.10
+                WorldDirector.Biome.MOUNTAIN ->
+                    sin(distance * 0.040) * 0.42 + cos(distance * 0.013) * 0.30
+                WorldDirector.Biome.DESERT ->
+                    sin(distance * 0.055) * 0.28 + cos(distance * 0.019) * 0.16
+                WorldDirector.Biome.PLATEAU ->
+                    sin(distance * 0.035) * 0.24 + cos(distance * 0.012) * 0.18
+                WorldDirector.Biome.MARKET ->
+                    sin(distance * 0.090) * 0.055 + cos(distance * 0.025) * 0.08
+                WorldDirector.Biome.VILLAGE ->
+                    sin(distance * 0.065) * 0.12 + cos(distance * 0.017) * 0.18
+                WorldDirector.Biome.COAST ->
+                    sin(distance * 0.050) * 0.10 + cos(distance * 0.015) * 0.14
+            }
+            val sideShape = sin(distance * 0.11) * 0.05
             val leftBankInner = sin(bank) * INNER
             val leftBankOuter = sin(bank) * OUTER
 
-            putVertex(data, innerLeftX.toFloat(), (sample.y + leftBankInner - 0.03 + wave).toFloat(), innerLeftZ.toFloat(), yaw, bank, 0f, distance / 8.0)
-            putVertex(data, outerLeftX.toFloat(), (sample.y + leftBankOuter + wave + cross).toFloat(), outerLeftZ.toFloat(), yaw, bank, 1f, distance / 8.0)
-            putVertex(data, innerRightX.toFloat(), (sample.y - leftBankInner - 0.03 + wave).toFloat(), innerRightZ.toFloat(), yaw, bank, 0f, distance / 8.0)
-            putVertex(data, outerRightX.toFloat(), (sample.y - leftBankOuter + wave - cross).toFloat(), outerRightZ.toFloat(), yaw, bank, 1f, distance / 8.0)
+            putVertex(data, innerLeftX.toFloat(), (sample.y + leftBankInner - 0.03 + terrainShape).toFloat(), innerLeftZ.toFloat(), yaw, bank, 0f, distance / 8.0)
+            putVertex(data, outerLeftX.toFloat(), (sample.y + leftBankOuter + terrainShape + sideShape).toFloat(), outerLeftZ.toFloat(), yaw, bank, 1f, distance / 8.0)
+            putVertex(data, innerRightX.toFloat(), (sample.y - leftBankInner - 0.03 + terrainShape).toFloat(), innerRightZ.toFloat(), yaw, bank, 0f, distance / 8.0)
+            putVertex(data, outerRightX.toFloat(), (sample.y - leftBankOuter + terrainShape - sideShape).toFloat(), outerRightZ.toFloat(), yaw, bank, 1f, distance / 8.0)
         }
 
         data.flip()
