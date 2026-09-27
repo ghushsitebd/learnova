@@ -781,17 +781,21 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         ) * cameraBlend
         cameraBank += (bankTarget - cameraBank) * (dt * 6.0).coerceIn(0.0, 1.0)
 
-        // A lightly damped camera offset avoids a robotic snap while keeping
-        // the road center visible for the child's one-tap driving interaction.
-        // Keep the vehicle visually centered while exposing more of the real road
-        // corridor and distant horizon. The lateral offset is deliberately tiny.
-        val cameraLateralOffset = kotlin.math.sin(road.yaw) * 0.10
-        val cameraX = road.x + cameraLateralOffset + kotlin.math.sin(travel * 0.18) * 0.045
-        val cameraZ = road.z - 6.9
+        // Place the camera on the actual road tangent rather than on a fixed
+        // world-Z rail. This is the important realism correction for curves:
+        // the child sees the vehicle follow the road naturally instead of the
+        // camera appearing to slide sideways around bends.
+        val forwardX = kotlin.math.sin(road.yaw.toDouble())
+        val forwardZ = kotlin.math.cos(road.yaw.toDouble())
+        val cameraX = road.x - forwardX * 6.9 + kotlin.math.sin(travel * 0.18) * 0.035
+        val cameraZ = road.z - forwardZ * 6.9
         val cameraY = world.cameraHeight + road.y + bodyBob
+
+        // Roll the camera gently with the road bank. Keep the vertical axis
+        // stable enough for children while preserving physical cornering cues.
         val upX = -kotlin.math.sin(cameraBank)
         val upY = kotlin.math.cos(cameraBank)
-        val upZ = 0.0
+        val upZ = kotlin.math.sin(cameraBank * 0.18)
 
         viewer.camera.lookAt(
             cameraX, cameraY, cameraZ,
