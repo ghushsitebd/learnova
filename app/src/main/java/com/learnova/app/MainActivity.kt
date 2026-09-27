@@ -209,7 +209,12 @@ class MainActivity : AppCompatActivity() {
                     // The learning card remains a simple three-stage touch interaction.
                     if (y >= h * 0.63f && y <= h * 0.91f && x < w * 0.76f) {
                         lessonStage = (lessonStage + 1) % 3
-                        voice.speakSmartLesson(SmartLearningEngine.lesson(question))
+                        if (level in 69..250) {
+                            val quran = LearnovaQuranCatalog.lesson(level - 68)
+                            voice.speakQuranStage(quran.name, quran.mode, lessonStage)
+                        } else {
+                            voice.speakSmartLesson(SmartLearningEngine.lesson(question))
+                        }
                         invalidate()
                         return true
                     }
