@@ -119,8 +119,12 @@ internal class ProceduralRoadMesh(
 
             val bankLift = sin(bank) * half
 
-            putVertex(data, leftX.toFloat(), bankLift.toFloat(), leftZ.toFloat(), yaw, bank, 0.0f, distance.toFloat() / 8.0f)
-            putVertex(data, rightX.toFloat(), (-bankLift).toFloat(), rightZ.toFloat(), yaw, bank, 1.0f, distance.toFloat() / 8.0f)
+            // Keep the rendered road on the same vertical spline used by
+            // the vehicle and camera. This prevents visual separation on crests
+            // and dips while preserving the existing lightweight sliding mesh.
+            val centerY = sample.y
+            putVertex(data, leftX.toFloat(), (centerY + bankLift).toFloat(), leftZ.toFloat(), yaw, bank, 0.0f, distance.toFloat() / 8.0f)
+            putVertex(data, rightX.toFloat(), (centerY - bankLift).toFloat(), rightZ.toFloat(), yaw, bank, 1.0f, distance.toFloat() / 8.0f)
         }
 
         data.flip()
