@@ -100,6 +100,15 @@ class LearnovaVoice(private val context: Context) : TextToSpeech.OnInitListener 
         player.start()
     }
 
+    fun speakQuranStage(surahName: String, mode: String, stage: Int) {
+        val line = when (stage.coerceIn(0, 2)) {
+            0 -> "Quran time. $surahName. Listen and repeat."
+            1 -> "$surahName. $mode. Touch the answer you know."
+            else -> "Great. Say $surahName once more, then continue."
+        }
+        speak(line, Locale.US)
+    }
+
     fun speakInstruction(running: Boolean) {
         speak(if (running) "Tap to stop." else "Tap to drive.", Locale.US)
     }
