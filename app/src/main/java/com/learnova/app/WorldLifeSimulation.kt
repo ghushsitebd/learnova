@@ -27,10 +27,10 @@ internal class WorldLifeSimulation(
     private companion object {
         const val BEHIND = 80.0
         const val AHEAD = 600.0
-        const val STEP = 12.0
+        const val STEP = 8.0
         const val MAX_AGENTS = 112
         const val NEAR_RADIUS = 85.0
-        const val MID_RADIUS = 240.0
+        const val MID_RADIUS = 260.0
         const val VERTICES_PER_AGENT = 8
         const val INDICES_PER_AGENT = 36
         const val STRIDE = 36
@@ -144,7 +144,11 @@ internal class WorldLifeSimulation(
             val x = sample.x + cos(sample.yaw) * roadsideOffset * side
             val z = sample.z - sin(sample.yaw) * roadsideOffset * side
             val hasVisibleMotion = kotlin.math.abs(trafficMotion) > 0.75
+            // Activity density falls with distance: nearby life gets enough
+            // motion to read as living, while far silhouettes remain sparse enough
+            // to preserve the long-distance landscape and GPU budget.
             val moving = when {
+                distanceFromPlayer < 42.0 && isBusyBiome -> (seed ushr 9) % 7L != 0L
                 distanceFromPlayer < NEAR_RADIUS && isBusyBiome -> (seed ushr 9) % 5L != 0L
                 distanceFromPlayer < NEAR_RADIUS -> hasVisibleMotion && (seed ushr 9) % 6L != 0L
                 distanceFromPlayer < MID_RADIUS -> (seed ushr 9) % 4L != 0L
