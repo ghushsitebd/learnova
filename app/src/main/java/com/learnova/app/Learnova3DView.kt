@@ -41,6 +41,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var driving = false
     private var driveTime = 0.0
     private var vehicleDistance = 0.0
+    // Floating origin keeps Filament coordinates close to the camera during very long sessions.
+    private var renderOriginDistance = 0.0
     private var vehicleSpeed = 0.0
     private var lastFrameNanos = 0L
     // Shared render-loop timestep keeps vehicle physics deterministic across devices.
@@ -140,6 +142,9 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 vehicleDistance += vehicleSpeed * dt
 
                 updateDriveScene()
+                if (kotlin.math.abs(vehicleDistance - renderOriginDistance) >= 4.0) {
+                    renderOriginDistance = vehicleDistance
+                }
                 proceduralRoad?.update(vehicleDistance)
                 updateVehicleMechanics()
                 vehicleInteraction.update(dt.toFloat(), interactionProfile)
@@ -513,9 +518,9 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         // Spring-damper suspension reacts to the road's actual vertical
         // curvature instead of using a purely time-based bounce. This keeps the
         // chassis settled over crests/dips and remains deterministic at any FPS.
-        val road = RoadSpline.sample(vehicleDistance)
-        val roadAhead = RoadSpline.sample(vehicleDistance + 0.45)
-        val roadBehind = RoadSpline.sample(vehicleDistance - 0.45)
+        val road = RoadSpline.sampleRelative(vehicleDistance, renderOriginDistance)
+        val roadAhead = RoadSpline.sampleRelative(vehicleDistance + 0.45, renderOriginDistance)
+        val roadBehind = RoadSpline.sampleRelative(vehicleDistance - 0.45, renderOriginDistance)
         val verticalCurvature = roadAhead.y - 2.0 * road.y + roadBehind.y
         val targetCompression = (-verticalCurvature * 0.10).coerceIn(-0.035, 0.035)
         // Use the exact Choreographer delta already used by speed integration.
@@ -541,7 +546,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             val baseRoot = vehicleRootBaseTransform
             if (vehicleRootEntity != 0 && baseRoot != null && tm.hasComponent(vehicleRootEntity)) {
                 val travel = vehicleDistance
-                val road = RoadSpline.sample(travel)
+                val road = RoadSpline.sampleRelative(travel, renderOriginDistance)
                 val suspensionBob = suspensionDisplacement.toFloat()
                 val chassis = Mat4.of(*baseRoot) *
                         Mat4.of(
@@ -599,8 +604,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         // while the one-tap driving state advances continuously through the world.
         // The curve is deliberately gentle for young players and low-end phones.
         val travel = vehicleDistance
-        val road = RoadSpline.sample(travel)
-        val lookAhead = RoadSpline.sample(travel + 7.0)
+        val road = RoadSpline.sampleRelative(travel, renderOriginDistance)
+        val lookAhead = RoadSpline.sampleRelative(travel + 7.0, renderOriginDistance)
         val bodyBob = if (driving) kotlin.math.sin(travel * 3.4) * 0.018 else 0.0
         // A lightly damped camera offset avoids a robotic snap while keeping
         // the road center visible for the child's one-tap driving interaction.
