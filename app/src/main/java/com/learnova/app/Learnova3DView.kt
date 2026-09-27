@@ -28,6 +28,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var started = false
     private var driving = false
     private var driveTime = 0.0
+    private var vehicleDistance = 0.0
 
     init {
         addView(
@@ -66,7 +67,10 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             started = true
             frameCallback = Choreographer.FrameCallback { time ->
                 if (!started) return@FrameCallback
-                if (driving) driveTime += 1.0 / 60.0
+                if (driving) {
+                    driveTime += 1.0 / 60.0
+                    vehicleDistance += 0.42 / 60.0
+                }
                 updateDriveScene()
                 viewer.render(time)
                 choreographer.postFrameCallback(frameCallback)
@@ -78,9 +82,30 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     fun setDriving(value: Boolean) { driving = value }
 
     private fun updateDriveScene() {
-        val z = 6.8 + (if (driving) (driveTime * 0.42) % 1.8 else 0.0)
-        val yaw = if (driving) kotlin.math.sin(driveTime * 0.72) * 0.035 else 0.0
-        viewer.camera.lookAt(4.8 + yaw, 2.8, z, 0.0, 1.0, 14.0, 0.0, 1.0, 0.0)
+        // Camera follows a shallow spline so the road reads as a real curved route,
+        // while the one-tap driving state advances continuously through the world.
+        // The curve is deliberately gentle for young players and low-end phones.
+        val travel = vehicleDistance
+        val pathZ = 6.8 + (travel % 18.0)
+        val curve = kotlin.math.sin(travel * 0.23) * 2.15 +
+                kotlin.math.sin(travel * 0.075 + 0.8) * 0.85
+        val curveAhead = kotlin.math.sin((travel + 2.8) * 0.23) * 2.15 +
+                kotlin.math.sin((travel + 2.8) * 0.075 + 0.8) * 0.85
+        val heading = kotlin.math.atan2(curveAhead - curve, 2.8)
+        val bodyBob = if (driving) kotlin.math.sin(travel * 3.4) * 0.025 else 0.0
+        val cameraX = curve + kotlin.math.sin(travel * 0.18) * 0.10
+        val targetX = curveAhead
+
+        viewer.camera.lookAt(
+            cameraX, 2.82 + bodyBob, pathZ,
+            targetX, 1.02, pathZ + 7.0,
+            0.0, 1.0, 0.0
+        )
+
+        // Small banking cue follows road direction instead of using random sway.
+        // This keeps the motion physically coherent without adding input complexity.
+        viewer.camera.lens.focalLength = 48.0
+        viewer.camera.setExposure(0.0, 0.0, 1000.0)
     }
 
     override fun onDetachedFromWindow() {
