@@ -220,6 +220,7 @@ class MainActivity : AppCompatActivity() {
             drawTrees(canvas, w, h)
             drawHabitatDetails(canvas, w, h, world)
             drawRoad(canvas, w, h, world)
+            drawRoadReflections(canvas, w, h, world)
             drawRoadInfrastructure(canvas, w, h, world)
             drawAtmosphere(canvas, w, h, world)
             drawDistantWorld(canvas, w, h, world)
@@ -1951,6 +1952,42 @@ class MainActivity : AppCompatActivity() {
                 paint.color = Color.argb(150, 95, 145, 175)
                 c.drawRect(ax - 8f, ay - 1f, ax + 8f, ay + 2f, paint)
             }
+        }
+
+        private fun drawRoadReflections(c: Canvas, w: Float, h: Float, world: SmartScene) {
+            // Subtle wet-surface reflections add physical depth while staying asset-free.
+            if (world.weather != "Rainy") return
+
+            val horizon = h * 0.60f
+            val center = w * 0.50f
+            val roadGlow = Path()
+            roadGlow.moveTo(center - w * 0.025f, horizon)
+            roadGlow.lineTo(center + w * 0.025f, horizon)
+            roadGlow.lineTo(center + w * 0.22f, h)
+            roadGlow.lineTo(center - w * 0.22f, h)
+            roadGlow.close()
+
+            paint.shader = LinearGradient(
+                0f, horizon, 0f, h,
+                Color.argb(22, 220, 235, 242),
+                Color.argb(4, 220, 235, 242),
+                Shader.TileMode.CLAMP
+            )
+            c.drawPath(roadGlow, paint)
+            paint.shader = null
+
+            // Broken highlights follow perspective, so the wet road does not look flat.
+            paint.strokeCap = Paint.Cap.ROUND
+            for (i in 0..10) {
+                val t = (i + 1) / 12f
+                val y = horizon + (h - horizon) * t
+                val half = w * (0.018f + 0.18f * t)
+                val cx = center + sin(frame / 700.0 + i * 0.37).toFloat() * w * 0.012f
+                paint.color = Color.argb((10 + 22 * t).toInt(), 235, 242, 245)
+                paint.strokeWidth = 1.2f + 2.8f * t
+                c.drawLine(cx - half, y, cx + half, y, paint)
+            }
+            paint.strokeCap = Paint.Cap.BUTT
         }
 
         private fun drawRoadInfrastructure(c: Canvas, w: Float, h: Float, world: SmartScene) {
