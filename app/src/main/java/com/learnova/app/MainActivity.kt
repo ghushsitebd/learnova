@@ -785,60 +785,140 @@ class MainActivity : AppCompatActivity() {
         }
 
         private fun drawCar(c: Canvas, x: Float, y: Float, variant: Int = 1) {
-            // Cinematic pseudo-3D car: layered body, glass reflections, contact shadow and highlights.
-            paint.shader = RadialGradient(x - 28f, y - 48f, 180f,
-                intArrayOf(Color.argb(255, 105, 230, 160), Color.rgb(13, 115, 67), Color.rgb(4, 62, 38)),
-                floatArrayOf(0f, .52f, 1f), Shader.TileMode.CLAMP)
-            c.drawRoundRect(RectF(x-112f,y-42f,x+112f,y+38f),24f,24f,paint)
-            paint.shader = null
-
-            // Lower bumper and side contour.
-            paint.color = if (variant % 4 == 0) Color.rgb(25,35,42) else Color.rgb(5, 53, 39)
-            c.drawRoundRect(RectF(x-103f,y+17f,x+103f,y+42f),12f,12f,paint)
-            paint.color = when (variant % 6) {
-                0 -> Color.rgb(210,55,55)
-                1 -> Color.rgb(30,158,94)
+            // Parameterized pseudo-3D vehicle studio: geometry changes by model family,
+            // while gradients/details stay lightweight enough for low-end devices.
+            val family = when (variant) {
+                1, 2, 16, 17, 25, 57, 58 -> 0 // sedan / crossover
+                3, 4 -> 1 // hatchback
+                5, 6, 7, 8, 9 -> 2 // SUV
+                26, 27, 31 -> 3 // sports
+                28 -> 4 // convertible
+                29 -> 5 // classic
+                30 -> 6 // rally
+                else -> 0
+            }
+            val bodyColor = when (variant % 8) {
+                0 -> Color.rgb(205,55,55)
+                1 -> Color.rgb(25,145,92)
                 2 -> Color.rgb(38,105,190)
                 3 -> Color.rgb(235,175,45)
-                4 -> Color.rgb(155,55,175)
-                else -> Color.rgb(25,145,150)
+                4 -> Color.rgb(155,60,175)
+                5 -> Color.rgb(28,150,160)
+                6 -> Color.rgb(225,225,225)
+                else -> Color.rgb(55,65,72)
             }
-            c.drawRoundRect(RectF(x-106f,y-36f,x+106f,y+23f),21f,21f,paint)
+            val bodyLeft = when (family) { 1 -> -102f; 2 -> -118f; 3 -> -116f; else -> -110f }
+            val bodyRight = when (family) { 1 -> 108f; 2 -> 118f; 3 -> 116f; else -> 110f }
+            val bodyTop = when (family) { 2 -> -48f; 3 -> -38f; 5 -> -35f; else -> -42f }
+            val bodyBottom = if (family == 3) 34f else 40f
 
-            val roof = Path().apply {
-                moveTo(x-70f,y-34f); lineTo(x-42f,y-82f); lineTo(x+43f,y-82f)
-                lineTo(x+73f,y-34f); close()
+            paint.shader = LinearGradient(x, y + bodyTop, x, y + bodyBottom,
+                bodyColor, Color.rgb(
+                    (bodyColor.red * .52f).toInt(),
+                    (bodyColor.green * .52f).toInt(),
+                    (bodyColor.blue * .52f).toInt()
+                ), Shader.TileMode.CLAMP)
+            c.drawRoundRect(RectF(x+bodyLeft,y+bodyTop,x+bodyRight,y+bodyBottom),
+                if (family == 3) 18f else 24f, if (family == 3) 18f else 24f, paint)
+            paint.shader = null
+
+            // Lower sill / bumper gives depth and a visible contact edge.
+            paint.color = Color.argb(230, 20, 27, 30)
+            c.drawRoundRect(RectF(x+bodyLeft+8f,y+18f,x+bodyRight-8f,y+46f),12f,12f,paint)
+
+            val roof = Path()
+            when (family) {
+                1 -> { // hatchback: short roof and rear hatch
+                    roof.moveTo(x-62f,y-37f); roof.lineTo(x-38f,y-72f)
+                    roof.lineTo(x+34f,y-72f); roof.lineTo(x+72f,y-34f); roof.close()
+                }
+                2 -> { // SUV: taller cabin
+                    roof.moveTo(x-76f,y-40f); roof.lineTo(x-48f,y-88f)
+                    roof.lineTo(x+48f,y-88f); roof.lineTo(x+78f,y-40f); roof.close()
+                }
+                3 -> { // sports: low, swept roof
+                    roof.moveTo(x-70f,y-35f); roof.lineTo(x-28f,y-70f)
+                    roof.lineTo(x+42f,y-66f); roof.lineTo(x+75f,y-34f); roof.close()
+                }
+                4 -> { // convertible: low open cabin
+                    roof.moveTo(x-42f,y-35f); roof.lineTo(x-20f,y-59f)
+                    roof.lineTo(x+35f,y-59f); roof.lineTo(x+50f,y-34f); roof.close()
+                }
+                5 -> { // classic: rounded high roof
+                    roof.moveTo(x-68f,y-36f); roof.lineTo(x-48f,y-78f)
+                    roof.lineTo(x+42f,y-78f); roof.lineTo(x+70f,y-36f); roof.close()
+                }
+                6 -> { // rally: compact aggressive cabin
+                    roof.moveTo(x-62f,y-38f); roof.lineTo(x-34f,y-76f)
+                    roof.lineTo(x+34f,y-76f); roof.lineTo(x+65f,y-38f); roof.close()
+                }
+                else -> { // sedan / executive
+                    roof.moveTo(x-70f,y-38f); roof.lineTo(x-42f,y-82f)
+                    roof.lineTo(x+43f,y-82f); roof.lineTo(x+72f,y-38f); roof.close()
+                }
             }
-            paint.shader = LinearGradient(x.toFloat(), y-84f, x.toFloat(), y-28f,
-                Color.rgb(45, 184, 125), Color.rgb(7, 76, 49), Shader.TileMode.CLAMP)
+            paint.shader = LinearGradient(x, y-90f, x, y-28f,
+                Color.rgb(65, 190, 160), Color.rgb(7, 63, 52), Shader.TileMode.CLAMP)
             c.drawPath(roof,paint)
             paint.shader = null
 
-            // Deep glass with diagonal reflections.
-            paint.color = Color.rgb(24, 57, 66)
-            c.drawRoundRect(RectF(x-39f,y-70f,x+1f,y-43f),7f,7f,paint)
-            c.drawRoundRect(RectF(x+7f,y-70f,x+43f,y-43f),7f,7f,paint)
-            paint.color = Color.argb(120, 210, 245, 255)
-            c.drawRect(x-35f,y-67f,x-5f,y-63f,paint)
-            c.drawRect(x+11f,y-67f,x+38f,y-63f,paint)
+            // Individual window geometry follows the roof family.
+            paint.color = Color.rgb(24,57,66)
+            when (family) {
+                2 -> {
+                    c.drawRoundRect(RectF(x-42f,y-75f,x-2f,y-45f),7f,7f,paint)
+                    c.drawRoundRect(RectF(x+5f,y-75f,x+47f,y-45f),7f,7f,paint)
+                }
+                3,4 -> c.drawRoundRect(RectF(x-30f,y-62f,x+38f,y-40f),7f,7f,paint)
+                else -> {
+                    c.drawRoundRect(RectF(x-42f,y-69f,x-4f,y-43f),7f,7f,paint)
+                    c.drawRoundRect(RectF(x+5f,y-69f,x+43f,y-43f),7f,7f,paint)
+                }
+            }
+            paint.color = Color.argb(125,220,250,255)
+            c.drawRect(x-35f,y-66f,x-7f,y-62f,paint)
+            c.drawRect(x+11f,y-66f,x+38f,y-62f,paint)
 
-            // Headlights and grille.
-            paint.shader = RadialGradient(x-96f,y-4f,18f,Color.WHITE,Color.argb(20,255,255,255),Shader.TileMode.CLAMP)
-            c.drawCircle(x-96f,y-4f,10f,paint)
-            paint.shader = RadialGradient(x+96f,y-4f,18f,Color.WHITE,Color.argb(20,255,255,255),Shader.TileMode.CLAMP)
-            c.drawCircle(x+96f,y-4f,10f,paint)
+            // Model-specific front identity: grille, lamps, or sporty intake.
+            paint.shader = RadialGradient(x-96f,y-5f,18f,Color.WHITE,
+                Color.argb(20,255,255,255),Shader.TileMode.CLAMP)
+            c.drawCircle(x-96f,y-5f,10f,paint)
+            paint.shader = RadialGradient(x+96f,y-5f,18f,Color.WHITE,
+                Color.argb(20,255,255,255),Shader.TileMode.CLAMP)
+            c.drawCircle(x+96f,y-5f,10f,paint)
             paint.shader = null
-            paint.color = Color.rgb(12, 39, 34)
-            c.drawRoundRect(RectF(x-38f,y+13f,x+38f,y+25f),6f,6f,paint)
-            paint.color = Color.argb(120,255,255,255)
-            c.drawRoundRect(RectF(x-72f,y-29f,x+62f,y-24f),3f,3f,paint)
+            paint.color = Color.rgb(12,39,34)
+            if (family == 3) {
+                c.drawRoundRect(RectF(x-55f,y+9f,x+55f,y+24f),7f,7f,paint)
+                paint.color = Color.argb(180,255,255,255)
+                c.drawRoundRect(RectF(x-75f,y-29f,x+75f,y-24f),3f,3f,paint)
+                paint.color = Color.rgb(15,20,25)
+                c.drawRoundRect(RectF(x+45f,y-78f,x+63f,y-67f),3f,3f,paint) // spoiler
+            } else {
+                c.drawRoundRect(RectF(x-38f,y+12f,x+38f,y+25f),6f,6f,paint)
+            }
 
-            // Ground contact shadow.
-            paint.color = Color.argb(105,0,0,0)
-            c.drawOval(RectF(x-120f,y+34f,x+120f,y+62f),paint)
+            // Door/side contour and model badges.
+            paint.color = Color.argb(85,255,255,255)
+            paint.strokeWidth = 2f
+            paint.style = Paint.Style.STROKE
+            c.drawLine(x-55f,y-18f,x-55f,y+18f,paint)
+            c.drawLine(x+55f,y-18f,x+55f,y+18f,paint)
+            paint.style = Paint.Style.FILL
 
-            drawWheel(c,x-69f,y+34f,wheelSpin)
-            drawWheel(c,x+69f,y+34f,wheelSpin)
+            drawWheel(c,x + if (family == 3) -72f else -69f,y+35f,wheelSpin)
+            drawWheel(c,x + if (family == 3) 72f else 69f,y+35f,wheelSpin)
+
+            // Convertible cabin cue / rally roof bar.
+            if (family == 4) {
+                paint.color = Color.rgb(35,35,38)
+                paint.strokeWidth = 5f
+                c.drawLine(x-38f,y-35f,x-20f,y-58f,paint)
+                c.drawLine(x+22f,y-58f,x+42f,y-35f,paint)
+            } else if (family == 6) {
+                paint.color = Color.rgb(25,25,28)
+                c.drawRoundRect(RectF(x-46f,y-84f,x+46f,y-78f),3f,3f,paint)
+            }
         }
 
         private fun drawWheel(c: Canvas, x: Float, y: Float, angle: Float) {
@@ -861,53 +941,123 @@ class MainActivity : AppCompatActivity() {
         }
 
         private fun drawBus(c: Canvas, x: Float, y: Float, variant: Int = 1) {
-            paint.color = when (variant % 4) {
-                0 -> Color.rgb(235,178,45)
-                1 -> Color.rgb(45,125,205)
-                2 -> Color.rgb(220,70,55)
-                else -> Color.rgb(35,150,90)
+            val type = when (variant) { 18 -> 0; 19 -> 1; 20 -> 2; 49 -> 3; else -> 4 }
+            val body = when (type) {
+                0 -> Color.rgb(236,178,45) // school
+                1 -> Color.rgb(45,125,205) // city
+                2 -> Color.rgb(70,85,105)  // coach
+                3 -> Color.rgb(45,150,95)  // airport
+                else -> Color.rgb(205,75,55)
             }
-            c.drawRoundRect(RectF(x-125f,y-58f,x+125f,y+38f),22f,22f,paint)
-            paint.color = Color.rgb(180,225,238)
-            c.drawRoundRect(RectF(x-88f,y-44f,x+88f,y-10f),10f,10f,paint)
+            val h = if (type == 2) 64f else 58f
+            paint.shader = LinearGradient(x,y-h,x,y+42f,body,
+                Color.rgb((body.red*.55f).toInt(),(body.green*.55f).toInt(),(body.blue*.55f).toInt()),
+                Shader.TileMode.CLAMP)
+            c.drawRoundRect(RectF(x-128f,y-h,x+128f,y+40f),22f,22f,paint)
+            paint.shader = null
+            paint.color = Color.rgb(185,225,238)
+            val windowTop = if (type == 2) y-48f else y-45f
+            c.drawRoundRect(RectF(x-105f,windowTop,x+102f,y-13f),9f,9f,paint)
             paint.color = Color.rgb(30,45,50)
-            c.drawRoundRect(RectF(x-105f,y-8f,x+105f,y+22f),7f,7f,paint)
-            drawWheel(c,x-78f,y+36f,wheelSpin)
-            drawWheel(c,x+78f,y+36f,wheelSpin)
+            c.drawRoundRect(RectF(x-110f,y-8f,x+110f,y+22f),7f,7f,paint)
+            paint.color = Color.argb(110,255,255,255)
+            c.drawRect(x-95f,y-41f,x-20f,y-37f,paint)
+            c.drawRect(x-10f,y-41f,x+75f,y-37f,paint)
+            if (type == 0) {
+                paint.color = Color.rgb(35,35,35)
+                c.drawRect(x-125f,y-2f,x+125f,y+5f,paint)
+            } else if (type == 3) {
+                paint.color = Color.WHITE
+                c.drawRoundRect(RectF(x-35f,y+2f,x+35f,y+18f),5f,5f,paint)
+            }
+            drawWheel(c,x-82f,y+38f,wheelSpin)
+            drawWheel(c,x+82f,y+38f,wheelSpin)
         }
 
         private fun drawTruck(c: Canvas, x: Float, y: Float, variant: Int = 1) {
-            paint.color = when (variant % 5) {
-                0 -> Color.rgb(205,70,52)
-                1 -> Color.rgb(55,105,145)
-                2 -> Color.rgb(210,175,55)
-                3 -> Color.rgb(55,130,75)
-                else -> Color.rgb(90,90,95)
+            val type = when (variant) {
+                10 -> 0; 11 -> 1; 12 -> 2; 13,55 -> 3; 14,54 -> 4; 52 -> 5; 53 -> 6; 59 -> 7; 51 -> 8; else -> 0
             }
-            c.drawRoundRect(RectF(x-120f,y-40f,x+15f,y+38f),12f,12f,paint)
-            paint.color = Color.rgb(80,105,115)
-            c.drawRoundRect(RectF(x+5f,y-65f,x+108f,y+38f),15f,15f,paint)
+            val cabColor = when (type) {
+                3 -> Color.rgb(210,55,45)
+                4 -> Color.rgb(45,120,175)
+                5 -> Color.rgb(205,145,45)
+                6 -> Color.rgb(75,125,75)
+                8 -> Color.rgb(105,75,45)
+                else -> Color.rgb(60,105,145)
+            }
+            val cargoColor = when (type) {
+                2 -> Color.rgb(235,235,235)
+                3 -> Color.rgb(225,70,55)
+                4 -> Color.rgb(70,125,165)
+                6 -> Color.rgb(100,115,105)
+                else -> Color.rgb(165,175,180)
+            }
+            paint.color = cargoColor
+            val cargoRight = if (type == 0) 112f else 120f
+            c.drawRoundRect(RectF(x-118f,y-42f,x+12f,y+38f),10f,10f,paint)
+            paint.shader = LinearGradient(x+55f,y-68f,x+55f,y+40f,cabColor,
+                Color.rgb((cabColor.red*.5f).toInt(),(cabColor.green*.5f).toInt(),(cabColor.blue*.5f).toInt()),
+                Shader.TileMode.CLAMP)
+            c.drawRoundRect(RectF(x+5f,y-66f,x+cargoRight,y+39f),15f,15f,paint)
+            paint.shader = null
             paint.color = Color.rgb(190,225,238)
-            c.drawRoundRect(RectF(x+22f,y-52f,x+91f,y-20f),8f,8f,paint)
-            drawWheel(c,x-72f,y+37f,wheelSpin)
-            drawWheel(c,x+72f,y+37f,wheelSpin)
+            c.drawRoundRect(RectF(x+21f,y-53f,x+91f,y-20f),8f,8f,paint)
+            paint.color = Color.argb(105,255,255,255)
+            c.drawRect(x+28f,y-48f,x+82f,y-44f,paint)
+            if (type == 3 || type == 4) {
+                paint.color = Color.rgb(245,245,245)
+                c.drawRoundRect(RectF(x-108f,y-25f,x+2f,y+18f),6f,6f,paint)
+            } else if (type == 6) {
+                paint.color = Color.rgb(45,55,50)
+                c.drawRoundRect(RectF(x-110f,y-28f,x+3f,y+20f),6f,6f,paint)
+            } else if (type == 8) {
+                paint.color = Color.rgb(120,75,35)
+                c.drawCircle(x-50f,y-2f,18f,paint)
+            }
+            paint.color = Color.rgb(30,35,38)
+            c.drawRoundRect(RectF(x-122f,y+22f,x+110f,y+45f),8f,8f,paint)
+            drawWheel(c,x-72f,y+38f,wheelSpin)
+            drawWheel(c,x+76f,y+38f,wheelSpin)
         }
 
         private fun drawVan(c: Canvas, x: Float, y: Float, variant: Int = 1) {
-            paint.color = when (variant % 5) {
-                0 -> Color.rgb(70,105,145)
-                1 -> Color.rgb(225,225,225)
-                2 -> Color.rgb(45,135,90)
-                3 -> Color.rgb(210,85,55)
-                else -> Color.rgb(120,75,145)
+            val type = when (variant) { 15 -> 0; 21 -> 1; 22 -> 2; 23 -> 3; 56 -> 4; 60 -> 5; else -> 3 }
+            val body = when (type) {
+                0 -> Color.rgb(238,238,238)
+                1 -> Color.rgb(80,105,145)
+                2 -> Color.rgb(45,140,90)
+                3 -> Color.rgb(220,220,220)
+                4 -> Color.rgb(225,75,55)
+                else -> Color.rgb(55,145,120)
             }
-            c.drawRoundRect(RectF(x-115f,y-58f,x+112f,y+38f),20f,20f,paint)
+            paint.shader = LinearGradient(x,y-62f,x,y+42f,body,
+                Color.rgb((body.red*.55f).toInt(),(body.green*.55f).toInt(),(body.blue*.55f).toInt()),
+                Shader.TileMode.CLAMP)
+            c.drawRoundRect(RectF(x-116f,y-60f,x+116f,y+40f),20f,20f,paint)
+            paint.shader = null
             paint.color = Color.rgb(185,225,238)
-            c.drawRoundRect(RectF(x-78f,y-43f,x+65f,y-10f),10f,10f,paint)
+            if (type == 1) {
+                c.drawRoundRect(RectF(x-82f,y-45f,x-8f,y-12f),9f,9f,paint)
+                c.drawRoundRect(RectF(x,y-45f,x+73f,y-12f),9f,9f,paint)
+            } else {
+                c.drawRoundRect(RectF(x-82f,y-45f,x+72f,y-12f),9f,9f,paint)
+            }
+            paint.color = Color.argb(120,220,250,255)
+            c.drawRect(x-72f,y-41f,x+58f,y-37f,paint)
             paint.color = Color.rgb(245,245,245)
-            c.drawRect(x-65f,y+2f,x+72f,y+25f,paint)
-            drawWheel(c,x-70f,y+36f,wheelSpin)
-            drawWheel(c,x+70f,y+36f,wheelSpin)
+            c.drawRoundRect(RectF(x-68f,y+1f,x+75f,y+24f),7f,7f,paint)
+            if (type == 0) {
+                paint.color = Color.rgb(205,55,55)
+                c.drawCircle(x+90f,y-5f,7f,paint)
+                paint.color = Color.rgb(25,110,180)
+                c.drawCircle(x+102f,y-5f,7f,paint)
+            } else if (type == 4) {
+                paint.color = Color.rgb(25,45,55)
+                c.drawRoundRect(RectF(x-50f,y-55f,x+48f,y-50f),3f,3f,paint)
+            }
+            drawWheel(c,x-70f,y+38f,wheelSpin)
+            drawWheel(c,x+70f,y+38f,wheelSpin)
         }
 
         private fun drawBike(c: Canvas, x: Float, y: Float) {
