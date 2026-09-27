@@ -25,10 +25,10 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      - name: Set up Android SDK 37
+      - name: Set up Android SDK 36
         uses: android-actions/setup-android@v3
         with:
-          packages: 'platform-tools platforms;android-37 build-tools;36.0.0'
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
 
       - name: Set up Gradle 9.3.1
         uses: gradle/actions/setup-gradle@v4
