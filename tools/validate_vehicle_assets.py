@@ -286,3 +286,5 @@ if ASSETS.exists():
 # 397: add compressed asset uncompressed-size guard.
 
 # 398: add validator deterministic exit summary.
+
+# 399: add malformed filename rejection hardening.
