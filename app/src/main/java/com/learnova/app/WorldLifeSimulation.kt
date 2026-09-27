@@ -26,7 +26,7 @@ internal class WorldLifeSimulation(
 ) {
     private companion object {
         const val BEHIND = 80.0
-        const val AHEAD = 420.0
+        const val AHEAD = 520.0
         const val STEP = 14.0
         const val MAX_AGENTS = 72
         const val VERTICES_PER_AGENT = 8
@@ -80,23 +80,30 @@ internal class WorldLifeSimulation(
         while (d <= centerDistance + AHEAD && vCount + 8 <= MAX_AGENTS * 8) {
             val seed = stableSeed(d)
             val sample = RoadSpline.sampleRelative(d, centerDistance)
-            val lane = when ((seed ushr 3) % 5L) {
+            val lane = when ((seed ushr 3) % 7L) {
                 0L -> -6.2
                 1L -> 6.2
                 2L -> -12.0
                 3L -> 12.0
-                else -> 18.0
+                5L -> -20.0
+                else -> 20.0
             }
             val side = if ((seed and 1L) == 0L) -1.0 else 1.0
             val x = sample.x + cos(sample.yaw) * lane * side
             val z = sample.z - sin(sample.yaw) * lane * side
-            val moving = (seed ushr 9) % 3L != 0L
+            val moving = (seed ushr 9) % 4L != 0L
             val phase = ((seed ushr 17) % 1000L) / 1000.0
             val drift = if (moving) sin(centerDistance * 0.035 + phase * 6.283) * 1.8 else 0.0
             val px = x + cos(sample.yaw) * drift
             val pz = z - sin(sample.yaw) * drift
-            val kind = ((seed ushr 4) % 6L).toInt()
-            val scale = 0.75 + ((seed ushr 21) % 45L) / 100.0
+            val biome = WorldDirector.profile(d).biome
+            val kind = when (biome) {
+                WorldDirector.Biome.DESERT -> ((seed ushr 4) % 5L).toInt()
+                WorldDirector.Biome.MOUNTAIN, WorldDirector.Biome.PLATEAU -> ((seed ushr 4) % 7L).toInt()
+                WorldDirector.Biome.MARKET, WorldDirector.Biome.VILLAGE -> ((seed ushr 4) % 8L).toInt()
+                else -> ((seed ushr 4) % 6L).toInt()
+            }
+            val scale = 0.70 + ((seed ushr 21) % 55L) / 100.0
 
             val height = when (kind) {
                 0, 1 -> 1.15 * scale
