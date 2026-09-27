@@ -12,7 +12,7 @@ def releaseKeyPassword = System.getenv("LEARNOVA_KEY_PASSWORD")
 
 android {
     namespace 'com.learnova.app'
-    compileSdk 36
+    compileSdk 37
 
     defaultConfig {
         applicationId 'com.learnova.app'
