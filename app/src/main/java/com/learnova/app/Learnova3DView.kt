@@ -1,6 +1,8 @@
 package com.learnova.app
 
 import android.content.Context
+import android.app.ActivityManager
+import android.os.Build
 import android.util.Base64
 import android.view.Choreographer
 import android.view.SurfaceView
@@ -51,9 +53,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var wheelRadius = activeVehicle.wheelRadius
     private var renderProfile = VehicleRenderProfile.forType(activeVehicle.type)
     private val vehicleAssetResolver = VehicleAssetResolver(context)
-    private val assetIoExecutor: ExecutorService = Executors.newSingleThreadExecutor { runnable ->
-        Thread(runnable, "LearnovaVehicleAssetIO").apply { isDaemon = true }
-    }
+    private var assetIoExecutor: ExecutorService = newAssetIoExecutor()
     private val assetLoadGeneration = AtomicInteger(0)
     private var loadedVehicleAssetKey = "base"
     private var requestedVehicleAssetKey = "base"
@@ -64,6 +64,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
         )
         surface.setZOrderOnTop(false)
+        configureDeviceRenderProfile()
 
         val modelBytes = decodeModel()
         viewer.loadModelGlb(ByteBuffer.wrap(modelBytes))
@@ -81,17 +82,14 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             0.0, 1.0, 14.0,
             0.0, 1.0, 0.0
         )
-        viewer.view.dynamicResolutionOptions = viewer.view.dynamicResolutionOptions.apply {
-            enabled = true
-            quality = com.google.android.filament.View.QualityLevel.MEDIUM
-        }
         viewer.view.antiAliasing = com.google.android.filament.View.AntiAliasing.FXAA
-        viewer.view.ambientOcclusionOptions = viewer.view.ambientOcclusionOptions.apply { enabled = true }
-        viewer.view.bloomOptions = viewer.view.bloomOptions.apply { enabled = true }
     }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
+        if (assetIoExecutor.isShutdown || assetIoExecutor.isTerminated) {
+            assetIoExecutor = newAssetIoExecutor()
+        }
         if (!started) {
             started = true
             frameCallback = Choreographer.FrameCallback { time ->
@@ -121,6 +119,44 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 choreographer.postFrameCallback(frameCallback)
             }
             choreographer.postFrameCallback(frameCallback)
+        }
+    }
+
+    private fun newAssetIoExecutor(): ExecutorService =
+        Executors.newSingleThreadExecutor { runnable ->
+            Thread(runnable, "LearnovaVehicleAssetIO").apply { isDaemon = true }
+        }
+
+    /**
+     * Device-aware quality policy: keep the same physically based scene, but scale
+     * expensive post-processing on constrained phones. This avoids making the child
+     * experience depend on a single hardware tier.
+     */
+    private fun configureDeviceRenderProfile() {
+        val memoryClassMb = (context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager)
+            ?.memoryClass ?: 128
+        val constrained = memoryClassMb < 192
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            surface.setFrameRate(
+                60.0f,
+                android.view.Surface.FRAME_RATE_COMPATIBILITY_DEFAULT
+            )
+        }
+
+        viewer.view.dynamicResolutionOptions = viewer.view.dynamicResolutionOptions.apply {
+            enabled = true
+            quality = if (constrained) {
+                com.google.android.filament.View.QualityLevel.LOW
+            } else {
+                com.google.android.filament.View.QualityLevel.MEDIUM
+            }
+        }
+        viewer.view.ambientOcclusionOptions = viewer.view.ambientOcclusionOptions.apply {
+            enabled = !constrained
+        }
+        viewer.view.bloomOptions = viewer.view.bloomOptions.apply {
+            enabled = !constrained
         }
     }
 
