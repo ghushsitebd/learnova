@@ -79,3 +79,5 @@ internal object RoadSpline {
 // Realism stage: stable terrain grade transitions.
 
 // Realism stage: secondary terrain undulation.
+
+// Realism stage: road path continuity.
