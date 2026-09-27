@@ -36,8 +36,10 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
-            shrinkResources false
+            // R8 removes unreachable Java/Kotlin code while keeping Filament/JNI entry points.
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             def releaseTaskRequested = gradle.startParameter.taskNames.any { it.toLowerCase().contains("release") }
             if (releaseStorePassword && releaseKeyAlias && releaseKeyPassword && System.getenv("LEARNOVA_KEYSTORE_PATH")) {
                 signingConfig signingConfigs.release
