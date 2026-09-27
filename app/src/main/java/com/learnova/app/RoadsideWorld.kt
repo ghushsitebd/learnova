@@ -81,7 +81,7 @@ internal class RoadsideWorld(
         var d = kotlin.math.floor((centerDistance - BEHIND) / STEP) * STEP
         while (d <= centerDistance + AHEAD && vertexCount + 8 <= MAX_PROPS * 8) {
             val sample = RoadSpline.sampleRelative(d, centerDistance)
-            val biome = WorldDirector.profile(d).biome
+            val biome = transitionBiome(d, stableSeed(d))
             val seed = stableSeed(d)
             val yaw = sample.yaw
             val sideSign = if ((seed and 1L) == 0L) -1.0 else 1.0
@@ -197,6 +197,30 @@ internal class RoadsideWorld(
         val hy = yaw * 0.5f; val hb = bank * 0.5f
         data.putFloat(sin(hb)); data.putFloat(0f); data.putFloat(sin(hy)); data.putFloat(cos(hy) * cos(hb))
         data.putFloat(u); data.putFloat(v)
+    }
+
+    /**
+     * Softens visual biome boundaries in the roadside stream.
+     *
+     * The world director remains deterministic, but real landscapes transition
+     * gradually. In the final 18 m of a chapter, a small deterministic subset
+     * of props can belong to the next biome, creating a natural ecotone.
+     */
+    private fun transitionBiome(distance: Double, seed: Long): WorldDirector.Biome {
+        val safe = kotlin.math.max(0.0, distance)
+        val chapterLength = 96.0
+        val fraction = safe - kotlin.math.floor(safe / chapterLength) * chapterLength
+        if (fraction < 78.0) return WorldDirector.profile(safe).biome
+
+        val current = WorldDirector.profile(safe).biome
+        val next = WorldDirector.profile(
+            safe + (chapterLength - fraction) + 0.25
+        ).biome
+        if (current == next) return current
+
+        val t = ((fraction - 78.0) / 18.0).coerceIn(0.0, 1.0)
+        val chance = ((seed ushr 16) and 1023L) / 1023.0
+        return if (chance < t * 0.58) next else current
     }
 
     private fun stableSeed(distance: Double): Long {
