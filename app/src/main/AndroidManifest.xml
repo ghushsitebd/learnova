@@ -3,18 +3,23 @@
 
     <application
         android:allowBackup="true"
+        android:hardwareAccelerated="true"
         android:icon="@drawable/learnova_icon"
         android:roundIcon="@drawable/learnova_icon"
         android:label="Learnova"
         android:supportsRtl="true"
+        android:resizeableActivity="true"
         android:theme="@style/Theme.Learnova">
 
         <activity
             android:name=".AdminPanelActivity"
             android:exported="false" />
+
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:hardwareAccelerated="true"
+            android:screenOrientation="portrait">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
