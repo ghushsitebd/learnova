@@ -530,18 +530,24 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         val road = RoadSpline.sample(travel)
         val lookAhead = RoadSpline.sample(travel + 7.0)
         val bodyBob = if (driving) kotlin.math.sin(travel * 3.4) * 0.018 else 0.0
+        // A lightly damped camera offset avoids a robotic snap while keeping
+        // the road center visible for the child's one-tap driving interaction.
         val cameraX = road.x + kotlin.math.sin(travel * 0.18) * 0.07
         val cameraZ = road.z - 6.8
+        val cameraY = 2.82 + lookAhead.y + bodyBob
 
         viewer.camera.lookAt(
-            cameraX, 2.82 + lookAhead.y + bodyBob, cameraZ,
+            cameraX, cameraY, cameraZ,
             lookAhead.x, lookAhead.y + 1.02, lookAhead.z,
             0.0, 1.0, 0.0
         )
 
-        // Small banking cue follows road direction instead of using random sway.
-        // This keeps the motion physically coherent without adding input complexity.
-        viewer.camera.setLensProjection(50.0, 1.0, 0.10, 260.0)
+        // A real driving camera widens its field of view slightly as speed rises.
+        // The change is deliberately small so children do not experience a
+        // distracting "zoom" effect on lower-end phones.
+        val speedRatio = (vehicleSpeed / targetSpeed.coerceAtLeast(0.1)).coerceIn(0.0, 1.0)
+        val dynamicFov = 48.0 + 4.0 * speedRatio
+        viewer.camera.setLensProjection(dynamicFov, 1.0, 0.10, 260.0)
         viewer.camera.setExposure(14.0f, 1.0f / 120.0f, 100.0f)
     }
 
