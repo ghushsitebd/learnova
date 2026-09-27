@@ -875,6 +875,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         proceduralRoad = null
         terrainMesh?.destroy()
         terrainMesh = null
+        roadsideWorld?.destroy()
+        roadsideWorld = null
         if (sunEntity != 0) {
             viewer.scene.removeEntity(sunEntity)
             viewer.engine.lightManager.destroy(sunEntity)
