@@ -160,17 +160,20 @@ class MainActivity : AppCompatActivity() {
                         // Holding either side of the road steers. This deliberately
                         // avoids a virtual joystick: the child only needs a finger.
                         if (running && x < w * 0.30f) {
+                            // Analog left steering: the farther the finger is from
+                            // the centre, the stronger the steering input.
                             steeringTouchActive = true
-                            steeringInput = -1f
-                            threeDWorld.setSteeringInput(-1f)
+                            steeringInput = ((x / w) * 2f - 1f).coerceIn(-1f, -0.15f)
+                            threeDWorld.setSteeringInput(steeringInput)
                             performClick()
                             invalidate()
                             return true
                         }
                         if (running && x > w * 0.70f) {
+                            // Analog right steering with a soft centre dead-zone.
                             steeringTouchActive = true
-                            steeringInput = 1f
-                            threeDWorld.setSteeringInput(1f)
+                            steeringInput = ((x / w) * 2f - 1f).coerceIn(0.15f, 1f)
+                            threeDWorld.setSteeringInput(steeringInput)
                             performClick()
                             invalidate()
                             return true
@@ -217,9 +220,12 @@ class MainActivity : AppCompatActivity() {
                         // Follow the finger continuously while it stays in the drive area.
                         // A vertical move outside the play corridor does not create a
                         // surprise steering jump; the current direction is simply held.
+                        // Preserve continuous steering strength while dragging.
+                        // The child still uses only one finger; no virtual joystick.
+                        val normalized = ((x / w) * 2f - 1f).coerceIn(-1f, 1f)
                         val side = when {
-                            x < w * 0.30f -> -1f
-                            x > w * 0.70f -> 1f
+                            normalized <= -0.15f -> normalized
+                            normalized >= 0.15f -> normalized
                             else -> 0f
                         }
                         steeringInput = side
