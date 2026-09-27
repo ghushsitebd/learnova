@@ -932,6 +932,7 @@ class MainActivity : AppCompatActivity() {
                 "car" -> drawCar(c, cx, cy, selected.id)
                 "bus" -> drawBus(c, cx, cy, selected.id)
                 "truck" -> drawTruck(c, cx, cy, selected.id)
+                "sixWheel" -> drawSixWheel(c, cx, cy, selected.id)
                 "van" -> drawVan(c, cx, cy, selected.id)
                 "bike" -> drawBike(c, cx, cy)
                 "sportBike" -> drawSportBike(c, cx, cy)
@@ -951,6 +952,58 @@ class MainActivity : AppCompatActivity() {
                 paint.strokeWidth = 2f
                 c.drawLine(cx - 70f, cy + 8f, cx - 125f, cy + 13f, paint)
                 c.drawLine(cx + 70f, cy + 12f, cx + 125f, cy + 17f, paint)
+            }
+        }
+
+        private fun drawSixWheel(c: Canvas, x: Float, y: Float, variant: Int) {
+            val body = when (variant % 4) {
+                0 -> Color.rgb(62, 88, 76)
+                1 -> Color.rgb(42, 72, 92)
+                2 -> Color.rgb(118, 72, 42)
+                else -> Color.rgb(92, 96, 102)
+            }
+            paint.color = Color.argb(82, 0, 0, 0)
+            c.drawOval(RectF(x - 125f, y + 38f, x + 125f, y + 62f), paint)
+
+            paint.shader = LinearGradient(x, y - 54f, x, y + 45f, body,
+                Color.rgb((Color.red(body)*.48f).toInt(), (Color.green(body)*.48f).toInt(), (Color.blue(body)*.48f).toInt()),
+                Shader.TileMode.CLAMP)
+            c.drawRoundRect(RectF(x - 118f, y - 48f, x + 118f, y + 42f), 20f, 20f, paint)
+            paint.shader = null
+
+            paint.color = Color.rgb(35, 55, 61)
+            val cabin = Path()
+            cabin.moveTo(x - 72f, y - 44f); cabin.lineTo(x - 48f, y - 92f)
+            cabin.lineTo(x + 43f, y - 92f); cabin.lineTo(x + 76f, y - 43f); cabin.close()
+            c.drawPath(cabin, paint)
+
+            paint.color = Color.rgb(38, 74, 82)
+            c.drawRoundRect(RectF(x - 42f, y - 82f, x - 3f, y - 52f), 6f, 6f, paint)
+            c.drawRoundRect(RectF(x + 4f, y - 82f, x + 43f, y - 52f), 6f, 6f, paint)
+
+            paint.color = Color.rgb(28, 32, 34)
+            c.drawRoundRect(RectF(x - 127f, y + 25f, x - 103f, y + 51f), 8f, 8f, paint)
+            c.drawRoundRect(RectF(x + 103f, y + 25f, x + 127f, y + 51f), 8f, 8f, paint)
+            c.drawRoundRect(RectF(x - 96f, y + 20f, x + 96f, y + 43f), 8f, 8f, paint)
+
+            val wheelXs = floatArrayOf(-82f, 0f, 82f)
+            for (wx in wheelXs) drawWheel(c, x + wx, y + 43f, wheelSpin)
+
+            paint.color = Color.rgb(24, 28, 30)
+            paint.strokeWidth = 5f
+            c.drawLine(x - 48f, y - 96f, x + 48f, y - 96f, paint)
+            c.drawLine(x - 43f, y - 96f, x - 55f, y - 77f, paint)
+            c.drawLine(x + 43f, y - 96f, x + 55f, y - 77f, paint)
+
+            paint.color = Color.rgb(255, 242, 180)
+            c.drawRoundRect(RectF(x - 111f, y - 2f, x - 94f, y + 12f), 4f, 4f, paint)
+            paint.color = Color.rgb(210, 48, 42)
+            c.drawRoundRect(RectF(x + 94f, y - 2f, x + 111f, y + 12f), 4f, 4f, paint)
+
+            if (running) {
+                paint.color = Color.argb(95, 235, 235, 220)
+                c.drawLine(x - 72f, y + 10f, x - 72f, y + 28f + sin(frame / 6.0).toFloat() * 3f, paint)
+                c.drawLine(x + 72f, y + 10f, x + 72f, y + 28f - sin(frame / 6.0).toFloat() * 3f, paint)
             }
         }
 
