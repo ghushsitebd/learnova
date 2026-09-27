@@ -805,40 +805,68 @@ class MainActivity : AppCompatActivity() {
             val secondaryPhase = sin(frame / 9.5 + 1.4).toFloat()
             val drift = if (running) sin(frame / 24.0).toFloat() * w * .018f else 0f
 
-            when (world.region) {
-                "Dinosaur Valley" -> {
-                    drawAnimatedAnimal(c, "dinosaur", w * .78f + drift, base + primaryPhase * 3f, travel)
-                    drawAnimatedAnimal(c, if (world.id % 2 == 0) "dinosaur" else "bird",
-                        w * .18f - drift, base - 28f + secondaryPhase * 2f, -travel * .7f)
+            // Rare wildlife encounters: a predator can suddenly leave the habitat,
+            // sprint beside/across the road, then disappear. The event is deterministic
+            // (not random every frame), so it remains reproducible and lightweight.
+            val encounterWindow = ((frame + world.id * 137L) % 960L).toFloat() / 960f
+            val aggressive = running && encounterWindow < .17f
+            if (aggressive) {
+                val progress = (encounterWindow / .17f).coerceIn(0f, 1f)
+                val chargeX = if (world.id % 2 == 0) -w*.12f + progress*w*1.24f
+                               else w*1.12f - progress*w*1.24f
+                val predator = when (world.id % 4) {
+                    0 -> "tiger"
+                    1 -> "cheetah"
+                    2 -> "dinosaur"
+                    else -> "elephant"
                 }
-                "Forest" -> {
-                    val a = when (world.id % 4) { 0 -> "bear"; 1 -> "deer"; 2 -> "fox"; else -> "bird" }
-                    val b = when (world.id % 3) { 0 -> "bird"; 1 -> "deer"; else -> "fox" }
-                    drawAnimatedAnimal(c, a, w * .16f + drift, base + primaryPhase * 2f, travel)
-                    drawAnimatedAnimal(c, b, w * .76f - drift, base - 20f + secondaryPhase * 2f, -travel * .65f)
+                drawAnimatedAnimal(c, predator, chargeX, base + 8f, travel*.18f, aggressive = true, chargeProgress = progress)
+            } else {
+                when (world.region) {
+                    "Dinosaur Valley" -> {
+                        drawAnimatedAnimal(c, "dinosaur", w*.78f+drift, base+primaryPhase*3f, travel)
+                        drawAnimatedAnimal(c, if (world.id%2==0) "dinosaur" else "bird",
+                            w*.18f-drift, base-28f+secondaryPhase*2f, -travel*.7f)
+                    }
+                    "Forest" -> {
+                        val a=when(world.id%4){0->"bear";1->"deer";2->"fox";else->"bird"}
+                        val b=when(world.id%3){0->"bird";1->"deer";else->"fox"}
+                        drawAnimatedAnimal(c,a,w*.16f+drift,base+primaryPhase*2f,travel)
+                        drawAnimatedAnimal(c,b,w*.76f-drift,base-20f+secondaryPhase*2f,-travel*.65f)
+                    }
+                    "Safari" -> {
+                        val a=when(world.id%4){0->"elephant";1->"giraffe";2->"zebra";else->"lion"}
+                        val b=when(world.id%3){0->"zebra";1->"lion";else->"giraffe"}
+                        drawAnimatedAnimal(c,a,w*.78f+drift,base+primaryPhase*2.5f,travel)
+                        drawAnimatedAnimal(c,b,w*.20f-drift,base-12f+secondaryPhase*2f,-travel*.55f)
+                    }
+                    "Ocean","Island","Wetland" -> {
+                        val a=when(world.id%4){0->"dolphin";1->"fish";2->"crocodile";else->"bird"}
+                        val b=if(world.id%2==0)"fish" else "bird"
+                        drawAnimatedAnimal(c,a,w*.78f+drift,base-5f+primaryPhase*5f,travel)
+                        drawAnimatedAnimal(c,b,w*.28f-drift,base-42f+secondaryPhase*4f,-travel*.8f)
+                    }
+                    "Arctic" -> {
+                        drawAnimatedAnimal(c,"penguin",w*.76f+drift,base+primaryPhase*2f,travel)
+                        drawAnimatedAnimal(c,"penguin",w*.30f-drift,base-4f+secondaryPhase*2f,-travel*.6f)
+                    }
+                    else -> {
+                        val a=if(world.id%2==0)"elephant" else "bear"
+                        val b=if(world.id%3==0)"bird" else "fox"
+                        drawAnimatedAnimal(c,a,w*.80f+drift,base+primaryPhase*2f,travel)
+                        drawAnimatedAnimal(c,b,w*.18f-drift,base-18f+secondaryPhase*2f,-travel*.55f)
+                    }
                 }
-                "Safari" -> {
-                    val a = when (world.id % 4) { 0 -> "elephant"; 1 -> "giraffe"; 2 -> "zebra"; else -> "lion" }
-                    val b = when (world.id % 3) { 0 -> "zebra"; 1 -> "lion"; else -> "giraffe" }
-                    drawAnimatedAnimal(c, a, w * .78f + drift, base + primaryPhase * 2.5f, travel)
-                    drawAnimatedAnimal(c, b, w * .20f - drift, base - 12f + secondaryPhase * 2f, -travel * .55f)
-                }
-                "Ocean", "Island", "Wetland" -> {
-                    val a = when (world.id % 4) { 0 -> "dolphin"; 1 -> "fish"; 2 -> "crocodile"; else -> "bird" }
-                    val b = if (world.id % 2 == 0) "fish" else "bird"
-                    drawAnimatedAnimal(c, a, w * .78f + drift, base - 5f + primaryPhase * 5f, travel)
-                    drawAnimatedAnimal(c, b, w * .28f - drift, base - 42f + secondaryPhase * 4f, -travel * .8f)
-                }
-                "Arctic" -> {
-                    drawAnimatedAnimal(c, "penguin", w * .76f + drift, base + primaryPhase * 2f, travel)
-                    drawAnimatedAnimal(c, "penguin", w * .30f - drift, base - 4f + secondaryPhase * 2f, -travel * .6f)
-                }
-                else -> {
-                    val a = if (world.id % 2 == 0) "elephant" else "bear"
-                    val b = if (world.id % 3 == 0) "bird" else "fox"
-                    drawAnimatedAnimal(c, a, w * .80f + drift, base + primaryPhase * 2f, travel)
-                    drawAnimatedAnimal(c, b, w * .18f - drift, base - 18f + secondaryPhase * 2f, -travel * .55f)
-                }
+            }
+
+            // Prehistoric sky encounters: pterosaurs and giant flying predators appear
+            // only occasionally, with wing beats and depth scaling.
+            val skyCycle = ((frame + world.id * 211L) % 1500L).toFloat() / 1500f
+            if (running && (world.region == "Dinosaur Valley" || world.id % 9 == 0) && skyCycle < .30f) {
+                val p = skyCycle/.30f
+                val fx = if (world.id%2==0) -w*.18f+p*w*1.36f else w*1.18f-p*w*1.36f
+                val fy = h*.22f + sin(frame/8.0).toFloat()*18f
+                drawFlyingPrehistoric(c,fx,fy,1.0f+0.35f*sin(world.id*1.7f).toFloat(), world.id%3==0)
             }
         }
 
@@ -899,6 +927,52 @@ class MainActivity : AppCompatActivity() {
         private fun hSafe(c: Canvas): Float = c.height.toFloat()
 
         private fun wSafe(c: Canvas): Float = c.width.toFloat()
+
+        private fun drawTiger(c: Canvas,x:Float,y:Float,aggressive:Boolean){
+            paint.color=Color.rgb(214,142,42)
+            c.drawOval(RectF(x-70f,y-45f,x+58f,y+8f),paint)
+            c.drawCircle(x+57f,y-42f,28f,paint)
+            paint.color=Color.BLACK
+            for(i in -2..2){ c.drawRect(x-35f+i*20f,y-43f+i*2f,x-28f+i*20f,y+1f+i*2f,paint) }
+            c.drawCircle(x+48f,y-50f,3f,paint); c.drawCircle(x+66f,y-50f,3f,paint)
+            paint.style=Paint.Style.STROKE; paint.strokeWidth=7f
+            val run=if(aggressive) abs(sin(frame/3.0)).toFloat()*18f else 0f
+            c.drawLine(x-38f,y-5f,x-55f,y+25f-run,paint); c.drawLine(x+25f,y-5f,x+42f,y+25f-run,paint)
+            paint.style=Paint.Style.FILL
+        }
+
+        private fun drawCheetah(c: Canvas,x:Float,y:Float,aggressive:Boolean){
+            paint.color=Color.rgb(208,164,62)
+            c.drawOval(RectF(x-78f,y-38f,x+62f,y+5f),paint)
+            c.drawCircle(x+65f,y-35f,23f,paint)
+            paint.color=Color.BLACK
+            for(i in 0..11){ val sx=x-48f+(i%6)*17f; val sy=y-28f+(i/6)*17f; c.drawCircle(sx,sy,2.5f,paint) }
+            c.drawCircle(x+57f,y-42f,3f,paint); c.drawCircle(x+73f,y-42f,3f,paint)
+            paint.style=Paint.Style.STROKE; paint.strokeWidth=6f
+            val run=if(aggressive) abs(sin(frame/2.7)).toFloat()*20f else 0f
+            c.drawLine(x-45f,y-2f,x-75f,y+22f-run,paint); c.drawLine(x+25f,y-2f,x+55f,y+22f-run,paint)
+            paint.style=Paint.Style.FILL
+        }
+
+        private fun drawFlyingPrehistoric(c:Canvas,x:Float,y:Float,scale:Float,menacing:Boolean){
+            c.save(); c.translate(x,y); c.scale(scale,scale)
+            val flap=sin(frame/4.0).toFloat()*22f
+            paint.color=if(menacing) Color.rgb(75,65,62) else Color.rgb(105,88,70)
+            val wing=Path()
+            wing.moveTo(0f,0f); wing.lineTo(-95f,-45f-flap); wing.lineTo(-35f,8f); wing.lineTo(0f,4f); wing.close()
+            c.drawPath(wing,paint)
+            val wing2=Path()
+            wing2.moveTo(0f,0f); wing2.lineTo(95f,-45f+flap); wing2.lineTo(35f,8f); wing2.lineTo(0f,4f); wing2.close()
+            c.drawPath(wing2,paint)
+            paint.color=Color.rgb(85,70,60)
+            c.drawOval(RectF(-18f,-12f,42f,18f),paint)
+            c.drawCircle(45f,-2f,12f,paint)
+            paint.color=Color.rgb(220,205,170); c.drawCircle(49f,-5f,2.5f,paint)
+            paint.style=Paint.Style.STROKE; paint.strokeWidth=4f
+            c.drawLine(53f,2f,68f,7f,paint)
+            paint.style=Paint.Style.FILL
+            c.restore()
+        }
 
         private fun drawElephant(c: Canvas, x: Float, y: Float) {
             paint.color = Color.rgb(120, 128, 126)
