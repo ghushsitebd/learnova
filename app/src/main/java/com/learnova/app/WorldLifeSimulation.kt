@@ -93,10 +93,18 @@ internal class WorldLifeSimulation(
             val z = sample.z - sin(sample.yaw) * lane * side
             val moving = (seed ushr 9) % 4L != 0L
             val phase = ((seed ushr 17) % 1000L) / 1000.0
-            val drift = if (moving) sin(centerDistance * 0.035 + phase * 6.283) * 1.8 else 0.0
-            val px = x + cos(sample.yaw) * drift
-            val pz = z - sin(sample.yaw) * drift
             val biome = WorldDirector.profile(d).biome
+            val baseDrift = if (moving) sin(centerDistance * 0.035 + phase * 6.283) * 1.8 else 0.0
+            // Walkers use a slower, shorter gait: lateral sway + subtle body
+            // bounce makes them read as living people instead of sliding blocks.
+            val isPedestrian = (biome == WorldDirector.Biome.MARKET || biome == WorldDirector.Biome.VILLAGE) &&
+                ((seed ushr 4) % 9L >= 6L)
+            val walkPhase = centerDistance * 0.22 + phase * 6.283
+            val pedestrianSway = if (isPedestrian) sin(walkPhase) * 0.48 else 0.0
+            val pedestrianDrift = if (isPedestrian && moving) sin(walkPhase * 0.5) * 0.55 else 0.0
+            val drift = if (isPedestrian) pedestrianDrift else baseDrift
+            val px = x + cos(sample.yaw) * drift + sin(sample.yaw) * pedestrianSway
+            val pz = z - sin(sample.yaw) * drift + cos(sample.yaw) * pedestrianSway
             // Population families vary by biome so each environment has a
             // different rhythm instead of repeating the same roadside objects.
             val family = when (biome) {
@@ -135,7 +143,9 @@ internal class WorldLifeSimulation(
 
             // Far agents are deliberately simplified: silhouette + motion cues
             // carry the perception of a populated world while keeping GPU cost low.
-            addAgent(vertices, indices, px, sample.y.toDouble() + 0.05, pz, sample.yaw.toDouble(), width, height, kind)
+            val bodyBounce = if (isPedestrian) kotlin.math.abs(sin(walkPhase)) * 0.045 else 0.0
+            val bodyYaw = if (isPedestrian) sample.yaw.toDouble() + sin(walkPhase) * 0.08 else sample.yaw.toDouble()
+            addAgent(vertices, indices, px, sample.y.toDouble() + 0.05 + bodyBounce, pz, bodyYaw, width, height, kind)
             vCount += 8
             iCount += 36
             d += STEP
