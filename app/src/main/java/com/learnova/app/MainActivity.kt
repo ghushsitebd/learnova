@@ -1083,13 +1083,38 @@ class MainActivity : AppCompatActivity() {
                 val progress = (encounterWindow / .17f).coerceIn(0f, 1f)
                 val chargeX = if (world.id % 2 == 0) -w*.12f + progress*w*1.24f
                                else w*1.12f - progress*w*1.24f
-                val predator = when (world.id % 4) {
-                    0 -> "tiger"
-                    1 -> "cheetah"
-                    2 -> "dinosaur"
-                    else -> "elephant"
+                // Aggressive encounters now cover the three natural domains:
+                // land, water and sky. The event stays brief and non-contact so the
+                // child sees a living world without turning the learning game into
+                // a combat mechanic.
+                val water = world.region == "Ocean" || world.region == "Island" || world.region == "Wetland" ||
+                        world.region == "Harbor" || world.region == "Beach Town" || world.region == "Fishing Village"
+                val air = world.region == "Sky" || world.region == "Airport" || world.region == "Mountain" ||
+                        world.region == "Dinosaur Valley"
+                if (water) {
+                    val waterX = if (world.id % 2 == 0) -w*.10f + progress*w*1.20f
+                                 else w*1.10f - progress*w*1.20f
+                    val waterY = h * (.73f + .055f * sin(frame / 9.0).toFloat())
+                    val predator = when (world.id % 3) {
+                        0 -> "shark"
+                        1 -> "crocodile"
+                        else -> "orca"
+                    }
+                    drawAquaticPredator(c, predator, waterX, waterY, .72f + progress*.28f, true)
+                } else if (air) {
+                    val airX = if (world.id % 2 == 0) -w*.16f + progress*w*1.32f
+                               else w*1.16f - progress*w*1.32f
+                    val airY = h * (.24f + .055f * sin(frame / 7.0).toFloat())
+                    drawAirPredator(c, airX, airY, .62f + progress*.28f, world.id % 2 == 0)
+                } else {
+                    val predator = when (world.id % 4) {
+                        0 -> "tiger"
+                        1 -> "cheetah"
+                        2 -> "dinosaur"
+                        else -> "elephant"
+                    }
+                    drawAnimatedAnimal(c, predator, chargeX, base + 8f, travel*.18f, aggressive = true, chargeProgress = progress)
                 }
-                drawAnimatedAnimal(c, predator, chargeX, base + 8f, travel*.18f, aggressive = true, chargeProgress = progress)
             } else {
                 when (world.region) {
                     "Dinosaur Valley" -> {
@@ -1137,6 +1162,101 @@ class MainActivity : AppCompatActivity() {
                 val fy = h*.22f + sin(frame/8.0).toFloat()*18f
                 drawFlyingPrehistoric(c,fx,fy,1.0f+0.35f*sin(world.id*1.7f).toFloat(), world.id%3==0)
             }
+        }
+
+        private fun drawAquaticPredator(c: Canvas, kind: String, x: Float, y: Float, scale: Float, aggressive: Boolean) {
+            // Lightweight water predator renderer: no bitmap assets, depth-friendly
+            // silhouettes, surface wake and a restrained motion cue.
+            c.save()
+            c.translate(x, y)
+            c.scale(scale, scale)
+            val surge = if (aggressive) abs(sin(frame / 3.8)).toFloat() * 5f else 0f
+
+            paint.color = Color.argb(55, 10, 55, 70)
+            c.drawOval(RectF(-92f, 18f, 92f, 34f), paint)
+
+            when (kind) {
+                "shark" -> {
+                    paint.color = Color.rgb(88, 112, 121)
+                    val body = Path()
+                    body.moveTo(-78f, 0f)
+                    body.cubicTo(-32f, -28f, 38f, -26f, 78f, 0f)
+                    body.cubicTo(38f, 27f, -32f, 28f, -78f, 0f)
+                    body.close()
+                    c.drawPath(body, paint)
+                    val fin = Path()
+                    fin.moveTo(-8f, -13f); fin.lineTo(8f, -52f); fin.lineTo(28f, -12f); fin.close()
+                    c.drawPath(fin, paint)
+                    val tail = Path()
+                    tail.moveTo(74f, 0f); tail.lineTo(104f, -28f); tail.lineTo(98f, 0f); tail.lineTo(104f, 28f); tail.close()
+                    c.drawPath(tail, paint)
+                    paint.color = Color.rgb(235, 241, 238)
+                    c.drawOval(RectF(-52f, -2f, 48f, 19f), paint)
+                    paint.color = Color.rgb(30, 42, 45)
+                    c.drawCircle(48f, -5f, 3.2f, paint)
+                }
+                "orca" -> {
+                    paint.color = Color.rgb(24, 35, 40)
+                    c.drawOval(RectF(-76f, -25f, 72f, 22f), paint)
+                    val fin = Path()
+                    fin.moveTo(-5f, -18f); fin.lineTo(8f, -60f); fin.lineTo(25f, -18f); fin.close()
+                    c.drawPath(fin, paint)
+                    val tail = Path()
+                    tail.moveTo(68f, 0f); tail.lineTo(103f, -24f); tail.lineTo(92f, 0f); tail.lineTo(103f, 24f); tail.close()
+                    c.drawPath(tail, paint)
+                    paint.color = Color.rgb(235, 241, 238)
+                    c.drawOval(RectF(-54f, -8f, 32f, 15f), paint)
+                    paint.color = Color.rgb(35, 45, 48)
+                    c.drawCircle(48f, -8f, 3f, paint)
+                }
+                else -> {
+                    paint.color = Color.rgb(69, 92, 76)
+                    c.drawOval(RectF(-86f, -12f, 74f, 18f), paint)
+                    val jaw = Path()
+                    jaw.moveTo(50f, 0f); jaw.lineTo(104f, -12f); jaw.lineTo(88f, 10f); jaw.close()
+                    c.drawPath(jaw, paint)
+                    paint.color = Color.rgb(205, 191, 141)
+                    c.drawOval(RectF(18f, 2f, 82f, 15f), paint)
+                    paint.color = Color.rgb(30, 40, 32)
+                    c.drawCircle(55f, -7f, 3f, paint)
+                    for (i in -2..2) c.drawLine(-50f + i*18f, 12f, -42f + i*18f, 24f + surge, paint)
+                }
+            }
+
+            // Wake/surface ripples anchor the animal to the water.
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 2f
+            paint.color = Color.argb(115, 205, 238, 244)
+            c.drawArc(RectF(-108f, 18f, -22f, 48f), 190f, 110f, false, paint)
+            c.drawArc(RectF(12f, 16f, 98f, 45f), 210f, 105f, false, paint)
+            paint.style = Paint.Style.FILL
+            c.restore()
+        }
+
+        private fun drawAirPredator(c: Canvas, x: Float, y: Float, scale: Float, dark: Boolean) {
+            // Distant raptor/eagle-like silhouette: wing beats, body tilt and soft
+            // motion trail create a believable aerial encounter without assets.
+            c.save()
+            c.translate(x, y)
+            c.scale(scale, scale)
+            val flap = sin(frame / 3.5).toFloat() * 18f
+            paint.color = if (dark) Color.rgb(57, 55, 51) else Color.rgb(86, 76, 62)
+            val left = Path()
+            left.moveTo(0f, 0f); left.lineTo(-88f, -34f - flap); left.lineTo(-34f, 9f); left.lineTo(0f, 5f); left.close()
+            c.drawPath(left, paint)
+            val right = Path()
+            right.moveTo(0f, 0f); right.lineTo(88f, -34f + flap); right.lineTo(34f, 9f); right.lineTo(0f, 5f); right.close()
+            c.drawPath(right, paint)
+            c.drawOval(RectF(-14f, -6f, 25f, 11f), paint)
+            val beak = Path()
+            beak.moveTo(22f, 0f); beak.lineTo(48f, 5f); beak.lineTo(22f, 9f); beak.close()
+            c.drawPath(beak, paint)
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 1.6f
+            paint.color = Color.argb(75, 255, 255, 255)
+            c.drawLine(-62f, 14f, 58f, 18f, paint)
+            paint.style = Paint.Style.FILL
+            c.restore()
         }
 
         private fun drawAnimatedAnimal(
