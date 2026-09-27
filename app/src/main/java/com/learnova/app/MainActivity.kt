@@ -171,6 +171,7 @@ class MainActivity : AppCompatActivity() {
             drawTrees(canvas, w, h)
             drawHabitatDetails(canvas, w, h, world)
             drawRoad(canvas, w, h, world)
+            drawRoadInfrastructure(canvas, w, h, world)
             drawAtmosphere(canvas, w, h, world)
             drawAnimals(canvas, w, h, world)
             drawVehicle(canvas, w, h)
@@ -1340,6 +1341,89 @@ class MainActivity : AppCompatActivity() {
                 .putInt("question", question)
                 .putFloat("levelProgress", levelProgress)
                 .apply()
+        }
+
+        private fun drawRoadInfrastructure(c: Canvas, w: Float, h: Float, world: SmartScene) {
+            // Lightweight environmental details make the road read like a real place
+            // without loading large bitmap assets. They are depth-scaled and scene-aware.
+            val horizon = h * 0.59f
+            val nearY = h * 0.88f
+            val curve = sin(frame / 120.0).toFloat() * w * 0.035f
+
+            when (world.region) {
+                "City", "Village" -> {
+                    paint.color = Color.rgb(72, 78, 76)
+                    for (i in 0..5) {
+                        val t = i / 5f
+                        val y = horizon + (nearY - horizon) * t
+                        val x = w * (0.08f + t * 0.84f) + curve * t
+                        val postH = 10f + 24f * t
+                        paint.strokeWidth = 2.2f
+                        c.drawLine(x, y, x, y - postH, paint)
+                        paint.color = if (world.time == "Night") Color.rgb(255, 226, 126) else Color.rgb(190, 205, 198)
+                        c.drawCircle(x, y - postH, 2.8f + 1.5f * t, paint)
+                        paint.color = Color.rgb(72, 78, 76)
+                    }
+                }
+                "Mountain", "Forest", "Safari", "Dinosaur Valley" -> {
+                    paint.color = Color.rgb(116, 116, 108)
+                    paint.strokeWidth = 3f
+                    for (side in -1..1 step 2) {
+                        val points = Path()
+                        points.moveTo(w / 2f + side * w * .20f, horizon + 18f)
+                        points.cubicTo(
+                            w / 2f + side * w * .29f, h * .68f,
+                            w / 2f + side * w * .37f, h * .77f,
+                            w / 2f + side * w * .46f, nearY
+                        )
+                        c.drawPath(points, paint)
+                        for (i in 0..5) {
+                            val t = i / 5f
+                            val x = w / 2f + side * (w * (.20f + .26f * t))
+                            val y = horizon + (nearY - horizon) * t
+                            c.drawCircle(x, y, 2.2f + 2.5f * t, paint)
+                        }
+                    }
+                }
+                "Farm", "Wetland", "Island", "Arabic Learning Garden", "Quran Learning Garden", "Garden", "Kindness Village" -> {
+                    paint.color = Color.rgb(139, 101, 61)
+                    paint.strokeWidth = 2.5f
+                    for (side in -1..1 step 2) {
+                        var previousX = w / 2f + side * w * .22f
+                        var previousY = horizon + 20f
+                        for (i in 1..6) {
+                            val t = i / 6f
+                            val x = w / 2f + side * (w * (.22f + .25f * t))
+                            val y = horizon + (nearY - horizon) * t
+                            c.drawLine(previousX, previousY, x, y, paint)
+                            c.drawLine(previousX, previousY - 5f - 7f * t, previousX, previousY + 8f, paint)
+                            previousX = x
+                            previousY = y
+                        }
+                    }
+                }
+                else -> {
+                    paint.color = Color.rgb(132, 126, 111)
+                    paint.strokeWidth = 2.5f
+                    for (i in 0..4) {
+                        val t = i / 4f
+                        val y = horizon + (nearY - horizon) * t
+                        val x = w * (.10f + .80f * t) + curve * t
+                        c.drawLine(x, y - 7f - 8f * t, x, y + 7f, paint)
+                    }
+                }
+            }
+
+            // Tiny perspective dust/spray cues reinforce motion without obscuring the lesson UI.
+            if (running) {
+                paint.color = if (world.weather == "Rainy") Color.argb(65, 225, 240, 245) else Color.argb(48, 220, 205, 170)
+                for (i in 0..7) {
+                    val t = ((frame / 3L + i * 17L) % 90L) / 90f
+                    val x = w / 2f + sin(i * 1.7 + frame / 25.0).toFloat() * (18f + 70f * t)
+                    val y = h * .78f + t * h * .15f
+                    c.drawCircle(x, y, 1.5f + 2.5f * t, paint)
+                }
+            }
         }
 
         private fun drawAtmosphere(c: Canvas, w: Float, h: Float, world: SmartScene) {
