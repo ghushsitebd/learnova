@@ -988,15 +988,25 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
         val rollTarget = (-lateralAcceleration * 0.018)
             .coerceIn(-0.075, 0.075)
-        chassisRoll += (rollTarget - chassisRoll) * (safeDt * 7.0).coerceAtMost(1.0)
-
         // Road yaw rate is already measured from the authoritative spline. Blend a
         // small steering contribution into the visual chassis pitch/roll envelope.
         val steeringLoad = steeringInput * (vehicleSpeed / targetSpeed.coerceAtLeast(0.1))
             .coerceIn(-1.0, 1.0)
-        val pitchTarget = (-vehicleAcceleration * 0.0028 + kotlin.math.abs(steeringLoad) * 0.003)
+
+        // Weight transfer: braking/acceleration changes the chassis pitch while
+        // cornering adds a small load-dependent roll component. The damping keeps
+        // the motion smooth enough for a child-facing camera.
+        val pitchTarget = (-vehicleAcceleration * 0.0032 +
+            kotlin.math.abs(steeringLoad) * 0.0025)
+            .coerceIn(-0.042, 0.042)
+        val dynamicRoll = (-steeringLoad * vehicleSpeed * 0.0022)
             .coerceIn(-0.035, 0.035)
-        chassisPitch += (pitchTarget - chassisPitch) * (safeDt * 6.0).coerceAtMost(1.0)
+        val combinedRollTarget = (rollTarget + dynamicRoll).coerceIn(-0.095, 0.095)
+
+        chassisRoll += (combinedRollTarget - chassisRoll) *
+            (safeDt * 7.5).coerceAtMost(1.0)
+        chassisPitch += (pitchTarget - chassisPitch) *
+            (safeDt * 6.5).coerceAtMost(1.0)
     }
 
     private fun updateDriveScene() {
