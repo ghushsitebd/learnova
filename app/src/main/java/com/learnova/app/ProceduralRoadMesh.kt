@@ -28,7 +28,7 @@ internal class ProceduralRoadMesh(
 ) {
     private companion object {
         const val ROAD_WIDTH = 7.2f
-        const val SAMPLE_STEP = 4.0
+        const val SAMPLE_STEP = 3.5
         const val BEHIND = 80.0
         const val VERTEX_COUNT = 2 * 127
         const val INDEX_COUNT = 6 * 126
