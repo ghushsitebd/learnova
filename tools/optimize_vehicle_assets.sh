@@ -20,7 +20,7 @@ mkdir -p "$OUT"
 
 shopt -s nullglob
 inputs=( "$RAW"/*.glb )
-if (\${#inputs[@]} == 0); then
+if (${#inputs[@]} == 0); then
   echo "No raw vehicle GLBs found in $RAW; nothing to optimize."
   exit 0
 fi
