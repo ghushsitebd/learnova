@@ -61,6 +61,10 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var suspensionVelocity = 0.0
     private var previousRoadYaw = 0.0
     private var roadYawRate = 0.0
+    // Camera/body inertial stabilization: the view follows the road bank and yaw
+    // progressively instead of snapping to the spline tangent.
+    private var cameraBank = 0.0
+    private var cameraYaw = 0.0
     private var renderProfile = VehicleRenderProfile.forType(activeVehicle.type)
     private val vehicleAssetResolver = VehicleAssetResolver(context)
     private var assetIoExecutor: ExecutorService = newAssetIoExecutor()
@@ -633,16 +637,32 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         val lookAhead = RoadSpline.sampleRelative(travel + 7.0, renderOriginDistance)
         val bodyBob = if (driving) kotlin.math.sin(travel * 3.4) * 0.018 else 0.0
 
+        // Inertial camera: yaw and bank are filtered from the same road spline that
+        // drives the chassis. This gives a believable driver's-eye response on curves
+        // while keeping the road readable and avoiding abrupt child-unfriendly motion.
+        val dt = frameDeltaSeconds.coerceIn(1.0 / 240.0, 0.05)
+        val yawTarget = road.yaw
+        val bankTarget = (road.bank + roadYawRate * 0.010).coerceIn(-0.12, 0.12)
+        val cameraBlend = (dt * 8.5).coerceIn(0.0, 1.0)
+        cameraYaw += kotlin.math.atan2(
+            kotlin.math.sin(yawTarget - cameraYaw),
+            kotlin.math.cos(yawTarget - cameraYaw)
+        ) * cameraBlend
+        cameraBank += (bankTarget - cameraBank) * (dt * 6.0).coerceIn(0.0, 1.0)
+
         // A lightly damped camera offset avoids a robotic snap while keeping
         // the road center visible for the child's one-tap driving interaction.
         val cameraX = road.x + kotlin.math.sin(travel * 0.18) * 0.07
         val cameraZ = road.z - 6.8
         val cameraY = world.cameraHeight + lookAhead.y + bodyBob
+        val upX = -kotlin.math.sin(cameraBank)
+        val upY = kotlin.math.cos(cameraBank)
+        val upZ = 0.0
 
         viewer.camera.lookAt(
             cameraX, cameraY, cameraZ,
             lookAhead.x, lookAhead.y + world.lookAheadLift, lookAhead.z,
-            0.0, 1.0, 0.0
+            upX, upY, upZ
         )
 
         // Speed provides a restrained FOV change; each biome adds only a subtle
@@ -659,6 +679,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         vehicleSpeed = 0.0
         previousRoadYaw = 0.0
         roadYawRate = 0.0
+        cameraBank = 0.0
+        cameraYaw = 0.0
         assetLoadGeneration.incrementAndGet()
         frameCallback?.let { choreographer.removeFrameCallback(it) }
         frameCallback = null
