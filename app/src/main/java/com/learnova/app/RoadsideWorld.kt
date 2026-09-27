@@ -155,11 +155,30 @@ internal class RoadsideWorld(
 
         val cx = cos(yaw); val cz = -sin(yaw)
         val sx = sin(yaw); val sz = cos(yaw)
+
+        // Give each roadside family a recognisable silhouette while retaining
+        // one fixed 8-vertex/36-index budget. Trees taper toward the crown,
+        // rocks use an uneven shoulder, and buildings stay broad and vertical.
+        val topScale = when (type) {
+            0 -> 0.42
+            1 -> 0.62
+            2 -> 0.78
+            3 -> 0.88
+            else -> 0.96
+        }
+        val topDepthScale = when (type) {
+            0 -> 0.50
+            1 -> 0.68
+            2 -> 0.82
+            else -> 0.94
+        }
         val corners = arrayOf(
             floatArrayOf(-halfW,0.0,-halfD), floatArrayOf(halfW,0.0,-halfD),
             floatArrayOf(halfW,0.0,halfD), floatArrayOf(-halfW,0.0,halfD),
-            floatArrayOf(-halfW,1.0,-halfD), floatArrayOf(halfW,1.0,-halfD),
-            floatArrayOf(halfW,1.0,halfD), floatArrayOf(-halfW,1.0,halfD)
+            floatArrayOf(-halfW * topScale,1.0,-halfD * topDepthScale),
+            floatArrayOf(halfW * topScale,1.0,-halfD * topDepthScale),
+            floatArrayOf(halfW * topScale,1.0,halfD * topDepthScale),
+            floatArrayOf(-halfW * topScale,1.0,halfD * topDepthScale)
         )
         for (c in corners) {
             val lx = c[0].toDouble(); val lz = c[2].toDouble()
