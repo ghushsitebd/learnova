@@ -27,8 +27,8 @@ internal class WorldLifeSimulation(
     private companion object {
         const val BEHIND = 80.0
         const val AHEAD = 600.0
-        const val STEP = 14.0
-        const val MAX_AGENTS = 96
+        const val STEP = 12.0
+        const val MAX_AGENTS = 112
         const val VERTICES_PER_AGENT = 8
         const val INDICES_PER_AGENT = 36
         const val STRIDE = 36
@@ -97,27 +97,40 @@ internal class WorldLifeSimulation(
             val px = x + cos(sample.yaw) * drift
             val pz = z - sin(sample.yaw) * drift
             val biome = WorldDirector.profile(d).biome
-            val kind = when (biome) {
-                WorldDirector.Biome.DESERT -> ((seed ushr 4) % 5L).toInt()
+            // Population families vary by biome so each environment has a
+            // different rhythm instead of repeating the same roadside objects.
+            val family = when (biome) {
+                WorldDirector.Biome.FOREST -> ((seed ushr 4) % 8L).toInt()
+                WorldDirector.Biome.RIVER, WorldDirector.Biome.COAST -> ((seed ushr 4) % 7L).toInt()
                 WorldDirector.Biome.MOUNTAIN, WorldDirector.Biome.PLATEAU -> ((seed ushr 4) % 7L).toInt()
-                WorldDirector.Biome.MARKET, WorldDirector.Biome.VILLAGE -> ((seed ushr 4) % 8L).toInt()
-                else -> ((seed ushr 4) % 6L).toInt()
+                WorldDirector.Biome.DESERT -> ((seed ushr 4) % 5L).toInt()
+                WorldDirector.Biome.MARKET, WorldDirector.Biome.VILLAGE -> ((seed ushr 4) % 9L).toInt()
             }
-            val scale = 0.70 + ((seed ushr 21) % 55L) / 100.0
+            // Market/village can contain narrow human-scale walkers.
+            val kind = if ((biome == WorldDirector.Biome.MARKET || biome == WorldDirector.Biome.VILLAGE) && family >= 6) {
+                6 + (family - 6)
+            } else {
+                family.coerceAtMost(5)
+            }
+            val scale = 0.72 + ((seed ushr 21) % 52L) / 100.0
 
             val height = when (kind) {
                 0, 1 -> 1.15 * scale
                 2 -> 2.2 * scale
                 3 -> 1.55 * scale
                 4 -> 1.0 * scale
-                else -> 1.35 * scale
+                5 -> 1.35 * scale
+                6 -> 1.62 * scale
+                else -> 1.48 * scale
             }
             val width = when (kind) {
                 0, 1 -> 1.15 * scale
                 2 -> 0.75 * scale
                 3 -> 1.5 * scale
                 4 -> 0.9 * scale
-                else -> 1.25 * scale
+                5 -> 1.25 * scale
+                6 -> 0.42 * scale
+                else -> 0.34 * scale
             }
 
             // Far agents are deliberately simplified: silhouette + motion cues
