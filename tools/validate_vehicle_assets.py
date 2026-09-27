@@ -308,3 +308,5 @@ if ASSETS.exists():
 # CI validation 407: filename safety validation.
 
 # CI validation 401: asset inventory determinism.
+
+# CI validation 410: deterministic asset contract hardening.
