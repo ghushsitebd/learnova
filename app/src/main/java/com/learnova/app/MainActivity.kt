@@ -814,9 +814,9 @@ class MainActivity : AppCompatActivity() {
 
             paint.shader = LinearGradient(x, y + bodyTop, x, y + bodyBottom,
                 bodyColor, Color.rgb(
-                    (bodyColor.red * .52f).toInt(),
-                    (bodyColor.green * .52f).toInt(),
-                    (bodyColor.blue * .52f).toInt()
+                    (Color.red(bodyColor) * .52f).toInt(),
+                    (Color.green(bodyColor) * .52f).toInt(),
+                    (Color.blue(bodyColor) * .52f).toInt()
                 ), Shader.TileMode.CLAMP)
             c.drawRoundRect(RectF(x+bodyLeft,y+bodyTop,x+bodyRight,y+bodyBottom),
                 if (family == 3) 18f else 24f, if (family == 3) 18f else 24f, paint)
