@@ -40,7 +40,6 @@ internal class ProceduralRoadMesh(
     private var indexBuffer: IndexBuffer? = null
     private var lastCenter = Double.NaN
     private var sourceRoadEntity = 0
-    private var renderOriginDistance = 0.0
     private var shoulderEntity = 0
     private var shoulderVertexBuffer: VertexBuffer? = null
     private var shoulderIndexBuffer: IndexBuffer? = null
@@ -67,7 +66,7 @@ internal class ProceduralRoadMesh(
         val indices = ByteBuffer.allocate(INDEX_COUNT * 2)
             .order(ByteOrder.nativeOrder())
         for (i in 0 until 126) {
-            val a = (i * 2)
+            val a = i * 2
             val b = a + 1
             val c = a + 2
             val d = a + 3
@@ -115,7 +114,7 @@ internal class ProceduralRoadMesh(
             val yaw = sample.yaw.toDouble()
             val bank = sample.bank.toDouble()
 
-            val half = ROAD_WIDTH * 0.5
+            val half = ROAD_WIDTH * 0.5f
             val lateralX = cos(yaw) * half
             val lateralZ = -sin(yaw) * half
 
@@ -126,9 +125,6 @@ internal class ProceduralRoadMesh(
 
             val bankLift = sin(bank) * half
 
-            // Keep the rendered road on the same vertical spline used by
-            // the vehicle and camera. This prevents visual separation on crests
-            // and dips while preserving the existing lightweight sliding mesh.
             val centerY = sample.y
             putVertex(data, leftX.toFloat(), (centerY + bankLift).toFloat(), leftZ.toFloat(), yaw, bank, 0.0f, distance.toFloat() / 8.0f)
             putVertex(data, rightX.toFloat(), (centerY - bankLift).toFloat(), rightZ.toFloat(), yaw, bank, 1.0f, distance.toFloat() / 8.0f)
@@ -140,12 +136,6 @@ internal class ProceduralRoadMesh(
         lastCenter = centerDistance
     }
 
-    /**
-     * Lightweight roadside verge: two narrow strips follow the same spline as
-     * the road. When the authored GLB contains a ground/grass/terrain material,
-     * the strips give the road a physical transition into the landscape without
-     * importing hundreds of separate meshes.
-     */
     private fun buildShoulders() {
         val material = shoulderMaterial ?: return
         if (shoulderEntity != 0) return
@@ -179,7 +169,7 @@ internal class ProceduralRoadMesh(
             val g = off + c
             val h = off + d
             indices.putShort(e.toShort()); indices.putShort(f.toShort()); indices.putShort(g.toShort())
-            indices.putShort(f.toShort()); indices.put(h.toShort()); indices.put(g.toShort())
+            indices.putShort(f.toShort()); indices.putShort(h.toShort()); indices.putShort(g.toShort())
         }
         indices.flip()
         ib.setBuffer(engine, indices)
@@ -258,8 +248,6 @@ internal class ProceduralRoadMesh(
         data.putFloat(y)
         data.putFloat(z)
 
-        // Quaternion for the road's tangent frame. The authored road material
-        // can consume TANGENTS even when it does not use a normal map.
         val halfYaw = yaw * 0.5
         val halfBank = bank * 0.5
         val sy = sin(halfYaw)
@@ -320,6 +308,5 @@ internal class ProceduralRoadMesh(
         shoulderMaterial = null
         lastCenter = Double.NaN
         sourceRoadEntity = 0
-        renderOriginDistance = 0.0
     }
 }
