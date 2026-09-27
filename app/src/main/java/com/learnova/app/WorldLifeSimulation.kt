@@ -92,7 +92,7 @@ internal class WorldLifeSimulation(
             // Keep nearby traffic in believable lanes while allowing distant
             // activity to spread wider into the landscape.
             val distanceFromPlayer = kotlin.math.abs(agentDistance - centerDistance)
-            val lane = when {
+            val baseLane = when {
                 distanceFromPlayer < NEAR_RADIUS -> when ((seed ushr 3) % 5L) {
                     0L -> -6.2
                     1L -> 6.2
@@ -118,9 +118,16 @@ internal class WorldLifeSimulation(
                 }
             }
             val side = if ((seed and 1L) == 0L) -1.0 else 1.0
+            // A small, slow lateral phase creates a believable lane-position
+            // correction/overtake cue without allowing agents to leave the road.
+            val laneShiftAllowed = distanceFromPlayer < MID_RADIUS && (seed ushr 12) % 5L == 0L
+            val laneShift = if (laneShiftAllowed) {
+                sin(centerDistance * 0.018 + trafficPhase * 6.283) * 2.0
+            } else 0.0
+            val lane = baseLane + laneShift
             val x = sample.x + cos(sample.yaw) * lane * side
             val z = sample.z - sin(sample.yaw) * lane * side
-            val biome = WorldDirector.profile(d).biome
+            val biome = WorldDirector.profile(agentDistance).biome
             val isBusyBiome = biome == WorldDirector.Biome.MARKET || biome == WorldDirector.Biome.VILLAGE
             val moving = when {
                 distanceFromPlayer < NEAR_RADIUS && isBusyBiome -> (seed ushr 9) % 5L != 0L
