@@ -55,6 +55,10 @@ if len(re.findall(r'VehicleDefinition\(', text)) != 100:
     print("::error::Vehicle catalog declaration count is inconsistent.")
     sys.exit(1)
 
+if "TODO" in text.upper():
+    print("::error::Vehicle catalog still contains a TODO marker.")
+    sys.exit(1)
+
 if not ASSETS.exists():
     print("::notice::No real vehicle GLB assets are committed yet; catalog/resolver fallback remains active.")
     sys.exit(0)
