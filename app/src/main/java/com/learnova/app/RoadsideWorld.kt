@@ -117,7 +117,7 @@ internal class RoadsideWorld(
                     3 -> 1.35 * scale
                     else -> 1.6 * scale
                 }
-                addProp(vertices, indices, x, sample.y.toDouble(), z, yaw, w, h, type)
+                addProp(vertices, indices, x, sample.y.toDouble(), z, yaw.toDouble(), w, h, type)
                 vertexCount += 8
                 indexCount += 36
             }
