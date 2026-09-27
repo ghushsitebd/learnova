@@ -801,7 +801,6 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
         // Speed provides a restrained FOV change; each biome adds only a subtle
         // composition bias so the child notices a new place without nausea.
-        val speedRatio = (vehicleSpeed / targetSpeed.coerceAtLeast(0.1)).coerceIn(0.0, 1.0)
         val dynamicFov = 48.0 + world.fovBias + 3.0 * speedRatio
         // Preserve distant mountains, forest and settlement silhouettes while the
         // floating origin keeps depth precision stable near the vehicle.
