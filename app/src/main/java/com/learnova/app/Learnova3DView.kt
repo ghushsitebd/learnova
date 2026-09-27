@@ -60,6 +60,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private val wheelContactLateral = HashMap<Int, Double>()
     private val wheelSuspensionDisplacement = HashMap<Int, Double>()
     private val wheelSuspensionVelocity = HashMap<Int, Double>()
+    // Front-wheel steering inertia prevents an artificial instant snap when the road curves.
+    private val wheelSteeringAngle = HashMap<Int, Double>()
     private var vehicleRootEntity = 0
     private var vehicleRootBaseTransform: FloatArray? = null
     private var sunEntity = 0
@@ -435,6 +437,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         wheelContactLateral.clear()
         wheelSuspensionDisplacement.clear()
         wheelSuspensionVelocity.clear()
+        wheelSteeringAngle.clear()
 
         for (entity in wheelEntities) {
             if (!tm.hasComponent(entity)) continue
@@ -733,9 +736,18 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                             ) / 3.6
                         )
                     )
-                    val steerAngle = if (isFrontWheel) {
-                        steeringTarget.coerceIn(-steeringLimit, steeringLimit).toFloat()
-                    } else 0.0f
+                    val steerTarget = if (isFrontWheel) {
+                        steeringTarget.coerceIn(-steeringLimit, steeringLimit)
+                    } else 0.0
+                    val previousSteer = wheelSteeringAngle[entity] ?: 0.0
+                    // Steering rack inertia is speed-aware: gentle at low speed for
+                    // child-friendly control, slightly firmer at speed for stability.
+                    val steeringResponse = if (speedRatio < 0.35) 9.5 else 7.0
+                    val steeringBlend = (dt * steeringResponse).coerceAtMost(1.0)
+                    val smoothedSteer = previousSteer +
+                        (steerTarget - previousSteer) * steeringBlend
+                    wheelSteeringAngle[entity] = smoothedSteer
+                    val steerAngle = smoothedSteer.toFloat()
 
                     val wheelSteering = if (isFrontWheel) {
                         rotation(Float3(0.0f, 1.0f, 0.0f), steerAngle)
