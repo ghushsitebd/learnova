@@ -91,7 +91,6 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 kotlin.math.sin(travel * 0.075 + 0.8) * 0.85
         val curveAhead = kotlin.math.sin((travel + 2.8) * 0.23) * 2.15 +
                 kotlin.math.sin((travel + 2.8) * 0.075 + 0.8) * 0.85
-        val heading = kotlin.math.atan2(curveAhead - curve, 2.8)
         val bodyBob = if (driving) kotlin.math.sin(travel * 3.4) * 0.025 else 0.0
         val cameraX = curve + kotlin.math.sin(travel * 0.18) * 0.10
         val targetX = curveAhead
@@ -104,7 +103,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
         // Small banking cue follows road direction instead of using random sway.
         // This keeps the motion physically coherent without adding input complexity.
-        viewer.camera.lens.focalLength = 48.0
+        viewer.camera.setLensProjection(48.0, 1.0, 0.10, 250.0)
         viewer.camera.setExposure(0.0, 0.0, 1000.0)
     }
 
