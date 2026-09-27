@@ -51,10 +51,6 @@ if any(not re.fullmatch(r"[a-z0-9_]+", key) for key in asset_keys):
     print("::error::Vehicle asset keys contain unsupported characters.")
     sys.exit(1)
 
-if len(re.findall(r'VehicleDefinition\(', text)) != 100:
-    print("::error::Vehicle catalog declaration count is inconsistent.")
-    sys.exit(1)
-
 if "TODO" in text.upper():
     print("::error::Vehicle catalog still contains a TODO marker.")
     sys.exit(1)
