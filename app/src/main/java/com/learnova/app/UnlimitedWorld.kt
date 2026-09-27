@@ -4,7 +4,8 @@ package com.learnova.app
 data class QuranSurahLesson(
     val number: Int,
     val name: String,
-    val mode: String
+    val mode: String,
+    val prompt: String
 )
 
 object LearnovaQuranCatalog {
@@ -25,7 +26,14 @@ object LearnovaQuranCatalog {
             QuranSurahLesson(
                 number = index + 1,
                 name = name,
-                mode = modes[index % modes.size]
+                mode = modes[index % modes.size],
+                prompt = when (modes[index % modes.size]) {
+                    "Find the Surah" -> "শুনে সঠিক সূরার নামটি ছুঁয়ে দাও"
+                    "Put in Order" -> "শুনে অংশগুলোর সঠিক ক্রমটি বেছে নাও"
+                    "Match Words" -> "সূরার নাম ও পরিচিতি মিলিয়ে নাও"
+                    "Complete the Line" -> "শোনা অংশের সঠিক অবস্থান বেছে নাও"
+                    else -> "শুনো, অনুসরণ করো, তারপর মনে রাখো"
+                }
             )
         }
     }
