@@ -519,7 +519,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             if (vehicleRootEntity != 0 && baseRoot != null && tm.hasComponent(vehicleRootEntity)) {
                 val travel = vehicleDistance
                 val road = RoadSpline.sample(travel)
-                val suspensionBob = suspensionDisplacement
+                val suspensionBob = suspensionDisplacement.toFloat()
                 val chassis = Mat4.of(*baseRoot) *
                         Mat4.of(
                             1f, 0f, 0f, road.x.toFloat(),
