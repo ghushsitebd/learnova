@@ -52,6 +52,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var activeVehicle: VehicleDefinition = VehicleCatalog.byId(1)
     private var targetSpeed = activeVehicle.targetSpeed
     private var wheelRadius = activeVehicle.wheelRadius
+    private var suspensionDisplacement = 0.0
+    private var suspensionVelocity = 0.0
     private var renderProfile = VehicleRenderProfile.forType(activeVehicle.type)
     private val vehicleAssetResolver = VehicleAssetResolver(context)
     private var assetIoExecutor: ExecutorService = newAssetIoExecutor()
@@ -491,9 +493,20 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         // Approximate a 0.30 m tyre radius: angular travel = distance / radius.
         // This keeps wheel rotation tied to actual vehicle travel rather than time.
         val wheelAngle = (vehicleDistance / wheelRadius).toFloat()
-        val suspension = if (driving) {
-            kotlin.math.sin(vehicleDistance * 8.0).toFloat() * 0.020f
-        } else 0f
+        // Spring-damper suspension reacts to the road's actual vertical
+        // curvature instead of using a purely time-based bounce. This keeps the
+        // chassis settled over crests/dips and remains deterministic at any FPS.
+        val road = RoadSpline.sample(vehicleDistance)
+        val roadAhead = RoadSpline.sample(vehicleDistance + 0.45)
+        val roadBehind = RoadSpline.sample(vehicleDistance - 0.45)
+        val verticalCurvature = roadAhead.y - 2.0 * road.y + roadBehind.y
+        val targetCompression = (-verticalCurvature * 0.10).coerceIn(-0.035, 0.035)
+        val dt = (if (lastFrameNanos == 0L) 1.0 / 60.0
+                  else (System.nanoTime() - lastFrameNanos).coerceIn(1_000_000L, 50_000_000L).toDouble() / 1_000_000_000.0)
+        suspensionVelocity += ((targetCompression - suspensionDisplacement) * 18.0 - suspensionVelocity * 5.2) * dt
+        suspensionDisplacement += suspensionVelocity * dt
+        suspensionDisplacement = suspensionDisplacement.coerceIn(-0.045, 0.045)
+        val suspension = suspensionDisplacement.toFloat()
 
         tm.openLocalTransformTransaction()
         try {
@@ -501,7 +514,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             if (vehicleRootEntity != 0 && baseRoot != null && tm.hasComponent(vehicleRootEntity)) {
                 val travel = vehicleDistance
                 val road = RoadSpline.sample(travel)
-                val suspensionBob = if (driving) kotlin.math.sin(travel * 4.2).toFloat() * 0.012f else 0f
+                val suspensionBob = suspensionDisplacement
                 val chassis = Mat4.of(*baseRoot) *
                         Mat4.of(
                             1f, 0f, 0f, road.x.toFloat(),
