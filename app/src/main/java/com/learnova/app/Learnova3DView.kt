@@ -154,7 +154,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         constrainedDevice = constrained
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            surface.setFrameRate(
+            surface.holder.surface.setFrameRate(
                 60.0f,
                 android.view.Surface.FRAME_RATE_COMPATIBILITY_DEFAULT
             )
