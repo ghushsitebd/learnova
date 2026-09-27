@@ -1,5 +1,39 @@
 package com.learnova.app
 
+
+data class QuranSurahLesson(
+    val number: Int,
+    val name: String,
+    val mode: String
+)
+
+object LearnovaQuranCatalog {
+    private val surahNames = listOf(
+        "Al-Fatihah", "Al-Ikhlas", "Al-Falaq", "An-Nas", "Al-Kafirun",
+        "An-Nasr", "Al-Masad", "Al-Kawthar", "Al-Ma'un", "Quraysh",
+        "Al-Fil", "Al-Humazah", "Al-'Asr", "At-Takathur", "Al-Qari'ah",
+        "Al-'Adiyat", "Az-Zalzalah", "Al-Bayyinah", "Al-Qadr", "Al-'Alaq"
+    )
+
+    private val modes = listOf(
+        "Listen & Repeat", "Find the Surah", "Put in Order",
+        "Match Words", "Complete the Line"
+    )
+
+    val lessons: List<QuranSurahLesson> by lazy {
+        surahNames.mapIndexed { index, name ->
+            QuranSurahLesson(
+                number = index + 1,
+                name = name,
+                mode = modes[index % modes.size]
+            )
+        }
+    }
+
+    fun lesson(level: Int): QuranSurahLesson =
+        lessons[(level.coerceAtLeast(1) - 1) % lessons.size]
+}
+
 data class VehicleEntry(
     val id: Int,
     val name: String,
