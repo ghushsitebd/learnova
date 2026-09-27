@@ -26,9 +26,9 @@ internal class WorldLifeSimulation(
 ) {
     private companion object {
         const val BEHIND = 80.0
-        const val AHEAD = 520.0
+        const val AHEAD = 600.0
         const val STEP = 14.0
-        const val MAX_AGENTS = 72
+        const val MAX_AGENTS = 96
         const val VERTICES_PER_AGENT = 8
         const val INDICES_PER_AGENT = 36
         const val STRIDE = 36
