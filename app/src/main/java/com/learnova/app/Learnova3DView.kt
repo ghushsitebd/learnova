@@ -178,8 +178,20 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 val steerBlend = (dt * 5.5).coerceAtMost(1.0)
                 lateralVelocity += (steerTarget - lateralVelocity) * steerBlend
                 lateralOffset += lateralVelocity * dt * (2.6 + vehicleSpeed * 0.08)
+
+                // Keep the child-friendly steering inside the actual driving lane.
+                // Near the road edge, progressive resistance slows the lateral motion
+                // before the vehicle can cross onto the shoulder. This feels much more
+                // natural than a hard invisible wall.
+                val laneLimit = 2.72
+                val edgeRatio = (kotlin.math.abs(lateralOffset) / laneLimit).coerceIn(0.0, 1.25)
+                if (edgeRatio > 0.82) {
+                    val edgeBrake = ((edgeRatio - 0.82) / 0.43).coerceIn(0.0, 1.0)
+                    lateralVelocity *= (1.0 - edgeBrake * dt * 7.5).coerceAtLeast(0.20)
+                    lateralOffset *= (1.0 - edgeBrake * dt * 1.8).coerceAtLeast(0.70)
+                }
                 if (!driving) lateralOffset *= (1.0 - (dt * 2.8).coerceAtMost(0.9))
-                lateralOffset = lateralOffset.coerceIn(-5.0, 5.0)
+                lateralOffset = lateralOffset.coerceIn(-laneLimit, laneLimit)
 
                 updateDriveScene()
                 if (kotlin.math.abs(vehicleDistance - renderOriginDistance) >= 4.0) {
@@ -776,8 +788,10 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                             ) / 3.6
                         )
                     )
+                    val playerSteer = if (driving) steeringInput * 0.34 else 0.0
                     val steerTarget = if (isFrontWheel) {
-                        steeringTarget.coerceIn(-steeringLimit, steeringLimit)
+                        (steeringTarget + playerSteer)
+                            .coerceIn(-steeringLimit, steeringLimit)
                     } else 0.0
                     val previousSteer = wheelSteeringAngle[entity] ?: 0.0
                     // Steering rack inertia is speed-aware: gentle at low speed for
