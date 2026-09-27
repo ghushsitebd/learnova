@@ -117,7 +117,8 @@ internal class RoadsideWorld(
                     3 -> 1.35 * scale
                     else -> 1.6 * scale
                 }
-                addProp(vertices, indices, x, sample.y.toDouble(), z, yaw.toDouble(), w, h, type)
+                val groundY = roadsideGroundHeight(d, sample.bank.toDouble(), side * sideSign, biome, sample.y.toDouble())
+                addProp(vertices, indices, x, groundY, z, yaw.toDouble(), w, h, type)
                 vertexCount += 8
                 indexCount += 36
             }
@@ -138,6 +139,42 @@ internal class RoadsideWorld(
         vb!!.setBufferAt(engine, 0, vertices)
         ib!!.setBuffer(engine, indices)
         lastCenter = centerDistance
+    }
+
+    /**
+     * Matches the streamed terrain micro-topography at a prop's actual lateral
+     * position. Props therefore sit on the land instead of floating at the road
+     * centerline when the verge rises, falls, banks, or changes biome.
+     */
+    private fun roadsideGroundHeight(
+        distance: Double,
+        bank: Double,
+        lateral: Double,
+        biome: WorldDirector.Biome,
+        roadY: Double
+    ): Double {
+        val bankLift = kotlin.math.sin(bank) * lateral
+        val terrainShape = when (biome) {
+            WorldDirector.Biome.FOREST ->
+                kotlin.math.sin(distance * 0.075) * 0.16 + kotlin.math.cos(distance * 0.021) * 0.24
+            WorldDirector.Biome.RIVER ->
+                kotlin.math.sin(distance * 0.060) * 0.07 + kotlin.math.cos(distance * 0.018) * 0.10
+            WorldDirector.Biome.MOUNTAIN ->
+                kotlin.math.sin(distance * 0.040) * 0.42 + kotlin.math.cos(distance * 0.013) * 0.30
+            WorldDirector.Biome.DESERT ->
+                kotlin.math.sin(distance * 0.055) * 0.28 + kotlin.math.cos(distance * 0.019) * 0.16
+            WorldDirector.Biome.PLATEAU ->
+                kotlin.math.sin(distance * 0.035) * 0.24 + kotlin.math.cos(distance * 0.012) * 0.18
+            WorldDirector.Biome.MARKET ->
+                kotlin.math.sin(distance * 0.090) * 0.055 + kotlin.math.cos(distance * 0.025) * 0.08
+            WorldDirector.Biome.VILLAGE ->
+                kotlin.math.sin(distance * 0.065) * 0.12 + kotlin.math.cos(distance * 0.017) * 0.18
+            WorldDirector.Biome.COAST ->
+                kotlin.math.sin(distance * 0.050) * 0.10 + kotlin.math.cos(distance * 0.015) * 0.14
+        }
+        val sideShape = kotlin.math.sin(distance * 0.11) * 0.05 *
+            if (lateral < 0.0) -1.0 else 1.0
+        return roadY + bankLift + terrainShape + sideShape
     }
 
     private fun addProp(
