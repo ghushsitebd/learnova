@@ -224,6 +224,7 @@ class MainActivity : AppCompatActivity() {
             drawRoadInfrastructure(canvas, w, h, world)
             drawAtmosphere(canvas, w, h, world)
             drawDistantWorld(canvas, w, h, world)
+            drawEnvironmentMotion(canvas, w, h, world)
             drawAnimals(canvas, w, h, world)
             drawVehicle(canvas, w, h)
             drawTopBar(canvas, w, h, world)
@@ -1951,6 +1952,43 @@ class MainActivity : AppCompatActivity() {
                 c.drawPath(a, paint)
                 paint.color = Color.argb(150, 95, 145, 175)
                 c.drawRect(ax - 8f, ay - 1f, ax + 8f, ay + 2f, paint)
+            }
+        }
+
+        private fun drawEnvironmentMotion(c: Canvas, w: Float, h: Float, world: SmartScene) {
+            // Lightweight procedural motion: foliage/water movement responds to the
+            // same frame clock as the vehicle, giving the world a less static feel.
+            val horizon = h * 0.59f
+            val wind = sin(frame / 38.0).toFloat()
+            val count = renderQuality.animalCount().coerceAtMost(9)
+
+            if (world.weather != "Rainy") {
+                paint.strokeWidth = 1.5f
+                for (i in 0 until count) {
+                    val t = (i + 1) / (count + 1f)
+                    val side = if (i % 2 == 0) -1f else 1f
+                    val x = w * (0.06f + 0.88f * t) + wind * (4f + 12f * t)
+                    val y = horizon + (h * 0.30f) * t
+                    val sway = wind * (3f + 7f * t)
+                    paint.color = if (world.time == "Night")
+                        Color.argb(105, 72, 105, 74)
+                    else
+                        Color.argb(125, 50, 108, 58)
+                    c.drawLine(x, y, x + sway, y - (7f + 18f * t), paint)
+                    c.drawCircle(x + sway, y - (9f + 18f * t), 2.2f + 3f * t, paint)
+                }
+            }
+
+            // Small water glints are depth-scaled and only appear near water regions.
+            if (world.region == "Ocean" || world.region == "Island" || world.region == "Wetland") {
+                paint.strokeWidth = 1.2f
+                for (i in 0..8) {
+                    val t = (i + 1) / 10f
+                    val x = w * (0.08f + 0.84f * t)
+                    val y = h * (0.73f + 0.14f * t) + sin(frame / 20.0 + i).toFloat() * 2f
+                    paint.color = Color.argb(75, 225, 245, 248)
+                    c.drawLine(x - 8f * t, y, x + 8f * t, y, paint)
+                }
             }
         }
 
