@@ -87,31 +87,36 @@ class MainActivity : AppCompatActivity() {
             val x = event.x
             val y = event.y
 
-            when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN -> {
-                    // Natural child control: press and hold anywhere on the play field to drive.
-                    if (y > h * 0.22f && y < h * 0.63f) {
-                        running = true
-                        voice.speakInstruction(true)
+            if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                // One-tap driving: tap the road/play area to toggle drive/stop.
+                if (y > h * 0.22f && y < h * 0.63f) {
+                    val now = System.currentTimeMillis()
+                    if (now - lastTap > 220L) {
+                        lastTap = now
+                        running = !running
+                        if (running) {
+                            voice.speakInstruction(true)
+                        } else {
+                            voice.speakInstruction(false)
+                        }
                         performClick()
                         invalidate()
-                    } else if (y >= h * 0.63f && y <= h * 0.91f && x < w * 0.76f) {
-                        voice.speakLesson(lessons[question])
                     }
                     return true
                 }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    if (y > h * 0.22f && y < h * 0.63f) {
-                        running = false
-                        voice.speakInstruction(false)
-                        invalidate()
-                    }
-                    if (event.actionMasked == MotionEvent.ACTION_UP && y > h * 0.91f) {
-                        nextLesson()
-                    }
+
+                // The learning card only replays the current lesson.
+                if (y >= h * 0.63f && y <= h * 0.91f && x < w * 0.76f) {
+                    voice.speakLesson(lessons[question])
                     return true
                 }
             }
+
+            if (event.actionMasked == MotionEvent.ACTION_UP && y > h * 0.91f) {
+                nextLesson()
+                return true
+            }
+
             return true
         }
 
@@ -129,17 +134,20 @@ class MainActivity : AppCompatActivity() {
 
             if (running) {
                 frame++
-                speed += 0.00045f
-                speed = speed.coerceAtMost(0.022f)
+                // Smooth acceleration gives the vehicle believable weight and momentum.
+                speed += 0.00032f
+                speed = speed.coerceAtMost(0.018f)
                 distance += speed
-                wheelSpin = (wheelSpin + speed * 820f) % 360f
-                vehicleProgress += speed * 0.18f
+                wheelSpin = (wheelSpin + speed * 900f) % 360f
+                vehicleProgress += speed * 0.16f
                 if (vehicleProgress > 1f) vehicleProgress = 0.70f
                 val targetSteer = sin(frame / 70.0).toFloat() * 0.055f
                 steering += (targetSteer - steering) * 0.08f
                 laneOffset += (steering * 0.7f - laneOffset) * 0.045f
             } else {
-                speed *= 0.84f
+                // Release is no longer a control action: after a tap-to-stop,
+                // the vehicle coasts down naturally before coming to rest.
+                speed *= 0.91f
                 steering *= 0.88f
                 laneOffset *= 0.92f
             }
@@ -938,7 +946,7 @@ class MainActivity : AppCompatActivity() {
             text.textAlign = Paint.Align.CENTER
             text.textSize = 13f
             c.drawText("LEVEL " + level,w*.53f,37f,text)
-            c.drawText(if (running) "● ON" else "● OFF",w*.53f,56f,text)
+            c.drawText(if (running) "● DRIVING" else "● STOPPED",w*.53f,56f,text)
 
             text.textSize = 11f
             c.drawText("WORLD " + world.id,w*.70f,35f,text)
@@ -980,14 +988,14 @@ class MainActivity : AppCompatActivity() {
             text.textAlign = Paint.Align.CENTER
             text.color = Color.WHITE
             text.textSize = 12f
-            c.drawText(if (running) "STOP" else "START",right-54f,top+57f,text)
+            c.drawText(if (running) "DRIVING" else "READY",right-54f,top+57f,text)
 
             text.textAlign = Paint.Align.CENTER
             text.color = Color.rgb(27,105,69)
             text.textSize = 11f
             text.color = Color.rgb(35,105,78)
             text.textSize = 10f
-            c.drawText("Tap card to listen • Tap bottom for next", w/2f, top+101f, text)
+            c.drawText("Tap road once to drive • Tap again to stop", w/2f, top+101f, text)
         }
 
         private fun speakCurrentLesson() {
@@ -1022,7 +1030,7 @@ class MainActivity : AppCompatActivity() {
             text.textSize = 15f
 
             c.drawText(
-                if (running) "গাড়ি চলছে • ট্যাপ করুন থামাতে"
+                if (running) "গাড়ি চলছে • থামাতে আবার ট্যাপ করুন"
                 else "গাড়ি চালাতে একবার ট্যাপ করুন",
                 w/2f,h*.965f,text
             )
