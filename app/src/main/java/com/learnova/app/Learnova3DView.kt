@@ -580,3 +580,5 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 }
 
 // Realism stage: smooth suspension response.
+
+// Realism stage: terrain-aware camera height.
