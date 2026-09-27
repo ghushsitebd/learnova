@@ -41,6 +41,8 @@ class MainActivity : AppCompatActivity() {
         private var steering = 0f
         private var level = 1
         private var vehicle = 0
+        private var levelProgress = 0f
+        private var levelComplete = false
         private var worldSceneId = 1
         private var question = 0
         private var lastTap = 0L
@@ -75,6 +77,7 @@ class MainActivity : AppCompatActivity() {
             level = prefs.getInt("level", 1).coerceAtLeast(1)
             vehicle = prefs.getInt("vehicle", 0).coerceIn(0, LearnovaUnlimitedWorld.vehicles.lastIndex)
             worldSceneId = prefs.getInt("worldSceneId", 1).coerceAtLeast(1)
+            levelProgress = prefs.getFloat("levelProgress", 0f).coerceIn(0f, 1f)
             question = prefs.getInt("question", 0).coerceIn(0, lessons.lastIndex)
             speakCurrentLesson()
         }
@@ -113,7 +116,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             if (event.actionMasked == MotionEvent.ACTION_UP && y > h * 0.91f) {
-                nextLesson()
+                if (levelComplete) nextLesson()
                 return true
             }
 
@@ -138,6 +141,9 @@ class MainActivity : AppCompatActivity() {
                 speed += 0.00032f
                 speed = speed.coerceAtMost(0.018f)
                 distance += speed
+                levelProgress += speed / LearnovaUnlimitedWorld.level(level).targetDistance * 0.006f
+                levelProgress = levelProgress.coerceAtMost(1f)
+                if (levelProgress >= 1f) levelComplete = true
                 wheelSpin = (wheelSpin + speed * 900f) % 360f
                 vehicleProgress += speed * 0.16f
                 if (vehicleProgress > 1f) vehicleProgress = 0.70f
@@ -149,6 +155,7 @@ class MainActivity : AppCompatActivity() {
                 // the vehicle coasts down naturally before coming to rest.
                 speed *= 0.91f
                 steering *= 0.88f
+                if (levelProgress >= 1f) levelComplete = true
                 laneOffset *= 0.92f
             }
 
@@ -1025,8 +1032,11 @@ class MainActivity : AppCompatActivity() {
 
             text.textAlign = Paint.Align.CENTER
             text.textSize = 13f
+            val info = LearnovaUnlimitedWorld.level(level)
             c.drawText("LEVEL " + level,w*.53f,37f,text)
-            c.drawText(if (running) "● DRIVING" else "● STOPPED",w*.53f,56f,text)
+            c.drawText(if (levelComplete) "✓ COMPLETE" else if (running) "● DRIVING" else "● READY",w*.53f,56f,text)
+            text.textSize = 9f
+            c.drawText(info.difficulty.uppercase(),w*.53f,67f,text)
 
             text.textSize = 11f
             c.drawText("WORLD " + world.id,w*.70f,35f,text)
@@ -1059,8 +1069,13 @@ class MainActivity : AppCompatActivity() {
             c.drawText(lessons[question],left+18f,top+61f,text)
 
             text.color = Color.rgb(85,90,90)
-            text.textSize = 12f
-            c.drawText(world.activity,left+18f,top+88f,text)
+            text.textSize = 11f
+            val info = LearnovaUnlimitedWorld.level(level)
+            c.drawText("${info.lessonType} • ${info.difficulty}",left+18f,top+82f,text)
+            paint.color = Color.rgb(225,232,228)
+            c.drawRoundRect(RectF(left+18f,top+88f,right-112f,top+95f),4f,4f,paint)
+            paint.color = Color.rgb(28,155,91)
+            c.drawRoundRect(RectF(left+18f,top+88f,left+18f+(right-left-130f)*levelProgress,top+95f),4f,4f,paint)
 
             paint.color = if (running) Color.rgb(20,150,83) else Color.rgb(45,100,80)
             c.drawRoundRect(RectF(right-90f,top+19f,right-18f,top+86f),18f,18f,paint)
@@ -1068,7 +1083,7 @@ class MainActivity : AppCompatActivity() {
             text.textAlign = Paint.Align.CENTER
             text.color = Color.WHITE
             text.textSize = 12f
-            c.drawText(if (running) "DRIVING" else "READY",right-54f,top+57f,text)
+            c.drawText(if (levelComplete) "NEXT LEVEL" else if (running) "DRIVING" else "READY",right-54f,top+57f,text)
 
             text.textAlign = Paint.Align.CENTER
             text.color = Color.rgb(27,105,69)
@@ -1087,9 +1102,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         private fun nextLesson() {
+            if (!levelComplete) return
             question = (question + 1) % lessons.size
             level += 1
             worldSceneId += 1
+            levelProgress = 0f
+            levelComplete = false
             saveProgress()
             speakCurrentLesson()
         }
@@ -1100,6 +1118,7 @@ class MainActivity : AppCompatActivity() {
                 .putInt("vehicle", vehicle)
                 .putInt("worldSceneId", worldSceneId)
                 .putInt("question", question)
+                .putFloat("levelProgress", levelProgress)
                 .apply()
         }
 
@@ -1110,7 +1129,8 @@ class MainActivity : AppCompatActivity() {
             text.textSize = 15f
 
             c.drawText(
-                if (running) "Driving • Tap again to stop"
+                if (levelComplete) "Level complete • Tap NEXT LEVEL"
+                else if (running) "Driving • Tap again to stop"
                 else "Tap once to drive",
                 w/2f,h*.965f,text
             )
