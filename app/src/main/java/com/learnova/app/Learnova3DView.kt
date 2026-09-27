@@ -867,18 +867,26 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                         .coerceIn(0.0, 1.0)
                     val steeringLimit = (0.58 - 0.20 * speedRatio)
                         .coerceIn(0.34, 0.58)
-                    val steeringTarget = kotlin.math.atan(
-                        2.30 * (
-                            kotlin.math.atan2(
-                                kotlin.math.sin(roadAhead.yaw - roadBehind.yaw),
-                                kotlin.math.cos(roadAhead.yaw - roadBehind.yaw)
-                            ) / 3.6
-                        )
+                    val curvatureYaw = kotlin.math.atan2(
+                        kotlin.math.sin(roadAhead.yaw - roadBehind.yaw),
+                        kotlin.math.cos(roadAhead.yaw - roadBehind.yaw)
                     )
+                    val steeringTarget = kotlin.math.atan(2.30 * (curvatureYaw / 3.6))
                     val playerSteer = if (driving) steeringInput * 0.34 else 0.0
                     val steerTarget = if (isFrontWheel) {
-                        (steeringTarget + playerSteer)
-                            .coerceIn(-steeringLimit, steeringLimit)
+                        // Ackermann-inspired geometry: the inside front wheel
+                        // turns slightly more than the outside wheel.
+                        val side = wheelContactLateral[entity] ?: 0.0
+                        val baseSteer = steeringTarget + playerSteer
+                        val ackermannGain = 0.055 * kotlin.math.abs(baseSteer)
+                        val adjusted = when {
+                            baseSteer > 0.0 && side < 0.0 -> baseSteer + ackermannGain
+                            baseSteer > 0.0 && side > 0.0 -> baseSteer - ackermannGain
+                            baseSteer < 0.0 && side > 0.0 -> baseSteer - ackermannGain
+                            baseSteer < 0.0 && side < 0.0 -> baseSteer + ackermannGain
+                            else -> baseSteer
+                        }
+                        adjusted.coerceIn(-steeringLimit, steeringLimit)
                     } else 0.0
                     val previousSteer = wheelSteeringAngle[entity] ?: 0.0
                     // Steering rack inertia is speed-aware: gentle at low speed for
