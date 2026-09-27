@@ -133,6 +133,13 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             .castShadows(true)
             .build(viewer.engine, sunEntity)
         viewer.scene.addEntity(sunEntity)
+
+        // Keep the shadow map useful for the actual driving corridor while
+        // avoiding unnecessarily large GPU work on lower-end devices.
+        viewer.view.directionalShadowOptions = viewer.view.directionalShadowOptions.apply {
+            enabled = true
+            shadowCascades = 3
+        }
     }
 
     fun setDriving(value: Boolean) {
