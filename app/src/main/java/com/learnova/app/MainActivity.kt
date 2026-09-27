@@ -92,6 +92,16 @@ class MainActivity : AppCompatActivity() {
             val y = event.y
 
             if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                // Vehicle selector: a single tap on the vehicle badge cycles the active vehicle.
+                // The driving surface keeps the core one-tap drive/stop interaction unchanged.
+                if (y < h * 0.22f && x > w * 0.76f) {
+                    vehicle = (vehicle + 1) % LearnovaUnlimitedWorld.vehicles.size
+                    prefs.edit().putInt("vehicle", vehicle).apply()
+                    voice.speakVehicle(LearnovaUnlimitedWorld.vehicles[vehicle].name)
+                    invalidate()
+                    return true
+                }
+
                 // One-tap driving: tap the road/play area to toggle drive/stop.
                 if (y > h * 0.22f && y < h * 0.63f) {
                     val now = System.currentTimeMillis()
@@ -925,6 +935,7 @@ class MainActivity : AppCompatActivity() {
                 "bicycle" -> drawBicycle(c, cx, cy)
                 "air" -> drawPlane(c, cx, cy)
                 "boat" -> drawBoat(c, cx, cy)
+                "train" -> drawTrain(c, cx, cy)
                 "space" -> drawRocket(c, cx, cy)
                 "micro" -> drawMicro(c, cx, cy)
                 else -> drawCar(c, cx, cy, selected.id)
@@ -1323,6 +1334,31 @@ class MainActivity : AppCompatActivity() {
             sail.lineTo(x+55f,y-10f)
             sail.close()
             c.drawPath(sail,paint)
+        }
+
+        private fun drawTrain(c: Canvas, x: Float, y: Float) {
+            paint.color = Color.argb(75, 0, 0, 0)
+            c.drawOval(RectF(x - 105f, y + 34f, x + 105f, y + 58f), paint)
+
+            paint.shader = LinearGradient(
+                x, y - 78f, x, y + 42f,
+                Color.rgb(210, 48, 48), Color.rgb(92, 22, 25), Shader.TileMode.CLAMP
+            )
+            c.drawRoundRect(RectF(x - 92f, y - 72f, x + 92f, y + 42f), 18f, 18f, paint)
+            paint.shader = null
+
+            paint.color = Color.rgb(28, 48, 55)
+            c.drawRoundRect(RectF(x - 65f, y - 52f, x - 8f, y - 15f), 7f, 7f, paint)
+            c.drawRoundRect(RectF(x + 8f, y - 52f, x + 65f, y - 15f), 7f, 7f, paint)
+
+            paint.color = Color.rgb(245, 244, 220)
+            c.drawCircle(x - 58f, y + 18f, 7f, paint)
+            c.drawCircle(x + 58f, y + 18f, 7f, paint)
+
+            paint.color = Color.rgb(42, 46, 50)
+            c.drawRoundRect(RectF(x - 102f, y + 26f, x + 102f, y + 47f), 8f, 8f, paint)
+            drawWheel(c, x - 63f, y + 43f, wheelSpin)
+            drawWheel(c, x + 63f, y + 43f, wheelSpin)
         }
 
         private fun drawRocket(c: Canvas, x: Float, y: Float) {
