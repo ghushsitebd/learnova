@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.content.SharedPreferences
 import android.view.MotionEvent
 import android.view.View
+import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import kotlin.math.sin
 import kotlin.math.cos
@@ -15,6 +16,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var gameView: LearnovaGameView
     private lateinit var voice: LearnovaVoice
+    private lateinit var threeDWorld: Learnova3DView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,7 +24,11 @@ class MainActivity : AppCompatActivity() {
         window.setNavigationBarColor(Color.BLACK)
         voice = LearnovaVoice(this)
         gameView = LearnovaGameView()
-        setContentView(gameView)
+        threeDWorld = Learnova3DView(this)
+        val root = FrameLayout(this)
+        root.addView(threeDWorld, FrameLayout.LayoutParams(-1, -1))
+        root.addView(gameView, FrameLayout.LayoutParams(-1, -1))
+        setContentView(root)
     }
 
     private inner class LearnovaGameView : View(this@MainActivity) {
@@ -33,6 +39,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         private var running = false
+        private val use3DWorld = true
         private var frame = 0L
         private var distance = 0f
         private var vehicleProgress = 0.78f
@@ -211,28 +218,34 @@ class MainActivity : AppCompatActivity() {
 
             val world = LearnovaUnlimitedWorld.scene(worldSceneId)
 
-            drawSky(canvas, w, h, world)
-            drawSun(canvas, w, h, world)
-            drawClouds(canvas, w, h)
-            drawMountains(canvas, w, h)
-            drawGround(canvas, w, h)
-            drawRiver(canvas, w, h)
-            drawTrees(canvas, w, h)
-            drawHabitatDetails(canvas, w, h, world)
-            drawForestRouteDepth(canvas, w, h, world)
-            drawRoad(canvas, w, h, world)
-            drawRoadMaterialPass(canvas, w, h, world)
-            drawRoadReflections(canvas, w, h, world)
-            drawRoadInfrastructure(canvas, w, h, world)
-            if (world.region.contains("Village")) drawVillageRoadsideDepth(canvas, w, h, world)
-            drawAtmosphere(canvas, w, h, world)
-            drawCinematicLighting(canvas, w, h, world)
-            drawDistantWorld(canvas, w, h, world)
-            drawRoadsideInteractions(canvas, w, h, world)
-            drawEnvironmentMotion(canvas, w, h, world)
-            drawAnimals(canvas, w, h, world)
-            drawVehicle(canvas, w, h)
-            drawVehicleContactEffects(canvas, w, h, world)
+            // The production 3D renderer now owns the physical world when enabled.
+            // Keep the Android Canvas layer for the learning HUD, voice/lesson state and
+            // compatibility fallback. This makes migration incremental instead of a
+            // risky all-at-once rewrite.
+            if (!use3DWorld) {
+                drawSky(canvas, w, h, world)
+                drawSun(canvas, w, h, world)
+                drawClouds(canvas, w, h)
+                drawMountains(canvas, w, h)
+                drawGround(canvas, w, h)
+                drawRiver(canvas, w, h)
+                drawTrees(canvas, w, h)
+                drawHabitatDetails(canvas, w, h, world)
+                drawForestRouteDepth(canvas, w, h, world)
+                drawRoad(canvas, w, h, world)
+                drawRoadMaterialPass(canvas, w, h, world)
+                drawRoadReflections(canvas, w, h, world)
+                drawRoadInfrastructure(canvas, w, h, world)
+                if (world.region.contains("Village")) drawVillageRoadsideDepth(canvas, w, h, world)
+                drawAtmosphere(canvas, w, h, world)
+                drawCinematicLighting(canvas, w, h, world)
+                drawDistantWorld(canvas, w, h, world)
+                drawRoadsideInteractions(canvas, w, h, world)
+                drawEnvironmentMotion(canvas, w, h, world)
+                drawAnimals(canvas, w, h, world)
+                drawVehicle(canvas, w, h)
+                drawVehicleContactEffects(canvas, w, h, world)
+            }
             drawTopBar(canvas, w, h, world)
             drawLearningCard(canvas, w, h, world)
             drawHint(canvas, w, h)
