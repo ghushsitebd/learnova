@@ -316,3 +316,5 @@ if ASSETS.exists():
 # CI validation 412: deterministic asset contract hardening.
 
 # CI validation 413: deterministic asset contract hardening.
+
+# CI validation 414: runtime-safe asset contract hardening.
