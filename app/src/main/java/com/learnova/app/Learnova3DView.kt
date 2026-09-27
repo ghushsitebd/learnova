@@ -204,6 +204,10 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 shorelineWorld?.update(vehicleDistance)
                 worldLife?.update(vehicleDistance)
                 updateVehicleMechanics()
+                // Camera/body inertia reads the same lateral dynamics as the vehicle.
+                // This couples steering, chassis motion and the horizon instead of
+                // making the camera behave like a detached follow camera.
+                updateDrivingInertia(dt)
                 vehicleInteraction.update(dt.toFloat(), interactionProfile)
                 updateVehicleInteractionVisuals()
                 viewer.render(time)
@@ -866,6 +870,31 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             .build(viewer.engine)
     }
 
+    /**
+     * Shared lateral dynamics cues for believable driving.
+     *
+     * The game remains touch-simple: the child only steers left/right. The renderer
+     * derives a small, filtered roll/yaw response from lateral acceleration so the
+     * vehicle and camera visually carry momentum through a turn.
+     */
+    private fun updateDrivingInertia(dt: Double) {
+        val safeDt = dt.coerceIn(1.0 / 240.0, 0.05)
+        val lateralAcceleration = ((lateralVelocity * vehicleSpeed) * 0.42)
+            .coerceIn(-4.5, 4.5)
+
+        val rollTarget = (-lateralAcceleration * 0.018)
+            .coerceIn(-0.075, 0.075)
+        chassisRoll += (rollTarget - chassisRoll) * (safeDt * 7.0).coerceAtMost(1.0)
+
+        // Road yaw rate is already measured from the authoritative spline. Blend a
+        // small steering contribution into the visual chassis pitch/roll envelope.
+        val steeringLoad = steeringInput * (vehicleSpeed / targetSpeed.coerceAtLeast(0.1))
+            .coerceIn(-1.0, 1.0)
+        val pitchTarget = (-vehicleAcceleration * 0.0028 + kotlin.math.abs(steeringLoad) * 0.003)
+            .coerceIn(-0.035, 0.035)
+        chassisPitch += (pitchTarget - chassisPitch) * (safeDt * 6.0).coerceAtMost(1.0)
+    }
+
     private fun updateDriveScene() {
         // The camera now reads a deterministic world profile as the child travels:
         // forest -> river -> mountain -> desert -> plateau -> market -> village -> coast.
@@ -911,13 +940,15 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         // vehicle mass without introducing uncomfortable child-facing motion.
         val gradePitch = road.grade.toDouble() * 0.11
         val accelerationPitch = (vehicleAcceleration * 0.0065).coerceIn(-0.055, 0.055)
-        val cameraY = world.cameraHeight + road.y + bodyBob + gradePitch - accelerationPitch
+        val inertiaPitch = chassisPitch * 0.45
+        val cameraY = world.cameraHeight + road.y + bodyBob + gradePitch - accelerationPitch + inertiaPitch
 
         // Roll the camera gently with the road bank. Keep the vertical axis
         // stable enough for children while preserving physical cornering cues.
-        val upX = -kotlin.math.sin(cameraBank)
-        val upY = kotlin.math.cos(cameraBank)
-        val upZ = kotlin.math.sin(cameraBank * 0.18)
+        val totalBank = (cameraBank + chassisRoll * 0.55).coerceIn(-0.16, 0.16)
+        val upX = -kotlin.math.sin(totalBank)
+        val upY = kotlin.math.cos(totalBank)
+        val upZ = kotlin.math.sin(totalBank * 0.18)
 
         viewer.camera.lookAt(
             cameraX, cameraY, cameraZ,
