@@ -238,3 +238,4 @@ if found == 0:
 # Engineering checkpoint 299: keep CI asset-contract validation reproducible.
 
 # Engineering checkpoint 300: keep CI asset-contract validation reproducible.
+\n# Checkpoint 301: reject symlinked production vehicle assets.\nif ASSETS.exists():\n    for candidate in ASSETS.iterdir():\n        if candidate.is_symlink():\n            print(f"::error::Vehicle asset must not be a symlink: {candidate.name}")\n            sys.exit(1)\n
