@@ -274,3 +274,5 @@ if ASSETS.exists():
 # 391: add duplicate asset payload hash detection.
 
 # 392: add GLB JSON chunk boundary validation.
+
+# 393: add GLB binary chunk boundary validation.
