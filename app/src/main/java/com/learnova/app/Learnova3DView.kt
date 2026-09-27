@@ -12,6 +12,7 @@ import com.google.android.filament.utils.rotation
 import com.google.android.filament.Colors
 import com.google.android.filament.EntityManager
 import com.google.android.filament.LightManager
+import com.google.android.filament.Skybox
 import java.io.ByteArrayInputStream
 import java.util.zip.GZIPInputStream
 import java.nio.ByteBuffer
@@ -52,6 +53,10 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         val modelBytes = decodeModel()
         viewer.loadModelGlb(ByteBuffer.wrap(modelBytes))
         configureRealisticSunLight()
+        viewer.scene.skybox = Skybox.Builder()
+            .color(0.25f, 0.50f, 0.90f, 1.0f)
+            .showSun(true)
+            .build(viewer.engine)
         cacheWheelEntities()
         cacheVehicleRoot()
 
@@ -276,7 +281,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         // Small banking cue follows road direction instead of using random sway.
         // This keeps the motion physically coherent without adding input complexity.
         viewer.camera.setLensProjection(48.0, 1.0, 0.10, 250.0)
-        viewer.camera.setExposure(0.0, 0.0, 1000.0)
+        viewer.camera.setExposure(14.0, 1.0 / 125.0, 100.0)
     }
 
     override fun onDetachedFromWindow() {
