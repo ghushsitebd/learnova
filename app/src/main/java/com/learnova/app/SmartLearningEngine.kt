@@ -80,17 +80,31 @@ object SmartLearningEngine {
     }
 
     private val quran = listOf(
-        SmartLesson(
-            id = "quran_fatiha",
-            domain = "Quran",
-            display = "الفاتحة",
-            spokenName = "سورة الفاتحة",
-            sound = "استماع وترديد",
-            example = "سورة الفاتحة",
-            visualKey = "quran_fatiha",
-            prompt = "Listen, follow, repeat and recognize Surah Al-Fatihah.",
-            rtl = true
-        )
+        quranLesson("quran_fatiha", "الفاتحة", "سورة الفاتحة", 7, "ফাতিহা", "শুনো, অনুসরণ করো, তারপর পরিচিত আয়াত/শব্দ চিনে নাও।"),
+        quranLesson("quran_ikhlas", "الإخلاص", "سورة الإخلاص", 4, "ইখলাস", "শোনো → শব্দ/আয়াতের অংশ চিনে নাও → ক্রম মিলাও।"),
+        quranLesson("quran_falaq", "الفلق", "سورة الفلق", 5, "ফালাক", "শোনো → সঠিক অংশ বেছে নাও → ধীরে পুনরাবৃত্তি করো।"),
+        quranLesson("quran_nas", "الناس", "سورة الناس", 6, "নাস", "শোনো → সঠিক শব্দ/অংশ খুঁজে নাও → শেষে ছোট রিভিউ।"),
+        quranLesson("quran_kawthar", "الكوثر", "سورة الكوثر", 3, "কাওসার", "শুনে অনুসরণ করো → আয়াতের ক্রম মিলাও → রিভিউ করো।"),
+        quranLesson("quran_asr", "العصر", "سورة العصر", 3, "আসর", "শোনো → ক্রম চিনে নাও → শেষে অর্থের সহজ ধারণা দেখো।")
+    )
+
+    private fun quranLesson(
+        id: String,
+        display: String,
+        spokenName: String,
+        ayahCount: Int,
+        banglaName: String,
+        activity: String
+    ) = SmartLesson(
+        id = id,
+        domain = "Quran",
+        display = display,
+        spokenName = spokenName,
+        sound = "استماع وترديد",
+        example = "$banglaName • $ayahCount আয়াত",
+        visualKey = id,
+        prompt = activity,
+        rtl = true
     )
 
     val lessons: List<SmartLesson> = english + arabic + quran
@@ -106,6 +120,9 @@ object SmartLearningEngine {
 
     fun reinforcement(index: Int, stage: Int): String {
         val l = lesson(index)
+        if (l.domain == "Quran") {
+            return QuranLearningEngine.activity(l.id, stage)
+        }
         return when (stage.coerceIn(0, 2)) {
             0 -> "Look: " + l.display
             1 -> "Listen: " + l.spokenName
