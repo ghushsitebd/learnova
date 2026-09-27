@@ -77,3 +77,5 @@ internal object RoadSpline {
 // Realism stage: refine banking response.
 
 // Realism stage: stable terrain grade transitions.
+
+// Realism stage: secondary terrain undulation.
