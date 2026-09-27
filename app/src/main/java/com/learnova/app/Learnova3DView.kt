@@ -42,6 +42,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var vehicleRootEntity = 0
     private var vehicleRootBaseTransform: FloatArray? = null
     private var sunEntity = 0
+    private var proceduralRoad: ProceduralRoadMesh? = null
 
     init {
         addView(
@@ -52,6 +53,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
         val modelBytes = decodeModel()
         viewer.loadModelGlb(ByteBuffer.wrap(modelBytes))
+        proceduralRoad = ProceduralRoadMesh(viewer.engine, viewer.scene, viewer.asset!!).also { it.build() }
         configureRealisticSunLight()
         viewer.scene.skybox = Skybox.Builder()
             .color(0.25f, 0.50f, 0.90f, 1.0f)
@@ -106,6 +108,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 vehicleDistance += vehicleSpeed * dt
 
                 updateDriveScene()
+                proceduralRoad?.update(vehicleDistance)
                 updateVehicleMechanics()
                 viewer.render(time)
                 choreographer.postFrameCallback(frameCallback)
@@ -297,6 +300,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         vehicleSpeed = 0.0
         frameCallback?.let { choreographer.removeFrameCallback(it) }
         frameCallback = null
+        proceduralRoad?.destroy()
+        proceduralRoad = null
         if (sunEntity != 0) {
             viewer.scene.removeEntity(sunEntity)
             viewer.engine.lightManager.destroy(sunEntity)
