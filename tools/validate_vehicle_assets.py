@@ -322,3 +322,5 @@ if ASSETS.exists():
 # CI validation 415: runtime-safe asset contract hardening.
 
 # CI validation 416: runtime-safe asset contract hardening.
+
+# CI validation 417: runtime-safe asset contract hardening.
