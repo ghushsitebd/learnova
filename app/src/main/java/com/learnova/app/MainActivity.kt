@@ -48,6 +48,7 @@ class MainActivity : AppCompatActivity() {
         private var question = 0
         private var lastTap = 0L
         private val prefs: SharedPreferences = getSharedPreferences("learnova_progress", MODE_PRIVATE)
+        private val renderQuality = LearnovaRenderQuality(this@MainActivity)
 
         private val lessons = arrayOf(
             "A", "B", "C", "D", "E", "F", "G", "H",
@@ -141,6 +142,7 @@ class MainActivity : AppCompatActivity() {
 
         override fun onDraw(canvas: Canvas) {
             super.onDraw(canvas)
+            val frameStart = renderQuality.beginFrame()
 
             val w = width.toFloat()
             val h = height.toFloat()
@@ -189,6 +191,7 @@ class MainActivity : AppCompatActivity() {
             drawTopBar(canvas, w, h, world)
             drawLearningCard(canvas, w, h, world)
             drawHint(canvas, w, h)
+            renderQuality.endFrame(frameStart)
 
             if (running) postInvalidateOnAnimation()
         }
@@ -298,7 +301,7 @@ class MainActivity : AppCompatActivity() {
 
             paint.color = Color.argb(135, 220, 250, 255)
             paint.strokeWidth = 4f
-            for (i in 0..5) {
+            for (i in 0 until renderQuality.distantTrafficCount()) {
                 val y = h * 0.79f + i * 24f
                 c.drawLine(w * 0.67f, y, w * 0.92f, y + 3f, paint)
             }
