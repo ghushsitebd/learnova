@@ -26,7 +26,7 @@ internal class LearnovaTerrainMesh(
     private val asset: FilamentAsset
 ) {
     private companion object {
-        const val SAMPLE_COUNT = 127
+        const val SAMPLE_COUNT = 191
         const val STEP = 3.25
         const val BEHIND = 80.0
         const val INNER = 6.0
