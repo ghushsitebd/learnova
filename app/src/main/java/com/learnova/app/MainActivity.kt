@@ -40,6 +40,10 @@ class MainActivity : AppCompatActivity() {
         private var speed = 0f
         private var laneOffset = 0f
         private var steering = 0f
+        private var vehicleHeading = 0f
+        private var lateralVelocity = 0f
+        private var suspensionOffset = 0f
+        private var suspensionVelocity = 0f
         private var level = 1
         private var vehicle = 0
         private var levelProgress = 0f
@@ -150,26 +154,59 @@ class MainActivity : AppCompatActivity() {
 
             if (running) {
                 frame++
-                // Smooth acceleration gives the vehicle believable weight and momentum.
-                speed += 0.00032f
-                speed = speed.coerceAtMost(0.018f)
+
+                // Vehicle dynamics: acceleration, road-following steering, lateral
+                // inertia and suspension are derived from the same road curve used by
+                // the renderer. The player still has only one control: tap to drive,
+                // tap again to stop.
+                val roadNow = roadCenterAt(vehicleProgress.coerceIn(0f, 1f), w, worldSceneId)
+                val roadAhead = roadCenterAt((vehicleProgress + 0.055f).coerceAtMost(1f), w, worldSceneId)
+                val roadFar = roadCenterAt((vehicleProgress + 0.14f).coerceAtMost(1f), w, worldSceneId)
+                val nearSlope = (roadAhead - roadNow) / w
+                val farSlope = (roadFar - roadAhead) / w
+                val curvatureSteer = (nearSlope * 2.8f + farSlope * 1.6f).coerceIn(-0.12f, 0.12f)
+                val laneCorrection = (-laneOffset * 0.24f).coerceIn(-0.055f, 0.055f)
+                val targetSteer = (curvatureSteer + laneCorrection).coerceIn(-0.14f, 0.14f)
+
+                steering += (targetSteer - steering) * 0.085f
+                vehicleHeading += (steering * 7.0f - vehicleHeading) * 0.11f
+
+                val targetSpeed = 0.018f
+                speed += (targetSpeed - speed) * 0.022f
+                speed = speed.coerceIn(0f, targetSpeed)
                 distance += speed
                 levelProgress += speed / LearnovaUnlimitedWorld.level(level).targetDistance * 0.006f
                 levelProgress = levelProgress.coerceAtMost(1f)
                 if (levelProgress >= 1f) levelComplete = true
+
+                // Lateral inertia makes the body settle into a curve instead of
+                // snapping sideways.
+                lateralVelocity += (steering * 0.0028f - lateralVelocity) * 0.10f
+                laneOffset += lateralVelocity
+                laneOffset += (laneCorrection - laneOffset) * 0.012f
+                laneOffset = laneOffset.coerceIn(-0.16f, 0.16f)
+
+                // Suspension reacts to speed and changing road direction.
+                val bump = sin(frame / 5.2).toFloat() * (0.35f + speed * 18f)
+                suspensionVelocity += (bump - suspensionOffset) * 0.16f
+                suspensionVelocity *= 0.76f
+                suspensionOffset += suspensionVelocity
+                suspensionOffset = suspensionOffset.coerceIn(-4.5f, 4.5f)
+
                 wheelSpin = (wheelSpin + speed * 900f) % 360f
                 vehicleProgress += speed * 0.16f
                 if (vehicleProgress > 1f) vehicleProgress = 0.70f
-                val targetSteer = sin(frame / 70.0).toFloat() * 0.055f
-                steering += (targetSteer - steering) * 0.08f
-                laneOffset += (steering * 0.7f - laneOffset) * 0.045f
             } else {
-                // Release is no longer a control action: after a tap-to-stop,
-                // the vehicle coasts down naturally before coming to rest.
+                // Tap-to-stop uses natural braking/coasting rather than an instant
+                // freeze, while steering and suspension settle smoothly.
                 speed *= 0.91f
                 steering *= 0.88f
+                vehicleHeading *= 0.90f
+                lateralVelocity *= 0.82f
+                laneOffset += (-laneOffset) * 0.06f
+                suspensionVelocity *= 0.70f
+                suspensionOffset *= 0.78f
                 if (levelProgress >= 1f) levelComplete = true
-                laneOffset *= 0.92f
             }
 
             val world = LearnovaUnlimitedWorld.scene(worldSceneId)
@@ -573,6 +610,20 @@ class MainActivity : AppCompatActivity() {
         }
 
         private fun phaseForWorld(seed:Int):Float = if(running) frame.toFloat()+seed else seed.toFloat()
+
+        private fun roadCenterAt(tRaw: Float, w: Float, sceneId: Int): Float {
+            val t = tRaw.coerceIn(0f, 1f)
+            val roadType = abs(sceneId * 17 + sceneId * 7) % 12
+            val curveSeed = sceneId * 0.73f + roadType * 0.41f
+            val curve = (sin(curveSeed + frame / 900.0) * 0.62 +
+                    sin(curveSeed * 0.47 + frame / 1450.0) * 0.38).toFloat()
+            val bend = curve * w * when (roadType) {
+                3, 4, 7 -> 0.13f
+                8, 9 -> 0.10f
+                else -> 0.085f
+            }
+            return w * 0.50f + bend * t * t + laneOffset * w * t * 0.18f
+        }
 
         private fun drawRoad(c: Canvas, w: Float, h: Float, world: SmartScene) {
             // A deterministic road generator creates many distinct road families while
@@ -1108,12 +1159,13 @@ class MainActivity : AppCompatActivity() {
             val selected = LearnovaUnlimitedWorld.vehicles[vehicle]
             val p = vehicleProgress.coerceIn(0f, 1f)
 
-            // Camera-follow placement: the vehicle grows as it approaches and follows
-            // the road curve rather than sliding across a flat screen.
-            val roadCurve = sin(frame / 120.0).toFloat() * w * 0.065f
-            val cx = w * 0.50f + roadCurve * p * p + laneOffset * w * (0.16f + 0.42f * p)
+            // Camera-follow placement uses the exact road centerline used by the
+            // road renderer, so the vehicle visually stays on the pavement through bends.
+            val roadX = roadCenterAt(p, w, worldSceneId)
+            val cx = roadX + laneOffset * w * (0.10f + 0.34f * p)
             val cy = h * (0.66f + 0.22f * p) +
-                if (running) sin(frame / 4.5).toFloat() * (1.0f + 3.8f * p) else 0f
+                suspensionOffset +
+                if (running) sin(frame / 4.5).toFloat() * (0.65f + 2.6f * p) else 0f
             val scale = 0.42f + 0.80f * p
 
             // Contact shadow reacts to height/suspension.
@@ -1125,7 +1177,10 @@ class MainActivity : AppCompatActivity() {
             )
 
             c.save()
-            val bodyLean = steering * 5.5f + if (running) sin(frame / 9.0).toFloat() * 0.7f else 0f
+            val bodyLean = vehicleHeading +
+                steering * 3.2f +
+                suspensionOffset * 0.55f +
+                if (running) sin(frame / 9.0).toFloat() * 0.55f else 0f
             c.rotate(bodyLean, cx, cy)
             c.scale(scale, scale, cx, cy)
 
