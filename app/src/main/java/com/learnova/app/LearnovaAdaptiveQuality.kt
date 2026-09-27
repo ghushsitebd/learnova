@@ -32,10 +32,10 @@ internal class LearnovaAdaptiveQuality {
         accumulatedMs += clamped
         samples++
 
-        if (clamped > 22.0) {
+        if (clamped > 18.5) {
             badFrames++
             goodFrames = 0
-        } else if (clamped < 14.0) {
+        } else if (clamped < 12.5) {
             goodFrames++
             badFrames = 0
         } else {
@@ -48,13 +48,13 @@ internal class LearnovaAdaptiveQuality {
         val average = accumulatedMs / samples
         val old = tier
 
-        if (badFrames >= 8 || average > 22.0) {
+        if (badFrames >= 6 || average > 18.5) {
             tier = when (tier) {
                 Tier.HIGH -> Tier.MEDIUM
                 Tier.MEDIUM -> Tier.LOW
                 Tier.LOW -> Tier.LOW
             }
-        } else if (!constrainedDevice && goodFrames >= 24 && average < 14.0) {
+        } else if (!constrainedDevice && goodFrames >= 30 && average < 12.5) {
             tier = when (tier) {
                 Tier.LOW -> Tier.MEDIUM
                 Tier.MEDIUM -> Tier.HIGH
