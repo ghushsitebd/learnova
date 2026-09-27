@@ -81,10 +81,17 @@ internal class WorldLifeSimulation(
 
         while (d <= centerDistance + AHEAD && vCount + 8 <= MAX_AGENTS * 8) {
             val seed = stableSeed(d)
-            val sample = RoadSpline.sampleRelative(d, centerDistance)
+            // Give traffic a small independent longitudinal velocity. The
+            // offset is deterministic and bounded, so spacing never explodes,
+            // but nearby vehicles visibly gain/lose distance like real traffic.
+            val trafficPhase = phaseFromSeed(seed)
+            val trafficMotion = sin(centerDistance * (0.012 + ((seed ushr 36) % 7L) * 0.001) + trafficPhase * 6.283) *
+                (2.0 + ((seed ushr 39) % 30L) / 10.0)
+            val agentDistance = d + trafficMotion
+            val sample = RoadSpline.sampleRelative(agentDistance, centerDistance)
             // Keep nearby traffic in believable lanes while allowing distant
             // activity to spread wider into the landscape.
-            val distanceFromPlayer = kotlin.math.abs(d - centerDistance)
+            val distanceFromPlayer = kotlin.math.abs(agentDistance - centerDistance)
             val lane = when {
                 distanceFromPlayer < NEAR_RADIUS -> when ((seed ushr 3) % 5L) {
                     0L -> -6.2
@@ -280,6 +287,9 @@ internal class WorldLifeSimulation(
         }
         return null
     }
+
+    private fun phaseFromSeed(seed: Long): Double =
+        ((seed ushr 17) % 1000L) / 1000.0
 
     private fun stableSeed(distance: Double): Long {
         var x = java.lang.Double.doubleToLongBits(kotlin.math.floor(distance / STEP) * STEP)
