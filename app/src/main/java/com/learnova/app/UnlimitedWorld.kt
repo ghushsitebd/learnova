@@ -197,6 +197,7 @@ object LearnovaUnlimitedWorld {
         VehicleEntry(57,"Luxury SUV","car","colors and shapes"),
         VehicleEntry(58,"Crossover","car","road safety"),
         VehicleEntry(59,"Off-Road Pickup","truck","nature discovery"),
-        VehicleEntry(60,"Electric City Van","van","clean technology")
+        VehicleEntry(60,"Electric City Van","van","clean technology"),
+        VehicleEntry(61,"Passenger Train","train","travel discovery")
     )
 }
