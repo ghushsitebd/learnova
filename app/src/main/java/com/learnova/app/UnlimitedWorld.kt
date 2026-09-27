@@ -25,7 +25,45 @@ data class LevelInfo(
     val lessonType: String
 )
 
+data class AnimalSpecies(
+    val id: Int,
+    val name: String,
+    val archetype: String,
+    val scale: Float,
+    val stride: Float
+)
+
+
 object LearnovaUnlimitedWorld {
+    private val animalBases = listOf(
+        "African Elephant","Asian Elephant","Giraffe","Lion","Tiger","Leopard","Cheetah","Jaguar",
+        "Brown Bear","Polar Bear","Panda","Wolf","Fox","Deer","Moose","Zebra","Rhinoceros","Hippopotamus",
+        "Gorilla","Chimpanzee","Orangutan","Kangaroo","Koala","Camel","Horse","Donkey","Goat","Sheep",
+        "Cow","Buffalo","Bison","Wild Boar","Rabbit","Squirrel","Otter","Beaver","Crocodile","Alligator",
+        "Komodo Dragon","Iguana","Tortoise","Penguin","Flamingo","Eagle","Falcon","Owl","Parrot","Peacock",
+        "Swan","Pelican","Dolphin","Whale","Orca","Seal","Sea Lion","Shark","Tuna","Turtle",
+        "Butterfly","Bee","Dragonfly","Ladybird","Frog","Salamander","Octopus","Squid","Jellyfish","Seahorse",
+        "Triceratops","Tyrannosaurus","Velociraptor","Brachiosaurus","Stegosaurus","Ankylosaurus","Spinosaurus","Pteranodon"
+    )
+    private val animalArchetypes = listOf(
+        "elephant","bear","deer","fox","giraffe","zebra","lion","fish","crocodile","penguin","bird","dolphin","dinosaur"
+    )
+    val animalSpecies: List<AnimalSpecies> by lazy {
+        (0 until 1000).map { i ->
+            val base = animalBases[i % animalBases.size]
+            val variant = i / animalBases.size
+            AnimalSpecies(
+                id = i + 1,
+                name = if (variant == 0) base else base + " Variant " + (variant + 1),
+                archetype = animalArchetypes[(i * 7 + variant) % animalArchetypes.size],
+                scale = 0.72f + ((i * 37) % 31) / 100f,
+                stride = 0.72f + ((i * 19) % 37) / 100f
+            )
+        }
+    }
+
+    fun animal(id: Int): AnimalSpecies = animalSpecies[(id.coerceAtLeast(1) - 1) % animalSpecies.size]
+
     private val regions = listOf(
         "Forest","River","Mountain","Safari","Ocean","Island","Desert","Arctic",
         "Farm","Village","City","Wetland","Cave","Dinosaur Valley","Sky",
