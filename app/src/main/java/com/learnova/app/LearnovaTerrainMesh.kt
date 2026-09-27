@@ -36,10 +36,10 @@ internal class LearnovaTerrainMesh(
         const val STRIDE = 9 * 4
         // Low-frequency outer terrain LOD extends the visible 3D landscape
         // without multiplying the detail density of the near driving corridor.
-        const val FAR_SAMPLE_COUNT = 73
+        const val FAR_SAMPLE_COUNT = 101
         const val FAR_STEP = 8.0
         const val FAR_INNER = 34.0
-        const val FAR_OUTER = 112.0
+        const val FAR_OUTER = 220.0
         const val FAR_VERTICES = FAR_SAMPLE_COUNT * 4
         const val FAR_INDICES = (FAR_SAMPLE_COUNT - 1) * 12
     }
