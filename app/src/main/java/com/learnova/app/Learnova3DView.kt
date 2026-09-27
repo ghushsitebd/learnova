@@ -550,20 +550,37 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             }
 
             if (renderProfile.enableWheelAnimation) {
-                for (entity in wheelEntities) {
-                val base = wheelBaseTransforms[entity] ?: continue
-                if (!tm.hasComponent(entity)) continue
-                val wheelRotation = rotation(
-                    Float3(1.0f, 0.0f, 0.0f),
-                    wheelAngle
-                )
-                val bob = Mat4.of(
-                    1f, 0f, 0f, 0f,
-                    0f, 1f, 0f, suspension,
-                    0f, 0f, 1f, 0f,
-                    0f, 0f, 0f, 1f
-                )
-                val transform = bob * Mat4.of(*base) * wheelRotation
+                for ((index, entity) in wheelEntities.withIndex()) {
+                    val base = wheelBaseTransforms[entity] ?: continue
+                    if (!tm.hasComponent(entity)) continue
+
+                    // Front wheels steer automatically from the same road spline.
+                    // The child only taps start/stop; steering remains invisible
+                    // and deterministic, so the vehicle stays naturally aligned
+                    // with curved roads.
+                    val isFrontWheel = index < 2
+                    val steerAngle = if (isFrontWheel) {
+                        road.yaw.coerceIn(-0.42f, 0.42f)
+                    } else {
+                        0.0f
+                    }
+
+                    val wheelSteering = if (isFrontWheel) {
+                        rotation(Float3(0.0f, 1.0f, 0.0f), steerAngle)
+                    } else {
+                        Mat4.identity()
+                    }
+                    val wheelRotation = rotation(
+                        Float3(1.0f, 0.0f, 0.0f),
+                        wheelAngle
+                    )
+                    val bob = Mat4.of(
+                        1f, 0f, 0f, 0f,
+                        0f, 1f, 0f, suspension,
+                        0f, 0f, 1f, 0f,
+                        0f, 0f, 0f, 1f
+                    )
+                    val transform = bob * Mat4.of(*base) * wheelSteering * wheelRotation
                     tm.setTransform(tm.getInstance(entity), transform.toFloatArray())
                 }
             }
