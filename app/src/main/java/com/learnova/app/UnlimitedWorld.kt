@@ -68,19 +68,19 @@ object LearnovaUnlimitedWorld {
         "Forest","River","Mountain","Safari","Ocean","Island","Desert","Arctic",
         "Farm","Village","City","Wetland","Cave","Dinosaur Valley","Sky",
         "Space","Garden","Quran Learning Garden","Arabic Learning Garden",
-        "Kindness Village","Science Park","Discovery Island"
+        "Kindness Village","Science Park","Discovery Island","Bangladesh Village","Village Market","River Bazaar","Town Market","City Center","School Campus","Mosque Courtyard","Quran School","Library","Farmhouse","Rice Field","Tea Garden","Fishing Village","Boat Terminal","Railway Station","Bus Terminal","Hospital District","Fire Station","Police Station","Construction Zone","Harbor","Beach Town","Mountain Town","Forest Camp","Safari Lodge","Animal Rescue Center","Dinosaur Museum","Science Museum","Space Center","Airport","Amusement Park","Childrens Park","Sports Ground","Food Street","Craft Village","Night Market","Festival Ground","Water Park","Eco Village"
     )
     private val environments = listOf(
         "green valley","wide river","quiet lake","open road","animal meadow",
         "tropical coast","snow trail","flower garden","coral bay","rocky canyon",
-        "ancient landscape","modern park","learning village","space station"
+        "ancient landscape","modern park","learning village","space station","busy village road","colorful market street","riverside bazaar","rice-growing countryside","school road","mosque garden","community center","farm lane","tea estate road","fishing harbor","railway crossing","city boulevard","hospital road","rescue district","harbor road","beach promenade","mountain pass","forest trail","wildlife reserve","museum avenue","airport approach","family park","sports avenue","festival street"
     )
     private val times = listOf("Morning","Afternoon","Sunset","Night")
     private val weather = listOf("Clear","Cloudy","Breezy","Rainy","Fresh")
     private val activities = listOf(
         "animal discovery","alphabet practice","number practice","Arabic letters",
         "Quran learning","adab and kindness","nature discovery","road safety",
-        "colors and shapes","science discovery","memory challenge","vehicle adventure"
+        "colors and shapes","science discovery","memory challenge","vehicle adventure","market discovery","village life","community helpers","mosque manners","Quran reading","Arabic vocabulary","nature stewardship","animal care","farm discovery","water safety","travel discovery","kindness challenge","clean environment","food and nutrition","history discovery","science experiment"
     )
 
     fun scene(id: Int): SmartScene {
