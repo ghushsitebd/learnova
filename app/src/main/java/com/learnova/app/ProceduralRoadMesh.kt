@@ -115,7 +115,14 @@ internal class ProceduralRoadMesh(
             val yaw = sample.yaw.toDouble()
             val bank = sample.bank.toDouble()
 
-            val half = ROAD_WIDTH * 0.5f
+            val roadWidth = when (WorldDirector.profile(distance).biome) {
+                WorldDirector.Biome.MARKET, WorldDirector.Biome.VILLAGE -> 7.8f
+                WorldDirector.Biome.MOUNTAIN -> 6.8f
+                WorldDirector.Biome.DESERT -> 7.4f
+                WorldDirector.Biome.RIVER, WorldDirector.Biome.COAST -> 7.5f
+                else -> ROAD_WIDTH
+            }
+            val half = roadWidth * 0.5f
             val lateralX = cos(yaw) * half
             val lateralZ = -sin(yaw) * half
 
@@ -127,10 +134,6 @@ internal class ProceduralRoadMesh(
             val bankLift = sin(bank) * half
 
             val centerY = sample.y
-            // Real paved roads usually have a very shallow crown for water
-            // drainage. Keep it subtle so the vehicle still reads as planted,
-            // while the surface no longer looks like a mathematically flat strip.
-            val crown = ROAD_WIDTH * 0.0048f
             val edgeY = centerY
             putVertex(data, leftX.toFloat(), (edgeY + bankLift).toFloat(), leftZ.toFloat(), yaw, bank, 0.0f, distance.toFloat() / 8.0f)
             putVertex(data, rightX.toFloat(), (edgeY - bankLift).toFloat(), rightZ.toFloat(), yaw, bank, 1.0f, distance.toFloat() / 8.0f)
