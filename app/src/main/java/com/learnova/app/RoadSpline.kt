@@ -52,6 +52,13 @@ internal object RoadSpline {
         )
     }
 
+
+    /** Sample the same world path in a floating-origin coordinate frame. */
+    fun sampleRelative(distance: Double, originDistance: Double): Sample {
+        val world = sample(distance)
+        return world.copy(z = distance - originDistance)
+    }
+
     private fun lateralOffset(distance: Double): Double =
         sin(distance * 0.225) * 2.15 +
         sin(distance * 0.073 + 0.8) * 0.85 +
