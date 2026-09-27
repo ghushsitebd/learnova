@@ -368,3 +368,5 @@ if ASSETS.exists():
 # CI hardening checkpoint 346: preserve deterministic, mobile-safe 3D asset delivery.
 
 # CI hardening checkpoint 347: preserve deterministic, mobile-safe 3D asset delivery.
+
+# CI hardening checkpoint 348: preserve deterministic, mobile-safe 3D asset delivery.
