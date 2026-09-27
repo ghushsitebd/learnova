@@ -432,42 +432,101 @@ class MainActivity : AppCompatActivity() {
         }
 
         private fun drawRoad(c: Canvas, w: Float, h: Float) {
-            val horizonY = h * .61f
+            // Perspective road: the vanishing point stays near the horizon while the
+            // lane, shoulders, reflectors and surface texture expand toward the camera.
+            val horizonY = h * 0.60f
             val bottomY = h
-            val bend = sin(frame / 115.0).toFloat() * w * 0.055f
+            val curve = sin(frame / 120.0).toFloat()
+            val bend = curve * w * 0.065f
+
+            fun roadCenter(t: Float): Float =
+                w * 0.50f + bend * (t * t) + laneOffset * w * t * 0.18f
+
+            fun roadHalfWidth(t: Float): Float =
+                w * (0.025f + 0.49f * t.pow(1.12f))
+
             val road = Path()
-            road.moveTo(w * .43f + bend * .10f, horizonY)
-            road.cubicTo(w * .46f + bend * .28f, h * .72f, w * .57f + bend * .62f, h * .88f, w * .96f + bend, bottomY)
-            road.lineTo(w * .04f + bend, bottomY)
-            road.cubicTo(w * .43f - bend * .62f, h * .88f, w * .46f - bend * .28f, h * .72f, w * .57f + bend * .10f, horizonY)
+            road.moveTo(roadCenter(0f) - roadHalfWidth(0f), horizonY)
+            for (i in 1..24) {
+                val t = i / 24f
+                val y = horizonY + (bottomY - horizonY) * t
+                road.lineTo(roadCenter(t) - roadHalfWidth(t), y)
+            }
+            for (i in 24 downTo 0) {
+                val t = i / 24f
+                val y = horizonY + (bottomY - horizonY) * t
+                road.lineTo(roadCenter(t) + roadHalfWidth(t), y)
+            }
             road.close()
 
-            paint.color = Color.rgb(49, 52, 56)
+            paint.shader = LinearGradient(
+                0f, horizonY, 0f, bottomY,
+                intArrayOf(Color.rgb(67,70,73), Color.rgb(43,45,47), Color.rgb(31,32,34)),
+                floatArrayOf(0f, .55f, 1f),
+                Shader.TileMode.CLAMP
+            )
             c.drawPath(road, paint)
-            paint.color = Color.WHITE
+            paint.shader = null
+
+            // Soft road-edge shoulders.
+            paint.color = Color.rgb(190, 188, 174)
             paint.style = Paint.Style.STROKE
-            paint.strokeWidth = 4f
+            paint.strokeWidth = 5f
             c.drawPath(road, paint)
             paint.style = Paint.Style.FILL
 
-            val travel = if (running) (frame * 7L % 120L).toFloat() else 0f
-            var y = horizonY + 10f + travel
-            while (y < bottomY) {
-                val t = ((y - horizonY) / (bottomY - horizonY)).coerceIn(0f, 1f)
-                val half = 3f + 30f * t
-                val center = w / 2f + bend * t + laneOffset * w * t
-                paint.color = Color.WHITE
-                c.drawRoundRect(RectF(center - half, y, center + half, y + 7f + 20f * t), 4f, 4f, paint)
-                y += 62f + 110f * t
+            // Subtle asphalt texture, kept cheap for low-end phones.
+            paint.color = Color.argb(34, 255, 255, 255)
+            for (i in 0..30) {
+                val t = ((i * 0.071f + frame * 0.0012f) % 1f).coerceIn(0f,1f)
+                val y = horizonY + (bottomY - horizonY) * t
+                val cx = roadCenter(t)
+                val hw = roadHalfWidth(t)
+                val x = cx + sin(i * 7.3).toFloat() * hw * .72f
+                c.drawCircle(x, y, 0.7f + 1.8f * t, paint)
             }
 
+            // Dashed center line with true perspective scaling.
+            val travel = if (running) (frame * 0.010f) % 1f else 0f
+            var t = 0.015f
+            while (t < 1f) {
+                val tt = (t + travel) % 1f
+                val y = horizonY + (bottomY - horizonY) * tt
+                val cx = roadCenter(tt)
+                val half = 1.5f + 7.5f * tt
+                val length = 7f + 34f * tt
+                paint.color = Color.rgb(248, 247, 236)
+                c.drawRoundRect(RectF(cx - half, y, cx + half, y + length), half, half, paint)
+                t += 0.105f + 0.16f * tt
+            }
+
+            // Raised lane reflectors and roadside posts.
             for (side in -1..1 step 2) {
-                for (i in 0..5) {
-                    val t = (i + 1) / 7f
-                    val y = horizonY + (bottomY - horizonY) * t
-                    val edgeX = w / 2f + side * (w * (.08f + .42f * t)) + bend * t
-                    paint.color = Color.rgb(255, 220, 90)
-                    c.drawCircle(edgeX, y, 2.5f + 4f * t, paint)
+                for (i in 1..8) {
+                    val tt = i / 9f
+                    val y = horizonY + (bottomY - horizonY) * tt
+                    val cx = roadCenter(tt)
+                    val edge = cx + side * roadHalfWidth(tt)
+                    paint.color = Color.rgb(255, 214, 78)
+                    c.drawCircle(edge, y, 2f + 3.5f * tt, paint)
+
+                    val postHeight = 10f + 20f * tt
+                    paint.color = Color.rgb(225, 225, 215)
+                    c.drawRoundRect(
+                        RectF(edge + side * (5f + 12f * tt), y - postHeight,
+                             edge + side * (10f + 15f * tt), y),
+                        2f, 2f, paint
+                    )
+                }
+            }
+
+            // Moving dust/road spray makes forward motion visible without adding assets.
+            if (running && speed > 0.004f) {
+                paint.color = Color.argb(35, 235, 235, 225)
+                for (i in 0..7) {
+                    val spread = (i - 3.5f) * 13f
+                    val yy = h * (.86f + (i % 3) * .025f)
+                    c.drawCircle(w/2f + spread, yy, 2f + (i % 3), paint)
                 }
             }
         }
@@ -668,15 +727,28 @@ class MainActivity : AppCompatActivity() {
         private fun drawVehicle(c: Canvas, w: Float, h: Float) {
             val selected = LearnovaUnlimitedWorld.vehicles[vehicle]
             val p = vehicleProgress.coerceIn(0f, 1f)
-            val cx = w / 2f + laneOffset * w * (0.45f + 0.55f * p)
-            val roadBend = sin(frame / 115.0).toFloat() * w * 0.055f
-            val cy = h * (0.64f + 0.24f * p) + roadBend * p * 0.10f +
-                if (running) sin(frame / 4.0).toFloat() * (1.2f + 3.5f * p) else 0f
-            val scale = 0.45f + 0.75f * p
+
+            // Camera-follow placement: the vehicle grows as it approaches and follows
+            // the road curve rather than sliding across a flat screen.
+            val roadCurve = sin(frame / 120.0).toFloat() * w * 0.065f
+            val cx = w * 0.50f + roadCurve * p * p + laneOffset * w * (0.16f + 0.42f * p)
+            val cy = h * (0.66f + 0.22f * p) +
+                if (running) sin(frame / 4.5).toFloat() * (1.0f + 3.8f * p) else 0f
+            val scale = 0.42f + 0.80f * p
+
+            // Contact shadow reacts to height/suspension.
+            paint.color = Color.argb((75 + 55 * p).toInt(), 0, 0, 0)
+            c.drawOval(
+                RectF(cx - 92f * scale, cy + 31f * scale,
+                      cx + 92f * scale, cy + 54f * scale),
+                paint
+            )
 
             c.save()
-            c.rotate(steering * 7f, cx, cy)
+            val bodyLean = steering * 5.5f + if (running) sin(frame / 9.0).toFloat() * 0.7f else 0f
+            c.rotate(bodyLean, cx, cy)
             c.scale(scale, scale, cx, cy)
+
             when (selected.kind) {
                 "car" -> drawCar(c, cx, cy)
                 "bus" -> drawBus(c, cx, cy)
@@ -692,6 +764,14 @@ class MainActivity : AppCompatActivity() {
                 else -> drawCar(c, cx, cy)
             }
             c.restore()
+
+            // Tiny speed streaks only at higher speed.
+            if (running && speed > 0.010f && selected.kind != "air" && selected.kind != "space") {
+                paint.color = Color.argb(38, 255, 255, 255)
+                paint.strokeWidth = 2f
+                c.drawLine(cx - 70f, cy + 8f, cx - 125f, cy + 13f, paint)
+                c.drawLine(cx + 70f, cy + 12f, cx + 125f, cy + 17f, paint)
+            }
         }
 
         private fun drawCar(c: Canvas, x: Float, y: Float) {
