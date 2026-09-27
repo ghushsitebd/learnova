@@ -46,6 +46,13 @@ internal class ProceduralRoadMesh(
     private var shoulderIndexBuffer: IndexBuffer? = null
     private var shoulderMaterial: com.google.android.filament.MaterialInstance? = null
 
+    // Reused CPU staging buffers keep the sliding road window allocation-free
+    // during normal driving. This is important on low-memory Android phones.
+    private val roadVertexData = ByteBuffer.allocate(VERTEX_COUNT * VERTEX_STRIDE)
+        .order(ByteOrder.nativeOrder())
+    private val shoulderVertexData = ByteBuffer.allocate(VERTEX_COUNT * 2 * VERTEX_STRIDE)
+        .order(ByteOrder.nativeOrder())
+
     fun build(): Boolean {
         if (entity != 0) return true
 
@@ -106,8 +113,7 @@ internal class ProceduralRoadMesh(
         if (!lastCenter.isNaN() && kotlin.math.abs(centerDistance - lastCenter) < 4.0) return
 
         val start = centerDistance - BEHIND
-        val data = ByteBuffer.allocate(VERTEX_COUNT * VERTEX_STRIDE)
-            .order(ByteOrder.nativeOrder())
+        val data = roadVertexData.apply { clear() }
 
         for (i in 0 until SAMPLE_COUNT) {
             val distance = start + i * SAMPLE_STEP
@@ -198,8 +204,7 @@ internal class ProceduralRoadMesh(
 
     private fun updateShoulders(centerDistance: Double) {
         if (shoulderEntity == 0 || shoulderVertexBuffer == null) return
-        val data = ByteBuffer.allocate(VERTEX_COUNT * 2 * VERTEX_STRIDE)
-            .order(ByteOrder.nativeOrder())
+        val data = shoulderVertexData.apply { clear() }
 
         for (i in 0 until 127) {
             val distance = centerDistance - BEHIND + i * SAMPLE_STEP
