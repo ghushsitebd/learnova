@@ -181,7 +181,22 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 // the next tap requests a controlled stop. Speed is integrated with
                 // acceleration/deceleration instead of assuming a fixed 60 FPS rate.
                 val requestedSpeed = if (driving) targetSpeed else 0.0
-                val response = if (driving) 2.8 else 6.5
+                // Vehicle classes have different mass/power responses. The child
+                // still has one simple tap-to-drive control, but a bus/truck does
+                // not accelerate like a motorcycle and braking remains progressive.
+                val accelerationResponse = when (activeVehicle.type) {
+                    "motorcycle", "cycle", "three_wheeler", "electric" -> 3.8
+                    "sport", "concept" -> 3.4
+                    "truck", "bus", "emergency", "construction", "farm" -> 2.15
+                    "offroad", "safari" -> 2.55
+                    else -> 2.85
+                }
+                val brakingResponse = when (activeVehicle.type) {
+                    "motorcycle", "cycle" -> 7.2
+                    "truck", "bus", "construction" -> 5.4
+                    else -> 6.6
+                }
+                val response = if (driving) accelerationResponse else brakingResponse
                 val blend = (response * dt).coerceAtMost(1.0)
                 previousVehicleSpeed = vehicleSpeed
                 vehicleSpeed += (requestedSpeed - vehicleSpeed) * blend
