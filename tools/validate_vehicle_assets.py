@@ -34,6 +34,11 @@ if len(set(ids)) != len(ids):
     print("::error::Vehicle IDs must be unique.")
     sys.exit(1)
 
+asset_keys = [key for _, key in keys]
+if len(set(asset_keys)) != len(asset_keys):
+    print("::error::Vehicle asset keys must be unique.")
+    sys.exit(1)
+
 if not ASSETS.exists():
     print("::notice::No real vehicle GLB assets are committed yet; catalog/resolver fallback remains active.")
     sys.exit(0)
