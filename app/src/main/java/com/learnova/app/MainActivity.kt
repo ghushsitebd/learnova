@@ -72,6 +72,9 @@ class MainActivity : AppCompatActivity() {
         private var vehicleHeading = 0f
         private var steeringInput = 0f
         private var lateralVelocity = 0f
+        // A side touch is a hold-to-steer gesture. Releasing the finger recentres
+        // the wheel smoothly instead of leaving steering latched on.
+        private var steeringTouchActive = false
         private var suspensionOffset = 0f
         private var suspensionVelocity = 0f
         private var level = 1
@@ -152,69 +155,105 @@ class MainActivity : AppCompatActivity() {
 
             val x = event.x
             val y = event.y
+            val inDriveArea = y > h * 0.22f && y < h * 0.63f
 
-            if (event.actionMasked == MotionEvent.ACTION_DOWN) {
-                // The vehicle badge now opens the real 100-slot garage.
-                // Driving remains intentionally simple: tap once to drive, tap again to stop.
-                if (y < h * 0.22f && x > w * 0.76f) {
-                    openGarage()
-                    return true
-                }
-
-                // One-tap driving: tap the road/play area to toggle drive/stop.
-                if (y > h * 0.22f && y < h * 0.63f) {
-                    val now = System.currentTimeMillis()
-                    if (running && now - lastTap > 90L && x < w * 0.30f) {
-                        lastTap = now
-                        steeringInput = -1f
-                        threeDWorld.setSteeringInput(-1f)
-                        performClick()
-                        invalidate()
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    // The vehicle badge opens the real 100-slot garage.
+                    if (y < h * 0.22f && x > w * 0.76f) {
+                        steeringTouchActive = false
+                        steeringInput = 0f
+                        threeDWorld.setSteeringInput(0f)
+                        openGarage()
                         return true
                     }
-                    if (running && now - lastTap > 90L && x > w * 0.70f) {
-                        lastTap = now
-                        steeringInput = 1f
-                        threeDWorld.setSteeringInput(1f)
-                        performClick()
-                        invalidate()
-                        return true
-                    }
-                    if (now - lastTap > 220L) {
-                        lastTap = now
-                        running = !running
-                        threeDWorld.setDriving(running)
-                        if (running) {
-                            natureAudio.start()
-                            if (!salamPlayedForSession) {
-                                salamPlayedForSession = true
-                                voice.playSalamExchange()
-                            } else {
-                                voice.playChildLesson(SmartLearningEngine.lesson(question))
-                            }
-                        } else {
-                            natureAudio.stop()
-                            voice.speakInstruction(false)
+
+                    if (inDriveArea) {
+                        // Holding either side of the road steers. This deliberately
+                        // avoids a virtual joystick: the child only needs a finger.
+                        if (running && x < w * 0.30f) {
+                            steeringTouchActive = true
+                            steeringInput = -1f
+                            threeDWorld.setSteeringInput(-1f)
+                            performClick()
+                            invalidate()
+                            return true
                         }
-                        performClick()
-                        invalidate()
+                        if (running && x > w * 0.70f) {
+                            steeringTouchActive = true
+                            steeringInput = 1f
+                            threeDWorld.setSteeringInput(1f)
+                            performClick()
+                            invalidate()
+                            return true
+                        }
+
+                        // Centre tap remains the primary child-simple drive/stop control.
+                        val now = System.currentTimeMillis()
+                        if (now - lastTap > 220L) {
+                            lastTap = now
+                            running = !running
+                            steeringTouchActive = false
+                            steeringInput = 0f
+                            threeDWorld.setSteeringInput(0f)
+                            threeDWorld.setDriving(running)
+                            if (running) {
+                                natureAudio.start()
+                                if (!salamPlayedForSession) {
+                                    salamPlayedForSession = true
+                                    voice.playSalamExchange()
+                                } else {
+                                    voice.playChildLesson(SmartLearningEngine.lesson(question))
+                                }
+                            } else {
+                                natureAudio.stop()
+                                voice.speakInstruction(false)
+                            }
+                            performClick()
+                            invalidate()
+                        }
+                        return true
                     }
-                    return true
+
+                    // The learning card remains a simple three-stage touch interaction.
+                    if (y >= h * 0.63f && y <= h * 0.91f && x < w * 0.76f) {
+                        lessonStage = (lessonStage + 1) % 3
+                        voice.speakSmartLesson(SmartLearningEngine.lesson(question))
+                        invalidate()
+                        return true
+                    }
                 }
 
-                // The learning card is the child's simple "learn while travelling"
-                // path: one tap moves through See -> Listen -> Connect.
-                if (y >= h * 0.63f && y <= h * 0.91f && x < w * 0.76f) {
-                    lessonStage = (lessonStage + 1) % 3
-                    voice.speakSmartLesson(SmartLearningEngine.lesson(question))
-                    invalidate()
-                    return true
+                MotionEvent.ACTION_MOVE -> {
+                    if (steeringTouchActive && running) {
+                        // Follow the finger continuously while it stays in the drive area.
+                        // A vertical move outside the play corridor does not create a
+                        // surprise steering jump; the current direction is simply held.
+                        val side = when {
+                            x < w * 0.30f -> -1f
+                            x > w * 0.70f -> 1f
+                            else -> 0f
+                        }
+                        steeringInput = side
+                        threeDWorld.setSteeringInput(side)
+                        invalidate()
+                        return true
+                    }
                 }
-            }
 
-            if (event.actionMasked == MotionEvent.ACTION_UP && y > h * 0.91f) {
-                if (levelComplete) nextLesson()
-                return true
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    if (steeringTouchActive) {
+                        steeringTouchActive = false
+                        steeringInput = 0f
+                        threeDWorld.setSteeringInput(0f)
+                        invalidate()
+                        return true
+                    }
+                    if (event.actionMasked == MotionEvent.ACTION_UP && y > h * 0.91f) {
+                        if (levelComplete) nextLesson()
+                        return true
+                    }
+                }
             }
 
             return true
