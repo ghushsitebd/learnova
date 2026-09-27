@@ -527,7 +527,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             Math.cos(road.yaw - previousRoadYaw)
         )
         roadYawRate += (yawDelta / dt - roadYawRate) * (dt * 7.0).coerceAtMost(1.0)
-        previousRoadYaw = road.yaw
+        previousRoadYaw = road.yaw.toDouble()
 
         tm.openLocalTransformTransaction()
         try {
