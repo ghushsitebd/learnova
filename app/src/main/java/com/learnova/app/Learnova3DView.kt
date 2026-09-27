@@ -826,11 +826,18 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         // world-Z rail. This is the important realism correction for curves:
         // the child sees the vehicle follow the road naturally instead of the
         // camera appearing to slide sideways around bends.
-        val forwardX = kotlin.math.sin(road.yaw.toDouble())
-        val forwardZ = kotlin.math.cos(road.yaw.toDouble())
+        // Use the filtered camera yaw for both position and viewing direction.
+        // This removes the subtle snap that appears when the road curvature changes.
+        val forwardX = kotlin.math.sin(cameraYaw)
+        val forwardZ = kotlin.math.cos(cameraYaw)
         val cameraX = road.x - forwardX * 6.9 + kotlin.math.sin(travel * 0.18) * 0.035
         val cameraZ = road.z - forwardZ * 6.9
-        val cameraY = world.cameraHeight + road.y + bodyBob
+
+        // Small grade and acceleration cues make the camera feel attached to the
+        // vehicle mass without introducing uncomfortable child-facing motion.
+        val gradePitch = road.grade.toDouble() * 0.11
+        val accelerationPitch = (vehicleAcceleration * 0.0065).coerceIn(-0.055, 0.055)
+        val cameraY = world.cameraHeight + road.y + bodyBob + gradePitch - accelerationPitch
 
         // Roll the camera gently with the road bank. Keep the vertical axis
         // stable enough for children while preserving physical cornering cues.
