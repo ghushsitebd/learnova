@@ -6,7 +6,7 @@ import com.google.android.filament.RenderableManager
 import com.google.android.filament.Scene
 import com.google.android.filament.VertexBuffer
 import com.google.android.filament.gltfio.FilamentAsset
-import com.google.android.filament.utils.EntityManager
+import com.google.android.filament.EntityManager
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.cos
