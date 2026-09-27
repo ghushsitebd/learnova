@@ -768,8 +768,9 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                         0f, 0f, 0f, 1f
                     ) *
                     rotation(Float3(0.0f, 1.0f, 0.0f), chassisYaw) *
-                    rotation(Float3(1.0f, 0.0f, 0.0f), chassisPitch.toFloat()) *
-                    rotation(Float3(0.0f, 0.0f, 1.0f), chassisRoll.toFloat()) *
+                    // Apply each attitude component once. Road bank is the
+                    // environment attitude; chassis roll/pitch are the vehicle's
+                    // filtered response to suspension, steering and acceleration.
                     rotation(
                         Float3(0.0f, 0.0f, 1.0f),
                         (road.bank + chassisRoll + roadYawRate * 0.010)
@@ -819,6 +820,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                         rotation(Float3(0.0f, 1.0f, 0.0f), steerAngle)
                     } else Mat4.identity()
 
+                    // Spin distance is converted to tyre rotation; keeping
+                    // the angle continuous avoids visible snapping at high speed.
                     val wheelRotation = rotation(
                         Float3(1.0f, 0.0f, 0.0f),
                         wheelAngle
