@@ -3,7 +3,6 @@ package com.learnova.app
 import android.graphics.*
 import android.os.Bundle
 import android.content.SharedPreferences
-import android.content.Intent
 import android.view.MotionEvent
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
@@ -15,14 +14,12 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var gameView: LearnovaGameView
     private lateinit var voice: LearnovaVoice
-    private lateinit var ads: LearnovaAdsManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.setStatusBarColor(Color.rgb(78, 175, 235))
         window.setNavigationBarColor(Color.BLACK)
         voice = LearnovaVoice(this)
-        ads = LearnovaAdsManager(this)
         gameView = LearnovaGameView()
         setContentView(gameView)
     }
@@ -47,9 +44,6 @@ class MainActivity : AppCompatActivity() {
         private var worldSceneId = 1
         private var question = 0
         private var lastTap = 0L
-        private var adminTapCount = 0
-        private var adminTapWindow = 0L
-        private var adVisible = false
         private val prefs: SharedPreferences = getSharedPreferences("learnova_progress", MODE_PRIVATE)
 
         private val lessons = arrayOf(
@@ -98,27 +92,6 @@ class MainActivity : AppCompatActivity() {
 
             val x = event.x
             val y = event.y
-
-            // Hidden owner/admin entry: tap the LEARNOVA label 7 times quickly.
-            if (x < w * 0.35f && y < h * 0.12f) {
-                if (now - adminTapWindow > 2200L) adminTapCount = 0
-                if (adminTapCount == 0) adminTapWindow = now
-                adminTapCount++
-                if (adminTapCount >= 7) {
-                    adminTapCount = 0
-                    startActivity(Intent(this@MainActivity, AdminPanelActivity::class.java))
-                    return true
-                }
-                invalidate()
-                return true
-            }
-
-            // Ads never interrupt the learning flow: tap once to close.
-            if (adVisible) {
-                adVisible = false
-                invalidate()
-                return true
-            }
 
             // Smart child-friendly controls:
             // tap the main play area OR the START/STOP button to toggle movement.
@@ -186,7 +159,6 @@ class MainActivity : AppCompatActivity() {
             drawVehicle(canvas, w, h)
             drawTopBar(canvas, w, h, world)
             drawLearningCard(canvas, w, h, world)
-            if (adVisible) drawAdCard(canvas, w, h)
             drawHint(canvas, w, h)
 
             if (running) postInvalidateOnAnimation()
@@ -1009,10 +981,6 @@ class MainActivity : AppCompatActivity() {
             worldSceneId += 1
             saveProgress()
             speakCurrentLesson()
-            if (ads.canShow()) {
-                adVisible = true
-                ads.recordShown()
-            }
         }
 
         private fun saveProgress() {
@@ -1022,37 +990,6 @@ class MainActivity : AppCompatActivity() {
                 .putInt("worldSceneId", worldSceneId)
                 .putInt("question", question)
                 .apply()
-        }
-
-        private fun drawAdCard(c: Canvas, w: Float, h: Float) {
-            val left = w * 0.08f
-            val right = w * 0.92f
-            val top = h * 0.27f
-            val bottom = h * 0.55f
-
-            paint.color = Color.argb(242, 255, 255, 255)
-            c.drawRoundRect(RectF(left, top, right, bottom), 26f, 26f, paint)
-
-            text.textAlign = Paint.Align.LEFT
-            text.color = Color.rgb(25, 90, 62)
-            text.textSize = 12f
-            c.drawText("ADVERTISEMENT", left + 22f, top + 28f, text)
-
-            text.textSize = 22f
-            text.color = Color.rgb(25, 35, 38)
-            c.drawText(ads.title.take(26), left + 22f, top + 62f, text)
-
-            text.textSize = 14f
-            text.color = Color.rgb(75, 82, 84)
-            val message = ads.message.take(58)
-            c.drawText(message, left + 22f, top + 92f, text)
-
-            paint.color = Color.rgb(25, 135, 82)
-            c.drawRoundRect(RectF(right - 105f, bottom - 58f, right - 22f, bottom - 18f), 16f, 16f, paint)
-            text.textAlign = Paint.Align.CENTER
-            text.color = Color.WHITE
-            text.textSize = 12f
-            c.drawText("CLOSE", right - 63f, bottom - 33f, text)
         }
 
         private fun drawHint(c: Canvas, w: Float, h: Float) {
