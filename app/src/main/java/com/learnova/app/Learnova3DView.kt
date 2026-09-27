@@ -3,6 +3,7 @@ package com.learnova.app
 import android.content.Context
 import android.app.ActivityManager
 import android.os.Build
+import android.os.PowerManager
 import android.util.Base64
 import android.view.Choreographer
 import android.view.SurfaceView
@@ -59,6 +60,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var requestedVehicleAssetKey = "base"
     private val adaptiveQuality = LearnovaAdaptiveQuality()
     private var constrainedDevice = false
+    private var thermalConstrained = false
 
     // Physical entry/exit state is kept separate from the child-simple drive
     // control. If a vehicle asset contains named door nodes, this layer animates
@@ -153,6 +155,20 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         val constrained = memoryClassMb < 192
         constrainedDevice = constrained
 
+        // Thermal headroom is part of mobile rendering quality. On supported
+        // Android versions, start conservatively when the device reports a
+        // serious thermal state; the adaptive frame-time sampler can recover
+        // quality later when rendering becomes stable.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val power = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+            thermalConstrained = when (power?.currentThermalStatus) {
+                PowerManager.THERMAL_STATUS_SEVERE,
+                PowerManager.THERMAL_STATUS_CRITICAL,
+                PowerManager.THERMAL_STATUS_EMERGENCY -> true
+                else -> false
+            }
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             surface.holder.surface.setFrameRate(
                 60.0f,
@@ -162,17 +178,17 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
         viewer.view.dynamicResolutionOptions = viewer.view.dynamicResolutionOptions.apply {
             enabled = true
-            quality = if (constrained) {
+            quality = if (constrained || thermalConstrained) {
                 com.google.android.filament.View.QualityLevel.LOW
             } else {
                 com.google.android.filament.View.QualityLevel.MEDIUM
             }
         }
         viewer.view.ambientOcclusionOptions = viewer.view.ambientOcclusionOptions.apply {
-            enabled = !constrained
+            enabled = !constrained && !thermalConstrained
         }
         viewer.view.bloomOptions = viewer.view.bloomOptions.apply {
-            enabled = !constrained
+            enabled = !constrained && !thermalConstrained
         }
     }
 
