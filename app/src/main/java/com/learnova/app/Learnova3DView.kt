@@ -60,6 +60,15 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private val adaptiveQuality = LearnovaAdaptiveQuality()
     private var constrainedDevice = false
 
+    // Physical entry/exit state is kept separate from the child-simple drive
+    // control. If a vehicle asset contains named door nodes, this layer animates
+    // those nodes; otherwise it remains a safe no-op until the production GLB arrives.
+    private val vehicleInteraction = VehicleInteractionController()
+    private var interactionProfile = VehicleInteractionProfiles.forVehicle(activeVehicle.type)
+    private var doorEntities = IntArray(0)
+    private val doorBaseTransforms = HashMap<Int, FloatArray>()
+    private val doorHingeSigns = HashMap<Int, Float>()
+
     init {
         addView(
             surface,
@@ -78,6 +87,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             .build(viewer.engine)
         cacheWheelEntities()
         cacheVehicleRoot()
+        cacheDoorEntities()
 
         viewer.camera.lookAt(
             4.8, 2.8, 6.8,
@@ -117,6 +127,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 updateDriveScene()
                 proceduralRoad?.update(vehicleDistance)
                 updateVehicleMechanics()
+                vehicleInteraction.update(dt.toFloat(), interactionProfile)
+                updateVehicleInteractionVisuals()
                 viewer.render(time)
                 adaptiveQuality.sample(dt * 1000.0, constrainedDevice)?.let { applyQualityTier(it) }
                 choreographer.postFrameCallback(frameCallback)
@@ -230,8 +242,26 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     }
 
     fun setDriving(value: Boolean) {
+        // A child cannot start moving while the avatar is in the middle of
+        // entering/exiting a vehicle. The normal gameplay path still remains
+        // one tap to drive / one tap to stop.
+        if (value && vehicleInteraction.state != VehicleInteractionController.State.OUTSIDE) return
         driving = value
         if (!value && vehicleSpeed < 0.02) vehicleSpeed = 0.0
+    }
+
+    /**
+     * Physical vehicle entry/exit hook for the interaction layer.
+     * Gameplay can call this while the vehicle is stopped; repeated taps during
+     * a transition are ignored by the deterministic controller.
+     */
+    fun interactWithVehicle(): Boolean {
+        if (driving) return false
+        return if (vehicleInteraction.isInside()) {
+            vehicleInteraction.requestExit(interactionProfile)
+        } else {
+            vehicleInteraction.requestEnter(interactionProfile)
+        }
     }
 
     /**
@@ -243,6 +273,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     internal fun setVehicle(definition: VehicleDefinition) {
         activeVehicle = definition
         renderProfile = VehicleRenderProfile.forType(definition.type)
+        interactionProfile = VehicleInteractionProfiles.forVehicle(definition.type)
+        vehicleInteraction.reset()
         targetSpeed = definition.targetSpeed.coerceIn(2.0, 18.0)
         wheelRadius = definition.wheelRadius.coerceIn(0.12, 0.80)
         loadVehicleAsset(definition)
@@ -288,6 +320,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
                 cacheWheelEntities()
                 cacheVehicleRoot()
+                cacheDoorEntities()
+                vehicleInteraction.reset()
                 vehicleDistance = 0.0
                 vehicleSpeed = 0.0
             }
@@ -320,6 +354,76 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             if (tm.hasComponent(entity)) {
                 wheelBaseTransforms[entity] = tm.getTransform(tm.getInstance(entity), FloatArray(16))
             }
+        }
+    }
+
+
+    /**
+     * Discovers production GLB door nodes by semantic names.
+     * Door pivots should be authored at the real hinge in the final asset;
+     * this runtime then applies a physically plausible opening angle without
+     * hard-coding entity ids.
+     */
+    private fun cacheDoorEntities() {
+        val asset = viewer.asset ?: return
+        val tm = viewer.engine.transformManager
+        val candidates = arrayOf(
+            "Door_FL" to -1f,
+            "Door_FR" to 1f,
+            "Door_RL" to -1f,
+            "Door_RR" to 1f,
+            "door_fl" to -1f,
+            "door_fr" to 1f,
+            "door_rl" to -1f,
+            "door_rr" to 1f,
+            "SideDoor_L" to -1f,
+            "SideDoor_R" to 1f,
+            "PassengerDoor_L" to -1f,
+            "PassengerDoor_R" to 1f,
+            "BusDoor_Front" to 1f,
+            "BusDoor_Side" to 1f
+        )
+
+        val found = ArrayList<Int>()
+        doorBaseTransforms.clear()
+        doorHingeSigns.clear()
+
+        for ((name, sign) in candidates) {
+            val entity = asset.getFirstEntityByName(name)
+            if (entity != 0 && !found.contains(entity) && tm.hasComponent(entity)) {
+                found.add(entity)
+                doorBaseTransforms[entity] =
+                    tm.getTransform(tm.getInstance(entity), FloatArray(16))
+                doorHingeSigns[entity] = sign
+            }
+        }
+        doorEntities = found.toIntArray()
+    }
+
+    private fun updateVehicleInteractionVisuals() {
+        if (doorEntities.isEmpty()) return
+        if (interactionProfile.doorAnimation == "none") return
+
+        val progress = vehicleInteraction.doorProgress(interactionProfile)
+        val maxAngle = when (interactionProfile.doorAnimation) {
+            "open_passenger_door" -> 78f
+            else -> 72f
+        }
+        val angle = Math.toRadians(maxAngle.toDouble()).toFloat() * progress
+        val tm = viewer.engine.transformManager
+
+        tm.openLocalTransformTransaction()
+        try {
+            for (entity in doorEntities) {
+                if (!tm.hasComponent(entity)) continue
+                val base = doorBaseTransforms[entity] ?: continue
+                val sign = doorHingeSigns[entity] ?: 1f
+                val transform = Mat4.of(*base) *
+                    rotation(Float3(0.0f, 1.0f, 0.0f), sign * angle)
+                tm.setTransform(tm.getInstance(entity), transform.toFloatArray())
+            }
+        } finally {
+            tm.commitLocalTransformTransaction()
         }
     }
 
