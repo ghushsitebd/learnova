@@ -47,6 +47,10 @@ if any(" " in key for key in asset_keys):
     print("::error::Vehicle asset keys must not contain spaces.")
     sys.exit(1)
 
+if any(not re.fullmatch(r"[a-z0-9_]+", key) for key in asset_keys):
+    print("::error::Vehicle asset keys contain unsupported characters.")
+    sys.exit(1)
+
 if not ASSETS.exists():
     print("::notice::No real vehicle GLB assets are committed yet; catalog/resolver fallback remains active.")
     sys.exit(0)
