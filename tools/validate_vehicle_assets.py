@@ -270,3 +270,5 @@ if ASSETS.exists():
             sys.exit(1)
 
 # 390: add deterministic asset inventory ordering validation.
+
+# 391: add duplicate asset payload hash detection.
