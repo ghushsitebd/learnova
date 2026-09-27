@@ -3,9 +3,9 @@ package com.learnova.app
 /**
  * Lightweight world-direction layer for Learnova.
  *
- * It changes the visual character of the journey without loading a large library
- * of environment models. Distances are deterministic, so the same lesson route
- * produces the same biome sequence on every device.
+ * The world is deterministic: the same journey distance always produces the
+ * same biome. Visual atmosphere can interpolate between chapters so the child
+ * does not see an artificial "hard cut" in the sky.
  */
 internal object WorldDirector {
 
@@ -19,9 +19,6 @@ internal object WorldDirector {
         val lookAheadLift: Double,
         val exposure: Float,
         val fovBias: Double,
-        // Linear-ish skybox colors chosen per biome so the distant world does not
-        // look like one repeated test scene. The renderer interpolates only at
-        // chapter boundaries, avoiding per-frame material allocation.
         val skyR: Float,
         val skyG: Float,
         val skyB: Float,
@@ -32,7 +29,42 @@ internal object WorldDirector {
 
     fun profile(distance: Double): Profile {
         val chapter = kotlin.math.floor(kotlin.math.max(0.0, distance) / CHAPTER_LENGTH).toInt()
-        return when (chapter % 8) {
+        return chapterProfile(chapter)
+    }
+
+    /**
+     * Continuous atmosphere for cinematic world transitions.
+     *
+     * The gameplay biome remains discrete for deterministic spawning, while the
+     * sky color eases across the final 24% of each chapter. This is intentionally
+     * allocation-free and therefore safe to call from the render loop.
+     */
+    fun atmosphere(distance: Double): Profile {
+        val safe = kotlin.math.max(0.0, distance)
+        val chapterFloat = safe / CHAPTER_LENGTH
+        val chapter = kotlin.math.floor(chapterFloat).toInt()
+        val fraction = chapterFloat - chapter
+
+        val current = chapterProfile(chapter)
+        val next = chapterProfile(chapter + 1)
+
+        // Hold most of the chapter, then ease into the next environment.
+        val t = ((fraction - 0.76) / 0.24).coerceIn(0.0, 1.0)
+        val eased = t * t * (3.0 - 2.0 * t)
+
+        return current.copy(
+            skyR = lerp(current.skyR, next.skyR, eased).toFloat(),
+            skyG = lerp(current.skyG, next.skyG, eased).toFloat(),
+            skyB = lerp(current.skyB, next.skyB, eased).toFloat(),
+            exposure = lerp(current.exposure.toDouble(), next.exposure.toDouble(), eased).toFloat(),
+            cameraHeight = lerp(current.cameraHeight, next.cameraHeight, eased),
+            lookAheadLift = lerp(current.lookAheadLift, next.lookAheadLift, eased),
+            fovBias = lerp(current.fovBias, next.fovBias, eased)
+        )
+    }
+
+    private fun chapterProfile(chapter: Int): Profile {
+        return when (chapter.mod(8)) {
             0 -> Profile(Biome.FOREST, 2.82, 1.02, 14.0f, 0.0, 0.29f, 0.55f, 0.82f)
             1 -> Profile(Biome.RIVER, 2.96, 1.06, 14.1f, 0.8, 0.24f, 0.60f, 0.86f)
             2 -> Profile(Biome.MOUNTAIN, 3.12, 1.10, 13.8f, -0.4, 0.31f, 0.43f, 0.64f)
@@ -43,4 +75,6 @@ internal object WorldDirector {
             else -> Profile(Biome.COAST, 2.92, 1.05, 14.2f, 1.2, 0.25f, 0.62f, 0.88f)
         }
     }
+
+    private fun lerp(a: Double, b: Double, t: Double): Double = a + (b - a) * t
 }
