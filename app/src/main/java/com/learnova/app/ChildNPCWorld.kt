@@ -57,8 +57,8 @@ internal class ChildNPCWorld(
                 box(sv,si,x-sin(s.yaw.toDouble())*.28*q,y+.73*q,z-cos(s.yaw.toDouble())*.28*q,s.yaw.toDouble(),.085*q,.20*q,.11*q+maxOf(0.0,walk)*.025*q)
                 box(sv,si,x+sin(s.yaw.toDouble())*.28*q,y+.73*q,z+cos(s.yaw.toDouble())*.28*q,s.yaw.toDouble(),.085*q,.20*q,.11*q)
                 box(cv,ci,x,y+.80*q,z,s.yaw.toDouble(),.23*q,.34*q,.14*q)
-                box(cv,ci,x-.075*q,y+.38*q,z+walk*.045*q,s.yaw,.07*q,.34*q,.095*q)
-                box(cv,ci,x+.075*q,y+.38*q,z-walk*.045*q,s.yaw,.07*q,.34*q,.095*q)
+                box(cv,ci,x-.075*q,y+.38*q,z+walk*.045*q,s.yaw.toDouble(),.07*q,.34*q,.095*q)
+                box(cv,ci,x+.075*q,y+.38*q,z-walk*.045*q,s.yaw.toDouble(),.07*q,.34*q,.095*q)
                 box(hv,hi,x,y+1.49*q,z,s.yaw.toDouble(),.29*q,.09*q,.29*q)
                 n++
             }
