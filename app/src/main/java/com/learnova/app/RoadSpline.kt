@@ -81,3 +81,5 @@ internal object RoadSpline {
 // Realism stage: secondary terrain undulation.
 
 // Realism stage: road path continuity.
+
+// Realism stage: camera look-ahead geometry.
