@@ -226,6 +226,7 @@ class MainActivity : AppCompatActivity() {
             if (world.region.contains("Village")) drawVillageRoadsideDepth(canvas, w, h, world)
             drawAtmosphere(canvas, w, h, world)
             drawDistantWorld(canvas, w, h, world)
+            drawRoadsideInteractions(canvas, w, h, world)
             drawEnvironmentMotion(canvas, w, h, world)
             drawAnimals(canvas, w, h, world)
             drawVehicle(canvas, w, h)
@@ -2159,6 +2160,61 @@ class MainActivity : AppCompatActivity() {
                 c.drawPath(a, paint)
                 paint.color = Color.argb(150, 95, 145, 175)
                 c.drawRect(ax - 8f, ay - 1f, ax + 8f, ay + 2f, paint)
+            }
+        }
+
+        private fun drawRoadsideInteractions(c: Canvas, w: Float, h: Float, world: SmartScene) {
+            // Small world interactions break visual repetition while keeping the
+            // one-tap driving model and the lightweight Canvas renderer intact.
+            if (!running) return
+
+            val horizon = h * .59f
+            val cycle = (frame % 360L) / 360f
+            val seed = abs(world.id * 31 + 7)
+
+            // Forest/village roadside movement: a bicycle or small animal briefly
+            // appears beside the road instead of permanently occupying the scene.
+            val active = world.region.contains("Village") ||
+                    world.region.contains("Forest") ||
+                    world.region.contains("Safari") ||
+                    world.region.contains("Farm")
+            if (active && cycle < .62f) {
+                val t = .20f + .30f * (cycle / .62f)
+                val y = horizon + (h - horizon) * t
+                val cx = roadCenterAt(t, w, worldSceneId)
+                val side = if (seed % 2 == 0) -1f else 1f
+                val x = cx + side * w * (.075f + .07f * t)
+                val s = .25f + .45f * t
+
+                // Bicycle silhouette, intentionally distant and non-interactive.
+                paint.style = Paint.Style.STROKE
+                paint.strokeWidth = 2.2f * s
+                paint.color = Color.rgb(45, 52, 48)
+                c.drawCircle(x - 12f*s, y, 8f*s, paint)
+                c.drawCircle(x + 12f*s, y, 8f*s, paint)
+                c.drawLine(x - 12f*s, y, x, y - 11f*s, paint)
+                c.drawLine(x, y - 11f*s, x + 12f*s, y, paint)
+                c.drawLine(x, y - 11f*s, x + 5f*s, y - 17f*s, paint)
+                paint.style = Paint.Style.FILL
+
+                // A subtle moving shadow anchors the object to the ground.
+                paint.color = Color.argb(38, 20, 25, 20)
+                c.drawOval(RectF(x - 17f*s, y + 6f*s, x + 17f*s, y + 11f*s), paint)
+            }
+
+            // A quick bird crossing gives forest and open-country scenes another
+            // layer of motion without adding image assets.
+            if ((world.region.contains("Forest") || world.region.contains("Mountain") ||
+                    world.region.contains("Village")) && cycle > .18f && cycle < .48f) {
+                val q = (cycle - .18f) / .30f
+                val bx = w * (.08f + .84f * q)
+                val by = h * (.30f + .035f * sin(frame / 11.0).toFloat())
+                paint.style = Paint.Style.STROKE
+                paint.strokeWidth = 1.5f
+                paint.color = Color.argb(155, 42, 55, 48)
+                c.drawArc(RectF(bx - 8f, by - 3f, bx, by + 5f), 205f, 115f, false, paint)
+                c.drawArc(RectF(bx, by - 3f, bx + 8f, by + 5f), 220f, 115f, false, paint)
+                paint.style = Paint.Style.FILL
             }
         }
 
