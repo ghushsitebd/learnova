@@ -122,7 +122,7 @@ internal class WorldLifeSimulation(
 
             // Far agents are deliberately simplified: silhouette + motion cues
             // carry the perception of a populated world while keeping GPU cost low.
-            addAgent(vertices, indices, px, sample.y + 0.05, pz, sample.yaw, width, height, kind)
+            addAgent(vertices, indices, px, sample.y.toDouble() + 0.05, pz, sample.yaw.toDouble(), width, height, kind)
             vCount += 8
             iCount += 36
             d += STEP
