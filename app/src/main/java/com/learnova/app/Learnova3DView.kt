@@ -74,6 +74,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var roadsideWorld: RoadsideWorld? = null
     private var waterSurfaceWorld: WaterSurfaceWorld? = null
     private var shorelineWorld: ShorelineWorld? = null
+    private var worldLife: WorldLifeSimulation? = null
     private var activeVehicle: VehicleDefinition = VehicleCatalog.byId(1)
     private var targetSpeed = activeVehicle.targetSpeed
     private var wheelRadius = activeVehicle.wheelRadius
@@ -123,6 +124,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             roadsideWorld = RoadsideWorld(viewer.engine, viewer.scene, asset).also { it.build() }
             waterSurfaceWorld = WaterSurfaceWorld(viewer.engine, viewer.scene, asset).also { it.build() }
             shorelineWorld = ShorelineWorld(viewer.engine, viewer.scene, asset).also { it.build() }
+            worldLife = WorldLifeSimulation(viewer.engine, viewer.scene, asset).also { it.build() }
         }
         configureRealisticSunLight()
         updateSkybox(WorldDirector.atmosphere(0.0), force = true)
@@ -178,6 +180,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 roadsideWorld?.update(vehicleDistance)
                 waterSurfaceWorld?.update(vehicleDistance)
                 shorelineWorld?.update(vehicleDistance)
+                worldLife?.update(vehicleDistance)
                 updateVehicleMechanics()
                 vehicleInteraction.update(dt.toFloat(), interactionProfile)
                 updateVehicleInteractionVisuals()
@@ -384,6 +387,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 roadsideWorld?.destroy()
                 waterSurfaceWorld?.destroy()
                 shorelineWorld?.destroy()
+                worldLife?.destroy()
+                worldLife = null
                 roadsideWorld = null
                 waterSurfaceWorld = null
                 shorelineWorld = null
@@ -398,6 +403,9 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 }
                 shorelineWorld = viewer.asset?.let {
                     ShorelineWorld(viewer.engine, viewer.scene, it).also { world -> world.build() }
+                }
+                worldLife = viewer.asset?.let {
+                    WorldLifeSimulation(viewer.engine, viewer.scene, it).also { world -> world.build() }
                 }
                 roadsideWorld = viewer.asset?.let {
                     RoadsideWorld(viewer.engine, viewer.scene, it).also { world -> world.build() }
@@ -913,6 +921,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         roadsideWorld?.destroy()
         waterSurfaceWorld?.destroy()
         shorelineWorld?.destroy()
+        worldLife?.destroy()
+        worldLife = null
         roadsideWorld = null
         waterSurfaceWorld = null
         if (sunEntity != 0) {
