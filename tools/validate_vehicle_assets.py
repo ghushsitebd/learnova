@@ -282,3 +282,5 @@ if ASSETS.exists():
 # 395: add asset key filename consistency validation.
 
 # 396: add compressed asset gzip integrity validation.
+
+# 397: add compressed asset uncompressed-size guard.
