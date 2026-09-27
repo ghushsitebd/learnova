@@ -121,15 +121,25 @@ internal class WorldLifeSimulation(
                 else -> (seed ushr 9) % 3L != 0L
             }
             val phase = ((seed ushr 17) % 1000L) / 1000.0
-            val baseDrift = if (moving) sin(centerDistance * 0.035 + phase * 6.283) * 1.8 else 0.0
+            // Deterministic local time gives each agent its own speed phase,
+            // avoiding the synchronized "all objects slide together" look.
+            val localTime = centerDistance * (0.028 + ((seed ushr 27) % 9L) * 0.001)
+            val baseDrift = if (moving) sin(localTime + phase * 6.283) * (1.15 + ((seed ushr 30) % 80L) / 100.0) else 0.0
             // Walkers use a slower, shorter gait: lateral sway + subtle body
             // bounce makes them read as living people instead of sliding blocks.
             val isPedestrian = (biome == WorldDirector.Biome.MARKET || biome == WorldDirector.Biome.VILLAGE) &&
                 ((seed ushr 4) % 9L >= 6L)
-            val walkPhase = centerDistance * 0.22 + phase * 6.283
+            val isWildlife = biome == WorldDirector.Biome.FOREST &&
+                ((seed ushr 4) % 8L >= 5L)
+            val walkPhase = centerDistance * (if (isWildlife) 0.11 else 0.22) + phase * 6.283
             val pedestrianSway = if (isPedestrian) sin(walkPhase) * 0.48 else 0.0
             val pedestrianDrift = if (isPedestrian && moving) sin(walkPhase * 0.5) * 0.55 else 0.0
-            val drift = if (isPedestrian) pedestrianDrift else baseDrift
+            val wildlifeDrift = if (isWildlife && moving) sin(walkPhase) * 1.1 else 0.0
+            val drift = when {
+                isPedestrian -> pedestrianDrift
+                isWildlife -> wildlifeDrift
+                else -> baseDrift
+            }
             val px = x + cos(sample.yaw) * drift + sin(sample.yaw) * pedestrianSway
             val pz = z - sin(sample.yaw) * drift + cos(sample.yaw) * pedestrianSway
             // Population families vary by biome so each environment has a
@@ -170,8 +180,16 @@ internal class WorldLifeSimulation(
 
             // Far agents are deliberately simplified: silhouette + motion cues
             // carry the perception of a populated world while keeping GPU cost low.
-            val bodyBounce = if (isPedestrian) kotlin.math.abs(sin(walkPhase)) * 0.045 else 0.0
-            val bodyYaw = if (isPedestrian) sample.yaw.toDouble() + sin(walkPhase) * 0.08 else sample.yaw.toDouble()
+            val bodyBounce = when {
+                isPedestrian -> kotlin.math.abs(sin(walkPhase)) * 0.045
+                isWildlife -> kotlin.math.abs(sin(walkPhase)) * 0.075
+                else -> 0.0
+            }
+            val bodyYaw = when {
+                isPedestrian -> sample.yaw.toDouble() + sin(walkPhase) * 0.08
+                isWildlife -> sample.yaw.toDouble() + sin(walkPhase) * 0.16
+                else -> sample.yaw.toDouble()
+            }
             addAgent(vertices, indices, px, sample.y.toDouble() + 0.05 + bodyBounce, pz, bodyYaw, width, height, kind)
             vCount += 8
             iCount += 36
