@@ -2256,6 +2256,19 @@ class MainActivity : AppCompatActivity() {
             }
 
             // Tiny perspective dust/spray cues reinforce motion without obscuring the lesson UI.
+            if (world.region.contains("Village") && running) {
+                // Lightweight village traffic: a rickshaw/van silhouette occasionally
+                // passes in the distance, moving with the road's perspective.
+                val cycle = ((frame + world.id * 73L) % 420L).toFloat() / 420f
+                if (cycle < .55f) {
+                    val q = cycle / .55f
+                    val t = .18f + .34f * q
+                    val y = horizon + (h - horizon) * t
+                    val x = roadCenterAt(t, w, worldSceneId) + if (world.id % 2 == 0) -w*.045f else w*.045f
+                    drawVillageTraffic(c, x, y, .30f + .42f*t, world.id % 2 == 0)
+                }
+            }
+
             if (running) {
                 paint.color = if (world.weather == "Rainy") Color.argb(65, 225, 240, 245) else Color.argb(48, 220, 205, 170)
                 for (i in 0..7) {
@@ -2305,6 +2318,27 @@ class MainActivity : AppCompatActivity() {
                     val drift = sin(frame / 42.0 + i).toFloat() * (4f + 7f*t)
                     c.drawOval(RectF(cx - 65f*t + drift, y + 7f, cx + 65f*t + drift, y + 15f), paint)
                 }
+            }
+        }
+
+        private fun drawVillageTraffic(c: Canvas, x: Float, y: Float, s: Float, reverse: Boolean) {
+            val wheel = 7f * s
+            paint.color = Color.rgb(42, 48, 48)
+            c.drawCircle(x - 18f*s, y, wheel, paint)
+            c.drawCircle(x + 18f*s, y, wheel, paint)
+            paint.color = Color.rgb(31, 105, 91)
+            c.drawRoundRect(RectF(x - 28f*s, y - 20f*s, x + 28f*s, y - 2f*s), 5f*s, 5f*s, paint)
+            paint.color = Color.rgb(201, 166, 96)
+            c.drawRoundRect(RectF(x - 21f*s, y - 31f*s, x + 20f*s, y - 15f*s), 5f*s, 5f*s, paint)
+            paint.color = Color.argb(190, 205, 228, 232)
+            c.drawRect(x - 15f*s, y - 28f*s, x - 2f*s, y - 18f*s, paint)
+            c.drawRect(x + 2f*s, y - 28f*s, x + 15f*s, y - 18f*s, paint)
+            if (reverse) {
+                paint.color = Color.rgb(221, 54, 42)
+                c.drawCircle(x + 27f*s, y - 7f*s, 2.5f*s, paint)
+            } else {
+                paint.color = Color.rgb(245, 222, 130)
+                c.drawCircle(x - 27f*s, y - 7f*s, 2.5f*s, paint)
             }
         }
 
