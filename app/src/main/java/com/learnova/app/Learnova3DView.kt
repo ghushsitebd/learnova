@@ -79,6 +79,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var waterSurfaceWorld: WaterSurfaceWorld? = null
     private var shorelineWorld: ShorelineWorld? = null
     private var worldLife: WorldLifeSimulation? = null
+    private var childNPC: ChildNPCWorld? = null
     private var activeVehicle: VehicleDefinition = VehicleCatalog.byId(1)
     private var targetSpeed = activeVehicle.targetSpeed
     private var wheelRadius = activeVehicle.wheelRadius
@@ -135,6 +136,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             waterSurfaceWorld = WaterSurfaceWorld(viewer.engine, viewer.scene, asset).also { it.build() }
             shorelineWorld = ShorelineWorld(viewer.engine, viewer.scene, asset).also { it.build() }
             worldLife = WorldLifeSimulation(viewer.engine, viewer.scene, asset).also { it.build() }
+            childNPC = ChildNPCWorld(viewer.engine, viewer.scene, asset).also { it.build() }
         }
         configureRealisticSunLight()
         updateSkybox(WorldDirector.atmosphere(0.0), force = true)
@@ -239,6 +241,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 waterSurfaceWorld?.update(vehicleDistance)
                 shorelineWorld?.update(vehicleDistance)
                 worldLife?.update(vehicleDistance)
+                childNPC?.update(vehicleDistance)
                 updateVehicleMechanics()
                 // Camera/body inertia reads the same lateral dynamics as the vehicle.
                 // This couples steering, chassis motion and the horizon instead of
