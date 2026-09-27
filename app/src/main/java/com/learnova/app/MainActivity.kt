@@ -173,7 +173,7 @@ class MainActivity : AppCompatActivity() {
 
                 // The learning card only replays the current lesson.
                 if (y >= h * 0.63f && y <= h * 0.91f && x < w * 0.76f) {
-                    voice.speakLesson(lessons[question])
+                    voice.speakSmartLesson(SmartLearningEngine.lesson(question))
                     return true
                 }
             }
@@ -2228,58 +2228,68 @@ class MainActivity : AppCompatActivity() {
         }
 
         private fun drawLearningCard(c: Canvas, w: Float, h: Float, world: SmartScene) {
-            val top = h*.63f
+            val top = h * .63f
             val left = 18f
-            val right = w-18f
+            val right = w - 18f
+            val lesson = SmartLearningEngine.lesson(question)
 
-            paint.color = Color.argb(225,255,255,255)
-            c.drawRoundRect(RectF(left,top,right,top+105f),22f,22f,paint)
+            paint.color = Color.argb(235, 255, 255, 255)
+            c.drawRoundRect(RectF(left, top, right, top + 108f), 22f, 22f, paint)
 
             text.textAlign = Paint.Align.LEFT
-            text.color = Color.rgb(27,105,69)
-            text.textSize = 13f
-            val lessonLabel = if (question < 26) {
-                "English • Letter ${lessons[question]} • ${englishWords[question]}"
-            } else {
-                lessonHints[question]
-            }
-            c.drawText(lessonLabel,left+18f,top+25f,text)
+            text.color = Color.rgb(27, 105, 69)
+            text.textSize = 12f
+            c.drawText(
+                lesson.domain + " • " + lesson.spokenName,
+                left + 18f, top + 23f, text
+            )
 
-            text.color = Color.rgb(35,45,48)
-            text.textSize = if (lessons[question].length > 4) 25f else 34f
-            c.drawText(lessons[question],left+18f,top+61f,text)
+            // The glyph is the visual anchor. Arabic is rendered large and right-to-left
+            // so the child learns the actual script, not only a Latin label.
+            text.color = Color.rgb(25, 35, 38)
+            text.textSize = if (lesson.rtl) 38f else 34f
+            c.drawText(lesson.display, left + 18f, top + 61f, text)
 
-            text.color = Color.rgb(85,90,90)
+            text.color = Color.rgb(72, 84, 84)
             text.textSize = 11f
-            val info = LearnovaUnlimitedWorld.level(level)
-            c.drawText("${info.lessonType} • ${info.difficulty}",left+18f,top+82f,text)
-            paint.color = Color.rgb(225,232,228)
-            c.drawRoundRect(RectF(left+18f,top+88f,right-112f,top+95f),4f,4f,paint)
-            paint.color = Color.rgb(28,155,91)
-            c.drawRoundRect(RectF(left+18f,top+88f,left+18f+(right-left-130f)*levelProgress,top+95f),4f,4f,paint)
+            c.drawText(
+                lesson.example + " • " + lesson.sound,
+                left + 18f, top + 81f, text
+            )
 
-            paint.color = if (running) Color.rgb(20,150,83) else Color.rgb(45,100,80)
-            c.drawRoundRect(RectF(right-90f,top+19f,right-18f,top+86f),18f,18f,paint)
+            paint.color = Color.rgb(225, 232, 228)
+            c.drawRoundRect(RectF(left + 18f, top + 88f, right - 112f, top + 95f), 4f, 4f, paint)
+            paint.color = Color.rgb(28, 155, 91)
+            c.drawRoundRect(
+                RectF(
+                    left + 18f,
+                    top + 88f,
+                    left + 18f + (right - left - 130f) * levelProgress,
+                    top + 95f
+                ), 4f, 4f, paint
+            )
+
+            paint.color = if (running) Color.rgb(20, 150, 83) else Color.rgb(45, 100, 80)
+            c.drawRoundRect(RectF(right - 90f, top + 18f, right - 18f, top + 86f), 18f, 18f, paint)
 
             text.textAlign = Paint.Align.CENTER
             text.color = Color.WHITE
             text.textSize = 12f
-            c.drawText(if (levelComplete) "NEXT LEVEL" else if (running) "DRIVING" else "READY",right-54f,top+57f,text)
+            c.drawText(
+                if (levelComplete) "NEXT" else if (running) "DRIVING" else "LEARN",
+                right - 54f, top + 56f, text
+            )
 
-            text.textAlign = Paint.Align.CENTER
-            text.color = Color.rgb(27,105,69)
-            text.textSize = 11f
-            text.color = Color.rgb(35,105,78)
+            text.color = Color.rgb(35, 105, 78)
             text.textSize = 10f
-            c.drawText("Tap road once to drive • Tap again to stop", w/2f, top+101f, text)
+            c.drawText(
+                lesson.prompt,
+                w / 2f, top + 103f, text
+            )
         }
 
         private fun speakCurrentLesson() {
-            if (question < 26) {
-                voice.speakEnglishLesson(lessons[question], englishWords[question])
-            } else {
-                voice.speakLesson(lessons[question])
-            }
+            voice.speakSmartLesson(SmartLearningEngine.lesson(question))
         }
 
         private fun nextLesson() {
