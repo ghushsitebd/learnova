@@ -43,6 +43,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var vehicleDistance = 0.0
     private var vehicleSpeed = 0.0
     private var lastFrameNanos = 0L
+    // Shared render-loop timestep keeps vehicle physics deterministic across devices.
+    private var frameDeltaSeconds = 1.0 / 60.0
     private var wheelEntities = IntArray(0)
     private val wheelBaseTransforms = HashMap<Int, FloatArray>()
     private var vehicleRootEntity = 0
@@ -117,6 +119,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                     ((time - lastFrameNanos).coerceIn(0L, 50_000_000L)).toDouble() / 1_000_000_000.0
                 }
                 lastFrameNanos = time
+                frameDeltaSeconds = dt
 
                 // Child-simple input, physically smoother motion: one tap starts,
                 // the next tap requests a controlled stop. Speed is integrated with
@@ -501,8 +504,10 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         val roadBehind = RoadSpline.sample(vehicleDistance - 0.45)
         val verticalCurvature = roadAhead.y - 2.0 * road.y + roadBehind.y
         val targetCompression = (-verticalCurvature * 0.10).coerceIn(-0.035, 0.035)
-        val dt = (if (lastFrameNanos == 0L) 1.0 / 60.0
-                  else (System.nanoTime() - lastFrameNanos).coerceIn(1_000_000L, 50_000_000L).toDouble() / 1_000_000_000.0)
+        // Use the exact Choreographer delta already used by speed integration.
+        // Sampling the clock again here can produce a near-zero delta and make
+        // the suspension appear unnaturally stiff or frame-rate dependent.
+        val dt = frameDeltaSeconds.coerceIn(1.0 / 240.0, 0.05)
         suspensionVelocity += ((targetCompression - suspensionDisplacement) * 18.0 - suspensionVelocity * 5.2) * dt
         suspensionDisplacement += suspensionVelocity * dt
         suspensionDisplacement = suspensionDisplacement.coerceIn(-0.045, 0.045)
