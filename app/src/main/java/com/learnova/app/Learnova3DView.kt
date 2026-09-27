@@ -593,12 +593,22 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                     // Front wheels steer automatically from the road curvature.
                     // Use semantic wheel names rather than GLB list order.
                     val isFrontWheel = frontWheelEntities.contains(entity)
-                    // Blend the current tangent with a short look-ahead so the
-                    // front wheels begin turning naturally before the chassis reaches
-                    // the curve apex. This preserves the single-tap control model.
-                    val steeringYaw = (road.yaw * 0.35f + roadAhead.yaw * 0.65f)
+                    // Steering follows road curvature, not absolute world yaw.
+                    // This prevents the wheels from pointing at a fixed world angle
+                    // whenever the road itself is already rotated.
+                    val roadBehind = RoadSpline.sampleRelative(
+                        vehicleDistance - 1.8,
+                        renderOriginDistance
+                    )
+                    val yawChange = kotlin.math.atan2(
+                        kotlin.math.sin(roadAhead.yaw - roadBehind.yaw),
+                        kotlin.math.cos(roadAhead.yaw - roadBehind.yaw)
+                    )
+                    val curvature = yawChange / 3.6
+                    val wheelBase = 2.30
+                    val steeringTarget = kotlin.math.atan(wheelBase * curvature)
                     val steerAngle = if (isFrontWheel) {
-                        steeringYaw.coerceIn(-0.42f, 0.42f)
+                        steeringTarget.coerceIn(-0.55, 0.55).toFloat()
                     } else {
                         0.0f
                     }
