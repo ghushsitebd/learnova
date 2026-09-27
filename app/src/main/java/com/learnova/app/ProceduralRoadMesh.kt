@@ -41,6 +41,10 @@ internal class ProceduralRoadMesh(
     private var lastCenter = Double.NaN
     private var sourceRoadEntity = 0
     private var renderOriginDistance = 0.0
+    private var shoulderEntity = 0
+    private var shoulderVertexBuffer: VertexBuffer? = null
+    private var shoulderIndexBuffer: IndexBuffer? = null
+    private var shoulderMaterial: com.google.android.filament.MaterialInstance? = null
 
     fun build(): Boolean {
         if (entity != 0) return true
@@ -91,6 +95,8 @@ internal class ProceduralRoadMesh(
         vertexBuffer = vb
         indexBuffer = ib
 
+        shoulderMaterial = findShoulderMaterial()
+        buildShoulders()
         update(0.0)
         return true
     }
@@ -130,7 +136,112 @@ internal class ProceduralRoadMesh(
 
         data.flip()
         vertexBuffer?.setBufferAt(engine, 0, data)
+        updateShoulders(centerDistance)
         lastCenter = centerDistance
+    }
+
+    /**
+     * Lightweight roadside verge: two narrow strips follow the same spline as
+     * the road. When the authored GLB contains a ground/grass/terrain material,
+     * the strips give the road a physical transition into the landscape without
+     * importing hundreds of separate meshes.
+     */
+    private fun buildShoulders() {
+        val material = shoulderMaterial ?: return
+        if (shoulderEntity != 0) return
+
+        val vb = VertexBuffer.Builder()
+            .vertexCount(VERTEX_COUNT * 2)
+            .bufferCount(1)
+            .attribute(VertexBuffer.VertexAttribute.POSITION, 0, VertexBuffer.AttributeType.FLOAT3, 0, VERTEX_STRIDE)
+            .attribute(VertexBuffer.VertexAttribute.TANGENTS, 0, VertexBuffer.AttributeType.FLOAT4, 12, VERTEX_STRIDE)
+            .attribute(VertexBuffer.VertexAttribute.UV0, 0, VertexBuffer.AttributeType.FLOAT2, 28, VERTEX_STRIDE)
+            .build(engine)
+
+        val ib = IndexBuffer.Builder()
+            .indexCount(INDEX_COUNT * 2)
+            .bufferType(IndexBuffer.Builder.IndexType.USHORT)
+            .build(engine)
+
+        val indices = ByteBuffer.allocate(INDEX_COUNT * 4)
+            .order(ByteOrder.nativeOrder())
+        for (i in 0 until 126) {
+            val a = i * 4
+            val b = a + 1
+            val c = a + 4
+            val d = a + 5
+            indices.putShort(a.toShort()); indices.putShort(c.toShort()); indices.putShort(b.toShort())
+            indices.putShort(b.toShort()); indices.putShort(c.toShort()); indices.putShort(d.toShort())
+
+            val off = 254
+            val e = off + a
+            val f = off + b
+            val g = off + c
+            val h = off + d
+            indices.putShort(e.toShort()); indices.putShort(f.toShort()); indices.putShort(g.toShort())
+            indices.putShort(f.toShort()); indices.put(h.toShort()); indices.put(g.toShort())
+        }
+        indices.flip()
+        ib.setBuffer(engine, indices)
+
+        shoulderEntity = EntityManager.get().create()
+        RenderableManager.Builder(1)
+            .material(0, material)
+            .geometry(0, RenderableManager.PrimitiveType.TRIANGLES, vb, ib)
+            .culling(false)
+            .receiveShadows(true)
+            .castShadows(false)
+            .build(engine, shoulderEntity)
+        scene.addEntity(shoulderEntity)
+        shoulderVertexBuffer = vb
+        shoulderIndexBuffer = ib
+    }
+
+    private fun updateShoulders(centerDistance: Double) {
+        if (shoulderEntity == 0 || shoulderVertexBuffer == null) return
+        val data = ByteBuffer.allocate(VERTEX_COUNT * 2 * VERTEX_STRIDE)
+            .order(ByteOrder.nativeOrder())
+
+        for (i in 0 until 127) {
+            val distance = centerDistance - BEHIND + i * SAMPLE_STEP
+            val sample = RoadSpline.sampleRelative(distance, centerDistance)
+            val yaw = sample.yaw.toDouble()
+            val halfRoad = ROAD_WIDTH * 0.5
+            val shoulder = 2.4
+            val lx = cos(yaw)
+            val lz = -sin(yaw)
+            val outerLeftX = sample.x + lx * (halfRoad + shoulder)
+            val outerLeftZ = sample.z + lz * (halfRoad + shoulder)
+            val innerLeftX = sample.x + lx * halfRoad
+            val innerLeftZ = sample.z + lz * halfRoad
+            val innerRightX = sample.x - lx * halfRoad
+            val innerRightZ = sample.z - lz * halfRoad
+            val outerRightX = sample.x - lx * (halfRoad + shoulder)
+            val outerRightZ = sample.z - lz * (halfRoad + shoulder)
+
+            putVertex(data, outerLeftX.toFloat(), (sample.y - 0.018).toFloat(), outerLeftZ.toFloat(), yaw, sample.bank.toDouble(), 0f, distance.toFloat() / 8f)
+            putVertex(data, innerLeftX.toFloat(), (sample.y - 0.012).toFloat(), innerLeftZ.toFloat(), yaw, sample.bank.toDouble(), 1f, distance.toFloat() / 8f)
+            putVertex(data, innerRightX.toFloat(), (sample.y - 0.012).toFloat(), innerRightZ.toFloat(), yaw, sample.bank.toDouble(), 0f, distance.toFloat() / 8f)
+            putVertex(data, outerRightX.toFloat(), (sample.y - 0.018).toFloat(), outerRightZ.toFloat(), yaw, sample.bank.toDouble(), 1f, distance.toFloat() / 8f)
+        }
+        data.flip()
+        shoulderVertexBuffer?.setBufferAt(engine, 0, data)
+    }
+
+    private fun findShoulderMaterial(): com.google.android.filament.MaterialInstance? {
+        val names = arrayOf(
+            "Ground", "Terrain", "Grass", "Landscape", "ground", "terrain", "grass"
+        )
+        val rm = engine.renderableManager
+        for (name in names) {
+            val entity = asset.getFirstEntityByName(name)
+            if (entity == 0 || !rm.hasComponent(entity)) continue
+            val instance = rm.getInstance(entity)
+            if (rm.getPrimitiveCount(instance) > 0) {
+                return rm.getMaterialInstanceAt(instance, 0)
+            }
+        }
+        return null
     }
 
     private fun putVertex(
@@ -192,10 +303,21 @@ internal class ProceduralRoadMesh(
             EntityManager.get().destroy(entity)
             entity = 0
         }
+        if (shoulderEntity != 0) {
+            scene.removeEntity(shoulderEntity)
+            engine.renderableManager.destroy(shoulderEntity)
+            EntityManager.get().destroy(shoulderEntity)
+            shoulderEntity = 0
+        }
         vertexBuffer?.let { engine.destroyVertexBuffer(it) }
+        shoulderVertexBuffer?.let { engine.destroyVertexBuffer(it) }
         indexBuffer?.let { engine.destroyIndexBuffer(it) }
+        shoulderIndexBuffer?.let { engine.destroyIndexBuffer(it) }
         vertexBuffer = null
         indexBuffer = null
+        shoulderVertexBuffer = null
+        shoulderIndexBuffer = null
+        shoulderMaterial = null
         lastCenter = Double.NaN
         sourceRoadEntity = 0
         renderOriginDistance = 0.0
