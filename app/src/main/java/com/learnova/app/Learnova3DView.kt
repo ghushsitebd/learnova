@@ -519,6 +519,11 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         // curvature instead of using a purely time-based bounce. This keeps the
         // chassis settled over crests/dips and remains deterministic at any FPS.
         val road = RoadSpline.sampleRelative(vehicleDistance, renderOriginDistance)
+        // Short look-ahead for progressive steering of the front axle.
+        val roadAhead = RoadSpline.sampleRelative(
+            vehicleDistance + 1.8,
+            renderOriginDistance
+        )
         // Evaluate the road at the approximate front/rear axle centers instead of
         // using a tiny time-based bounce. The chassis therefore follows the actual
         // longitudinal road slope and reacts naturally to crests and dips.
