@@ -51,6 +51,10 @@ if any(not re.fullmatch(r"[a-z0-9_]+", key) for key in asset_keys):
     print("::error::Vehicle asset keys contain unsupported characters.")
     sys.exit(1)
 
+if len(re.findall(r'VehicleDefinition\(', text)) != 100:
+    print("::error::Vehicle catalog declaration count is inconsistent.")
+    sys.exit(1)
+
 if not ASSETS.exists():
     print("::notice::No real vehicle GLB assets are committed yet; catalog/resolver fallback remains active.")
     sys.exit(0)
