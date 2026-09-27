@@ -17,8 +17,9 @@ class LearnovaVoice(context: Context) : TextToSpeech.OnInitListener {
     override fun onInit(status: Int) {
         if (status != TextToSpeech.SUCCESS) return
         ready = true
-        tts.setSpeechRate(0.82f)
-        tts.setPitch(1.0f)
+        tts.setSpeechRate(0.78f)
+        tts.setPitch(1.12f)
+        
         pendingText?.let {
             speak(it, pendingLocale)
             pendingText = null
@@ -44,8 +45,8 @@ class LearnovaVoice(context: Context) : TextToSpeech.OnInitListener {
 
     fun speakInstruction(running: Boolean) {
         speak(
-            if (running) "Tap to stop. Tap again to continue."
-            else "Tap once to start.",
+            if (running) "Let go to stop."
+            else "Press and hold to drive.",
             Locale.US
         )
     }
