@@ -71,3 +71,5 @@ internal object RoadSpline {
 // Realism stage: road crest and dip shaping.
 
 // Realism stage: smoother lateral curvature.
+
+// Realism stage: long-radius route variation.
