@@ -1,6 +1,7 @@
 package com.learnova.app
 
 import android.media.AudioAttributes
+import android.media.AudioManager
 import android.media.AudioFormat
 import android.media.AudioTrack
 import kotlin.math.PI
@@ -57,7 +58,7 @@ class LearnovaNatureAudio {
             format,
             minBuffer,
             AudioTrack.MODE_STREAM,
-            AudioTrack.AUDIO_SESSION_ID_GENERATE
+            AudioManager.AUDIO_SESSION_ID_GENERATE
         )
         track = audioTrack
 
