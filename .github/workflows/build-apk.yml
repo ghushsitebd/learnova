@@ -53,7 +53,7 @@ jobs:
           test -s learnova-release.keystore
           file learnova-release.keystore
 
-      - name: Verify signing configuration
+      - name: Verify and normalize signing keystore
         env:
           LEARNOVA_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           LEARNOVA_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
@@ -62,29 +62,24 @@ jobs:
           test -n "${LEARNOVA_STORE_PASSWORD:-}" || { echo "::error::KEYSTORE_PASSWORD secret is missing."; exit 1; }
           test -n "${LEARNOVA_KEY_PASSWORD:-}" || { echo "::error::KEY_PASSWORD secret is missing."; exit 1; }
 
-          # Normalize accidental CR/LF characters from pasted GitHub secrets.
+          # Remove only accidental line-ending characters from pasted secrets.
           LEARNOVA_STORE_PASSWORD=$(printf '%s' "$LEARNOVA_STORE_PASSWORD" | tr -d '\r\n')
           LEARNOVA_KEY_PASSWORD=$(printf '%s' "$LEARNOVA_KEY_PASSWORD" | tr -d '\r\n')
-          echo "LEARNOVA_STORE_PASSWORD=$LEARNOVA_STORE_PASSWORD" >> "$GITHUB_ENV"
-          echo "LEARNOVA_KEY_PASSWORD=$LEARNOVA_KEY_PASSWORD" >> "$GITHUB_ENV"
 
-          echo "Checking keystore password..."
+          echo "Checking original keystore password..."
           if ! keytool -list -v -keystore learnova-release.keystore -storepass "$LEARNOVA_STORE_PASSWORD" >/tmp/learnova-keytool.txt 2>/tmp/learnova-keytool.err; then
             echo "::error::KEYSTORE_PASSWORD does not unlock the restored keystore."
             cat /tmp/learnova-keytool.err
             exit 1
           fi
 
-          echo "Detecting signing alias..."
           LEARNOVA_KEY_ALIAS=$(awk -F': ' '/^Alias name: / {print $2; exit}' /tmp/learnova-keytool.txt)
           if [ -z "${LEARNOVA_KEY_ALIAS:-}" ]; then
             echo "::error::No signing alias was found in the keystore."
             exit 1
           fi
-          echo "Detected signing alias: [hidden]"
-          echo "LEARNOVA_KEY_ALIAS=$LEARNOVA_KEY_ALIAS" >> "$GITHUB_ENV"
 
-          echo "Checking key password..."
+          echo "Checking original signing key password..."
           if ! keytool -certreq -keystore learnova-release.keystore -storepass "$LEARNOVA_STORE_PASSWORD" -alias "$LEARNOVA_KEY_ALIAS" -keypass "$LEARNOVA_KEY_PASSWORD" -file /tmp/learnova-test.csr -dname "CN=Learnova CI Test" >/tmp/learnova-csr.out 2>/tmp/learnova-csr.err; then
             echo "::error::KEY_PASSWORD does not unlock the Learnova signing key."
             cat /tmp/learnova-csr.err
@@ -92,17 +87,41 @@ jobs:
             exit 1
           fi
           rm -f /tmp/learnova-test.csr
-          echo "Signing configuration verified."
+
+          # Re-wrap the SAME private key and certificate into a temporary JKS.
+          # This gives Gradle ASCII-only passwords without changing the signing identity.
+          NORMALIZED_STORE_PASSWORD=$(openssl rand -hex 32)
+          NORMALIZED_KEY_PASSWORD=$(openssl rand -hex 32)
+          echo "::add-mask::$NORMALIZED_STORE_PASSWORD"
+          echo "::add-mask::$NORMALIZED_KEY_PASSWORD"
+
+          echo "Creating temporary normalized signing keystore..."
+          keytool -importkeystore -noprompt             -srckeystore learnova-release.keystore             -srcstorepass "$LEARNOVA_STORE_PASSWORD"             -srcalias "$LEARNOVA_KEY_ALIAS"             -srckeypass "$LEARNOVA_KEY_PASSWORD"             -destkeystore learnova-release-normalized.jks             -deststoretype JKS             -deststorepass "$NORMALIZED_STORE_PASSWORD"             -destkeypass "$NORMALIZED_KEY_PASSWORD"             -destalias "$LEARNOVA_KEY_ALIAS"
+
+          chmod 600 learnova-release-normalized.jks
+          test -s learnova-release-normalized.jks
+
+          echo "Verifying normalized keystore..."
+          keytool -list -keystore learnova-release-normalized.jks -storepass "$NORMALIZED_STORE_PASSWORD" >/dev/null
+          keytool -certreq -keystore learnova-release-normalized.jks             -storepass "$NORMALIZED_STORE_PASSWORD"             -alias "$LEARNOVA_KEY_ALIAS"             -keypass "$NORMALIZED_KEY_PASSWORD"             -file /tmp/learnova-normalized-test.csr             -dname "CN=Learnova CI Normalized Test" >/dev/null
+          rm -f /tmp/learnova-normalized-test.csr
+
+          mv learnova-release-normalized.jks learnova-release.keystore
+
+          echo "LEARNOVA_KEYSTORE_PATH=$GITHUB_WORKSPACE/learnova-release.keystore" >> "$GITHUB_ENV"
+          echo "LEARNOVA_STORE_PASSWORD=$NORMALIZED_STORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "LEARNOVA_KEY_PASSWORD=$NORMALIZED_KEY_PASSWORD" >> "$GITHUB_ENV"
+          echo "LEARNOVA_KEY_ALIAS=$LEARNOVA_KEY_ALIAS" >> "$GITHUB_ENV"
+
+          echo "Signing keystore normalized successfully."
+
       - name: Build Release APK and AAB
-        env:
-          LEARNOVA_KEYSTORE_PATH: ${{ github.workspace }}/learnova-release.keystore
-          LEARNOVA_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          LEARNOVA_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          LEARNOVA_STORE_PASSWORD=$(printf '%s' "$LEARNOVA_STORE_PASSWORD" | tr -d '\r\n')
-          LEARNOVA_KEY_PASSWORD=$(printf '%s' "$LEARNOVA_KEY_PASSWORD" | tr -d '\r\n')
-          export LEARNOVA_STORE_PASSWORD LEARNOVA_KEY_PASSWORD
+          test -n "${LEARNOVA_KEYSTORE_PATH:-}"
+          test -n "${LEARNOVA_STORE_PASSWORD:-}"
+          test -n "${LEARNOVA_KEY_ALIAS:-}"
+          test -n "${LEARNOVA_KEY_PASSWORD:-}"
           gradle clean assembleRelease bundleRelease --stacktrace
 
       - name: Find Generated APK and AAB
