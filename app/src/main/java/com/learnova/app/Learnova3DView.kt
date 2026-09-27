@@ -148,7 +148,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
      * Asset replacement is intentionally separate: a catalog entry can point to
      * its future GLB without forcing 100 models into memory at the same time.
      */
-    fun setVehicle(definition: VehicleDefinition) {
+    internal fun setVehicle(definition: VehicleDefinition) {
         activeVehicle = definition
         targetSpeed = definition.targetSpeed.coerceIn(2.0, 18.0)
         wheelRadius = definition.wheelRadius.coerceIn(0.12, 0.80)
