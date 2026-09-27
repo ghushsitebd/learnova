@@ -76,6 +76,11 @@ class MainActivity : AppCompatActivity() {
         private var vehicle = 0
         private var levelProgress = 0f
         private var levelComplete = false
+        private var lessonStage = 0
+        private var completedLessons = 0
+        private var learningPoints = 0
+        private var celebrationUntil = 0L
+        private val sessionStartedAt = System.currentTimeMillis()
         private var worldSceneId = 1
         private var question = 0
         private var lastTap = 0L
@@ -177,9 +182,12 @@ class MainActivity : AppCompatActivity() {
                     return true
                 }
 
-                // The learning card only replays the current lesson.
+                // The learning card is the child's simple "learn while travelling"
+                // path: one tap moves through See -> Listen -> Connect.
                 if (y >= h * 0.63f && y <= h * 0.91f && x < w * 0.76f) {
+                    lessonStage = (lessonStage + 1) % 3
                     voice.speakSmartLesson(SmartLearningEngine.lesson(question))
+                    invalidate()
                     return true
                 }
             }
@@ -2300,7 +2308,14 @@ class MainActivity : AppCompatActivity() {
 
         private fun nextLesson() {
             if (!levelComplete) return
+            completedLessons += 1
+            val reward = ChildSafeEngagementPolicy.rewardForCorrectLesson(completedLessons)
+            learningPoints += reward.points
+            if (reward.celebration != ChildSafeEngagementPolicy.Celebration.NONE) {
+                celebrationUntil = System.currentTimeMillis() + 1800L
+            }
             question = (question + 1) % lessons.size
+            lessonStage = 0
             level += 1
             worldSceneId += 1
             levelProgress = 0f
@@ -2820,8 +2835,11 @@ class MainActivity : AppCompatActivity() {
             text.setShadowLayer(5f,0f,2f,Color.DKGRAY)
             text.textSize = 15f
 
+            val sessionMinutes = ((System.currentTimeMillis() - sessionStartedAt) / 60000L).toInt()
             c.drawText(
-                if (levelComplete) "Level complete • Tap NEXT LEVEL"
+                if (ChildSafeEngagementPolicy.shouldSuggestBreak(sessionMinutes))
+                    "Nice learning • Take a short break when you are ready"
+                else if (levelComplete) "Level complete • Tap NEXT LEVEL"
                 else if (running) "Driving • Tap again to stop"
                 else "Tap once to drive",
                 w/2f,h*.965f,text
