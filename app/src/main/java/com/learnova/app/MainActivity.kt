@@ -210,10 +210,6 @@ class MainActivity : AppCompatActivity() {
                     if (y >= h * 0.63f && y <= h * 0.91f && x < w * 0.76f) {
                         if (level in 69..250) {
                             val quran = LearnovaQuranCatalog.lesson(level - 68)
-                            val lessonIndex = SmartLearningEngine.lessons.indexOfFirst { it.id == "quran_" + quran.name
-                                .lowercase()
-                                .replace(" ", "_")
-                                .replace("-", "_") }
                             // The first tap starts the lesson; later taps advance its guided stages.
                             lessonStage = (lessonStage + 1) % 3
                             voice.speakQuranStage(quran.name, quran.mode, lessonStage)
