@@ -41,6 +41,7 @@ internal class WorldLifeSimulation(
     private var ib: IndexBuffer? = null
     private var material: com.google.android.filament.MaterialInstance? = null
     private var lastCenter = Double.NaN
+    private var lastAnimationNanos = 0L
 
     fun build(): Boolean {
         if (entity != 0) return true
@@ -71,7 +72,13 @@ internal class WorldLifeSimulation(
 
     fun update(centerDistance: Double) {
         if (entity == 0 || vb == null || ib == null) return
-        if (!lastCenter.isNaN() && kotlin.math.abs(centerDistance - lastCenter) < 9.0) return
+        val now = System.nanoTime()
+        val animationTime = now * 1.0e-9
+        // Keep the living world animated even while the child pauses the vehicle.
+        // Rebuild at a bounded cadence so pedestrians/animals move naturally without
+        // turning the combined population mesh into a per-frame allocation hotspot.
+        if (!lastCenter.isNaN() && kotlin.math.abs(centerDistance - lastCenter) < 9.0 &&
+            now - lastAnimationNanos < 140_000_000L) return
 
         val vertices = ByteBuffer.allocate(MAX_AGENTS * VERTICES_PER_AGENT * STRIDE).order(ByteOrder.nativeOrder())
         val indices = ByteBuffer.allocate(MAX_AGENTS * INDICES_PER_AGENT * 2).order(ByteOrder.nativeOrder())
@@ -85,7 +92,8 @@ internal class WorldLifeSimulation(
             // offset is deterministic and bounded, so spacing never explodes,
             // but nearby vehicles visibly gain/lose distance like real traffic.
             val trafficPhase = phaseFromSeed(seed)
-            val trafficMotion = sin(centerDistance * (0.012 + ((seed ushr 36) % 7L) * 0.001) + trafficPhase * 6.283) *
+            val trafficMotion = sin((centerDistance * (0.012 + ((seed ushr 36) % 7L) * 0.001)) +
+                animationTime * (0.32 + ((seed ushr 39) % 30L) / 100.0) + trafficPhase * 6.283) *
                 (2.0 + ((seed ushr 39) % 30L) / 10.0)
             val agentDistance = d + trafficMotion
             val sample = RoadSpline.sampleRelative(agentDistance, centerDistance)
@@ -157,7 +165,8 @@ internal class WorldLifeSimulation(
             val phase = ((seed ushr 17) % 1000L) / 1000.0
             // Deterministic local time gives each agent its own speed phase,
             // avoiding the synchronized "all objects slide together" look.
-            val localTime = centerDistance * (0.028 + ((seed ushr 27) % 9L) * 0.001)
+            val localTime = centerDistance * (0.028 + ((seed ushr 27) % 9L) * 0.001) +
+                animationTime * (0.55 + ((seed ushr 31) % 35L) / 100.0)
             val baseDrift = if (moving) sin(localTime + phase * 6.283) * (1.15 + ((seed ushr 30) % 80L) / 100.0) else 0.0
             // Walkers use a slower, shorter gait: lateral sway + subtle body
             // bounce makes them read as living people instead of sliding blocks.
@@ -220,7 +229,9 @@ internal class WorldLifeSimulation(
                 isWildlife -> sample.yaw.toDouble() + sin(walkPhase) * 0.16
                 else -> sample.yaw.toDouble()
             }
-            addAgent(vertices, indices, px, sample.y.toDouble() + 0.05 + bodyBounce, pz, bodyYaw, width, height, kind)
+            val groundY = sample.y.toDouble() +
+                kotlin.math.sin(sample.bank.toDouble()) * kotlin.math.abs(roadsideOffset) * 0.35
+            addAgent(vertices, indices, px, groundY + 0.05 + bodyBounce, pz, bodyYaw, width, height, kind)
             vCount += 8
             iCount += 36
             d += STEP
@@ -240,6 +251,7 @@ internal class WorldLifeSimulation(
         vb!!.setBufferAt(engine, 0, vertices)
         ib!!.setBuffer(engine, indices)
         lastCenter = centerDistance
+        lastAnimationNanos = now
     }
 
     private fun addAgent(
@@ -331,5 +343,6 @@ internal class WorldLifeSimulation(
         vb?.let { engine.destroyVertexBuffer(it) }
         ib?.let { engine.destroyIndexBuffer(it) }
         vb = null; ib = null; material = null; lastCenter = Double.NaN
+        lastAnimationNanos = 0L
     }
 }
