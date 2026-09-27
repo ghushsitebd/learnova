@@ -288,3 +288,5 @@ if ASSETS.exists():
 # CI hardening checkpoint 316: keep the production 3D asset pipeline deterministic and mobile-safe.
 
 # CI hardening checkpoint 317: keep the production 3D asset pipeline deterministic and mobile-safe.
+
+# CI hardening checkpoint 318: keep the production 3D asset pipeline deterministic and mobile-safe.
