@@ -219,6 +219,7 @@ class MainActivity : AppCompatActivity() {
             drawRiver(canvas, w, h)
             drawTrees(canvas, w, h)
             drawHabitatDetails(canvas, w, h, world)
+            drawForestRouteDepth(canvas, w, h, world)
             drawRoad(canvas, w, h, world)
             drawRoadReflections(canvas, w, h, world)
             drawRoadInfrastructure(canvas, w, h, world)
@@ -783,6 +784,56 @@ class MainActivity : AppCompatActivity() {
             return w * 0.50f + bend * t * t + laneOffset * w * t * 0.18f
         }
 
+        private fun drawForestRouteDepth(c: Canvas, w: Float, h: Float, world: SmartScene) {
+            // Forest routes reveal a distant track through the trees, so the world
+            // does not feel like a flat straight road.
+            val forest = world.region == "Forest" || world.region == "Forest Camp" ||
+                    world.region == "Safari" || world.region == "Safari Lodge" ||
+                    world.region == "Animal Rescue Center" || world.region == "Dinosaur Valley"
+            if (!forest) return
+
+            val horizon = h * .59f
+            val seed = abs(world.id * 29 + worldSceneId * 11)
+            val drift = sin(seed * .17 + frame / 520.0).toFloat()
+
+            // Depth-scaled trunks and crowns form a natural forest corridor.
+            val count = when (renderQuality.level()) { 0 -> 7; 1 -> 9; 2 -> 11; else -> 13 }
+            for (i in 0 until count) {
+                val side = if (i % 2 == 0) -1f else 1f
+                val t = .08f + ((i * 17 + seed) % 72) / 100f
+                val x0 = if (side < 0f) w * (.02f + .34f * t) else w * (.98f - .34f * t)
+                val x = x0 + drift * (5f + 13f * t)
+                val y = horizon + (h - horizon) * (.18f + .56f * t)
+                val tw = 3f + 9f * t
+                val th = 26f + 105f * t
+                paint.color = if (i % 3 == 0) Color.rgb(73,61,43) else Color.rgb(91,69,45)
+                c.drawRoundRect(RectF(x-tw,y-th,x+tw,y+8f),tw,tw,paint)
+                paint.color = if (i % 2 == 0) Color.rgb(28,91,50) else Color.rgb(39,112,57)
+                val crown = 18f + 34f * t
+                c.drawCircle(x-crown*.55f,y-th-crown*.35f,crown,paint)
+                c.drawCircle(x+crown*.25f,y-th-crown*.55f,crown*1.12f,paint)
+                c.drawCircle(x+crown*.70f,y-th,crown*.72f,paint)
+            }
+
+            // A shallow branch track is visible far ahead; it is scenery, not a
+            // second control route.
+            val branch = Path()
+            branch.moveTo(w*.47f,horizon+2f)
+            branch.cubicTo(w*(.43f+drift*.025f),h*.63f,w*(.30f+drift*.045f),h*.69f,w*(.17f+drift*.07f),h*.76f)
+            branch.lineTo(w*.24f,h*.77f)
+            branch.cubicTo(w*(.38f+drift*.045f),h*.69f,w*(.48f+drift*.025f),h*.64f,w*.53f,horizon+4f)
+            branch.close()
+            paint.color = Color.rgb(102,86,64)
+            c.drawPath(branch,paint)
+            paint.color = Color.argb(105,220,205,168)
+            paint.strokeWidth = 1.5f
+            for (i in 1..5) {
+                val t = i / 6f
+                val y = horizon + h*.18f*t
+                val x = w*(.49f-.30f*t+drift*.02f)
+                c.drawLine(x-7f*t,y,x+11f*t,y+1.5f,paint)
+            }
+        }
         private fun drawRoad(c: Canvas, w: Float, h: Float, world: SmartScene) {
             // A deterministic road generator creates many distinct road families while
             // keeping the renderer asset-light: urban boulevard, highway, village road,
