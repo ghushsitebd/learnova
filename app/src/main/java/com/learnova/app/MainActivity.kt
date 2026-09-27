@@ -485,12 +485,167 @@ class MainActivity : AppCompatActivity() {
             c.drawRect(x+7f*s,y-52f*s,x+75f*s,y-40f*s,paint)
         }
 
-        private fun drawVillageWorld(c:Canvas,w:Float,h:Float,g:Float,seed:Int){
-            for(i in 0..5){ val x=w*(0.03f+i*.18f); drawBuilding(c,x,g+4f,105f,55f+(i%3)*12f,Color.rgb(188,151,103),Color.rgb(132,91,58)); drawTree(c,x+105f,g+4f,.72f,seed+i) }
-            for(i in 0..2) drawShop(c,w*(.12f+i*.34f),g+8f,.72f,seed+i)
-            paint.color=Color.rgb(92,150,91); c.drawOval(RectF(w*.60f,g+18f,w*.94f,g+75f),paint)
-            paint.color=Color.rgb(110,177,201); c.drawOval(RectF(w*.65f,g+28f,w*.88f,g+58f),paint)
-            for(i in 0..4) drawPerson(c,w*(.15f+i*.17f),g+18f,0.7f,if(running)sin(frame/8.0).toFloat()*2f else 0f)
+        private fun drawVillageWorld(c: Canvas, w: Float, h: Float, g: Float, seed: Int) {
+            // Bangladesh-inspired village composition: raised homesteads, courtyards,
+            // ponds, crops, bamboo fencing, livestock sheds and small roadside shops.
+            // Everything is procedural so the APK stays small and scenes can vary.
+            val phase = if (running) frame * 0.035f else 0f
+
+            // Distant rice/crop plots.
+            paint.color = Color.rgb(103, 160, 69)
+            for (i in 0..5) {
+                val left = w * (0.01f + i * 0.10f)
+                val top = g - 2f + (i % 2) * 10f
+                c.drawRect(left, top, left + w * 0.085f, g + 34f, paint)
+                paint.color = Color.rgb(137, 178, 72)
+                for (r in 0..3) {
+                    val x = left + 8f + r * w * 0.019f
+                    c.drawLine(x, top + 5f, x + 3f, top - 4f, paint)
+                }
+                paint.color = Color.rgb(103, 160, 69)
+            }
+
+            // Raised homesteads with varied local house forms.
+            val houseX = floatArrayOf(.05f, .30f, .55f, .78f)
+            for (i in houseX.indices) {
+                val x = w * houseX[i]
+                val width = w * (0.16f + ((seed + i) and 1) * 0.025f)
+                val body = when (i % 3) {
+                    0 -> Color.rgb(181, 151, 112)
+                    1 -> Color.rgb(197, 180, 151)
+                    else -> Color.rgb(164, 173, 167)
+                }
+                val roof = when (i % 2) {
+                    0 -> Color.rgb(113, 78, 52)
+                    else -> Color.rgb(92, 93, 82)
+                }
+                // Raised earth plinth.
+                paint.color = Color.rgb(144, 108, 69)
+                c.drawOval(RectF(x - 8f, g - 2f, x + width + 10f, g + 17f), paint)
+                drawBuilding(c, x, g + 3f, width, 54f + (i % 2) * 10f, body, roof)
+                drawBambooFence(c, x - 12f, g + 8f, width + 24f, 30f)
+                drawTree(c, x + width * .78f, g + 5f, .52f + (i % 3) * .08f, seed + i)
+            }
+
+            // Courtyard / kitchen / cowshed details.
+            for (i in 0..2) {
+                val x = w * (.22f + i * .27f)
+                paint.color = Color.rgb(164, 126, 79)
+                c.drawRect(x, g + 4f, x + 42f, g + 34f, paint)
+                paint.color = Color.rgb(106, 79, 51)
+                c.drawRect(x + 4f, g - 8f, x + 38f, g + 5f, paint)
+                drawCow(c, x + 21f, g + 1f, .42f)
+            }
+
+            // Village pond with bank, water reflection and a simple ghat.
+            val px = w * .58f
+            val py = g + 22f
+            paint.color = Color.rgb(87, 127, 68)
+            c.drawOval(RectF(px - 10f, py - 8f, w * .98f, py + 68f), paint)
+            paint.color = Color.rgb(71, 145, 171)
+            c.drawOval(RectF(px, py, w * .96f, py + 53f), paint)
+            paint.color = Color.argb(90, 235, 250, 250)
+            for (i in 0..4) {
+                val x = px + 22f + i * w * .055f + sin(phase + i).toFloat() * 3f
+                c.drawLine(x, py + 14f + i * 7f, x + 22f, py + 14f + i * 7f, paint)
+            }
+            paint.color = Color.rgb(128, 91, 57)
+            c.drawRect(px + 22f, py + 48f, px + 75f, py + 55f, paint)
+            for (i in 0..2) c.drawRect(px + 26f + i * 16f, py + 55f, px + 38f + i * 16f, py + 61f, paint)
+
+            // Banana/coconut/betel-nut cluster makes the homestead silhouette distinct.
+            for (i in 0..5) {
+                val x = w * (.08f + i * .16f)
+                val y = g - 6f
+                drawPalmTree(c, x, y, .48f + (i % 2) * .10f, phase + i)
+            }
+
+            // Bamboo bridge / foot crossing near the pond.
+            paint.color = Color.rgb(151, 112, 65)
+            c.drawRoundRect(RectF(w * .48f, g + 73f, w * .68f, g + 81f), 4f, 4f, paint)
+            paint.strokeWidth = 2f
+            for (i in 0..5) c.drawLine(w * (.49f + i * .035f), g + 72f, w * (.49f + i * .035f), g + 82f, paint)
+
+            // Roadside tea/grocery stall.
+            val sx = w * .08f
+            drawShop(c, sx, g + 8f, .72f, seed + 20)
+            paint.color = Color.rgb(235, 184, 65)
+            c.drawCircle(sx + 34f, g - 12f, 7f, paint)
+            c.drawCircle(sx + 54f, g - 12f, 7f, paint)
+
+            // People, bicycles and poultry give the scene life without crowding it.
+            for (i in 0..4) {
+                val x = w * (.18f + i * .16f)
+                drawPerson(c, x, g + 24f, .55f, sin(phase * 3f + i).toFloat() * 2f)
+                if (i % 2 == 0) drawBicycle(c, x + 18f, g + 22f, .45f, phase + i)
+            }
+            for (i in 0..3) drawChicken(c, w * (.36f + i * .08f), g + 31f, .32f, phase + i)
+
+            // A narrow irrigation channel connects the field to the pond.
+            paint.color = Color.rgb(72, 135, 156)
+            c.drawRect(w * .40f, g + 24f, w * .47f, h, paint)
+            paint.color = Color.argb(70, 235, 250, 255)
+            c.drawLine(w * .415f, g + 28f, w * .415f, h, paint)
+        }
+
+        private fun drawBambooFence(c: Canvas, x: Float, y: Float, width: Float, height: Float) {
+            paint.color = Color.rgb(145, 105, 58)
+            paint.strokeWidth = 2.2f
+            var px = x
+            while (px <= x + width) {
+                c.drawLine(px, y - height * .35f, px, y + height * .65f, paint)
+                px += 10f
+            }
+            c.drawLine(x, y, x + width, y, paint)
+            c.drawLine(x, y + height * .45f, x + width, y + height * .45f, paint)
+        }
+
+        private fun drawPalmTree(c: Canvas, x: Float, y: Float, s: Float, phase: Float) {
+            paint.color = Color.rgb(112, 82, 45)
+            c.drawRoundRect(RectF(x - 4f*s, y - 76f*s, x + 4f*s, y), 3f, 3f, paint)
+            paint.color = Color.rgb(37, 122, 61)
+            for (i in 0..5) {
+                val a = -1.15f + i * .46f
+                val sway = sin(phase + i).toFloat() * 2.5f
+                val ex = x + cos(a) * 29f * s + sway
+                val ey = y - 78f*s + sin(a) * 20f*s
+                c.drawLine(x, y - 78f*s, ex, ey, paint)
+                c.drawCircle(ex, ey, 7f*s, paint)
+            }
+        }
+
+        private fun drawCow(c: Canvas, x: Float, y: Float, s: Float) {
+            paint.color = Color.rgb(221, 214, 191)
+            c.drawOval(RectF(x - 25f*s, y - 14f*s, x + 20f*s, y + 8f*s), paint)
+            c.drawCircle(x + 22f*s, y - 8f*s, 9f*s, paint)
+            paint.color = Color.rgb(84, 67, 53)
+            c.drawCircle(x + 24f*s, y - 10f*s, 2f*s, paint)
+            paint.strokeWidth = 2f*s
+            c.drawLine(x - 13f*s, y + 5f*s, x - 13f*s, y + 15f*s, paint)
+            c.drawLine(x + 7f*s, y + 5f*s, x + 7f*s, y + 15f*s, paint)
+        }
+
+        private fun drawBicycle(c: Canvas, x: Float, y: Float, s: Float, phase: Float) {
+            paint.color = Color.rgb(55, 70, 76)
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 2f*s
+            c.drawCircle(x - 10f*s, y, 9f*s, paint)
+            c.drawCircle(x + 12f*s, y, 9f*s, paint)
+            c.drawLine(x - 10f*s, y, x, y - 9f*s, paint)
+            c.drawLine(x, y - 9f*s, x + 12f*s, y, paint)
+            c.drawLine(x, y - 9f*s, x + 5f*s, y - 14f*s, paint)
+            paint.style = Paint.Style.FILL
+            if (running) c.drawCircle(x + sin(phase).toFloat() * 2f, y - 14f*s, 1.5f*s, paint)
+        }
+
+        private fun drawChicken(c: Canvas, x: Float, y: Float, s: Float, phase: Float) {
+            paint.color = Color.rgb(239, 233, 211)
+            c.drawOval(RectF(x - 9f*s, y - 7f*s, x + 8f*s, y + 5f*s), paint)
+            c.drawCircle(x + 7f*s, y - 5f*s, 4f*s, paint)
+            paint.color = Color.rgb(201, 55, 44)
+            c.drawCircle(x + 9f*s, y - 7f*s, 2f*s, paint)
+            paint.strokeWidth = 1.5f
+            c.drawLine(x - 3f*s, y + 4f*s, x - 3f*s + sin(phase).toFloat()*2f, y + 9f*s, paint)
         }
 
         private fun drawMarketWorld(c:Canvas,w:Float,h:Float,g:Float,seed:Int){
