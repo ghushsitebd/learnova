@@ -44,6 +44,10 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     // Floating origin keeps Filament coordinates close to the camera during very long sessions.
     private var renderOriginDistance = 0.0
     private var vehicleSpeed = 0.0
+    private var previousVehicleSpeed = 0.0
+    private var vehicleAcceleration = 0.0
+    private var chassisPitch = 0.0
+    private var chassisRoll = 0.0
     private var lastFrameNanos = 0L
     // Shared render-loop timestep keeps vehicle physics deterministic across devices.
     private var frameDeltaSeconds = 1.0 / 60.0
@@ -149,7 +153,10 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 val requestedSpeed = if (driving) targetSpeed else 0.0
                 val response = if (driving) 2.8 else 6.5
                 val blend = (response * dt).coerceAtMost(1.0)
+                previousVehicleSpeed = vehicleSpeed
                 vehicleSpeed += (requestedSpeed - vehicleSpeed) * blend
+                vehicleAcceleration = ((vehicleSpeed - previousVehicleSpeed) / dt)
+                    .coerceIn(-8.0, 8.0)
                 driveTime += dt * (if (vehicleSpeed > 0.02) 1.0 else 0.0)
                 vehicleDistance += vehicleSpeed * dt
 
@@ -658,6 +665,15 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             1.56
         ).coerceIn(-0.10, 0.10).toFloat()
 
+        val longitudinalWeightTransfer = (-vehicleAcceleration * 0.012)
+            .coerceIn(-0.065, 0.065)
+        val lateralWeightTransfer = (roadYawRate * vehicleSpeed * 0.0028)
+            .coerceIn(-0.055, 0.055)
+        chassisPitch += ((axlePitch + longitudinalWeightTransfer) - chassisPitch) *
+            (dt * 8.0).coerceAtMost(1.0)
+        chassisRoll += ((contactRoll + lateralWeightTransfer) - chassisRoll) *
+            (dt * 9.0).coerceAtMost(1.0)
+
         val averageSuspension = if (contactCompression.isNotEmpty()) {
             contactCompression.values.average()
         } else 0.0
@@ -680,10 +696,13 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                     rotation(Float3(0.0f, 1.0f, 0.0f), road.yaw) *
                     rotation(
                         Float3(0.0f, 0.0f, 1.0f),
-                        (road.bank + contactRoll + roadYawRate * 0.018)
-                            .coerceIn(-0.14, 0.14).toFloat()
+                        (road.bank + chassisRoll + roadYawRate * 0.010)
+                            .coerceIn(-0.16, 0.16).toFloat()
                     ) *
-                    rotation(Float3(1.0f, 0.0f, 0.0f), axlePitch)
+                    rotation(
+                        Float3(1.0f, 0.0f, 0.0f),
+                        chassisPitch.coerceIn(-0.18, 0.18).toFloat()
+                    )
                 tm.setTransform(tm.getInstance(vehicleRootEntity), chassis.toFloatArray())
             }
 
@@ -693,6 +712,10 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                     if (!tm.hasComponent(entity)) continue
 
                     val isFrontWheel = frontWheelEntities.contains(entity)
+                    val speedRatio = (vehicleSpeed / targetSpeed.coerceAtLeast(0.1))
+                        .coerceIn(0.0, 1.0)
+                    val steeringLimit = (0.58 - 0.20 * speedRatio)
+                        .coerceIn(0.34, 0.58)
                     val steeringTarget = kotlin.math.atan(
                         2.30 * (
                             kotlin.math.atan2(
@@ -702,7 +725,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                         )
                     )
                     val steerAngle = if (isFrontWheel) {
-                        steeringTarget.coerceIn(-0.55, 0.55).toFloat()
+                        steeringTarget.coerceIn(-steeringLimit, steeringLimit).toFloat()
                     } else 0.0f
 
                     val wheelSteering = if (isFrontWheel) {
@@ -781,6 +804,10 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         started = false
         lastFrameNanos = 0L
         vehicleSpeed = 0.0
+        previousVehicleSpeed = 0.0
+        vehicleAcceleration = 0.0
+        chassisPitch = 0.0
+        chassisRoll = 0.0
         previousRoadYaw = 0.0
         roadYawRate = 0.0
         cameraBank = 0.0
