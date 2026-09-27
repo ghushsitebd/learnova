@@ -120,6 +120,11 @@ jobs:
 
           echo "Signing keystore normalized successfully."
 
+      - name: Validate vehicle asset contracts
+        run: |
+          set -euo pipefail
+          python3 tools/validate_vehicle_assets.py
+
       - name: Build Release APK and AAB
         run: |
           set -euo pipefail
