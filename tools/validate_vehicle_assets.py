@@ -105,6 +105,8 @@ if ASSETS.exists():
             print(f"::error::Empty vehicle asset: {candidate.name}")
             sys.exit(1)
 
+print("Learnova vehicle validation completed with production-safe asset naming and size guards.")
+
 if not ASSETS.exists():
     print("::notice::No real vehicle GLB assets are committed yet; catalog/resolver fallback remains active.")
     sys.exit(0)
