@@ -39,6 +39,7 @@ internal class ProceduralRoadMesh(
     private var vertexBuffer: VertexBuffer? = null
     private var indexBuffer: IndexBuffer? = null
     private var lastCenter = Double.NaN
+    private var sourceRoadEntity = 0
 
     fun build(): Boolean {
         if (entity != 0) return true
@@ -84,6 +85,7 @@ internal class ProceduralRoadMesh(
             .castShadows(false)
             .build(engine, entity)
 
+        if (sourceRoadEntity != 0) scene.removeEntity(sourceRoadEntity)
         scene.addEntity(entity)
         vertexBuffer = vb
         indexBuffer = ib
@@ -172,6 +174,7 @@ internal class ProceduralRoadMesh(
             if (!rm.hasComponent(roadEntity)) continue
             val instance = rm.getInstance(roadEntity)
             if (rm.getPrimitiveCount(instance) <= 0) continue
+            sourceRoadEntity = roadEntity
             return rm.getMaterialInstanceAt(instance, 0)
         }
         return null
@@ -189,5 +192,6 @@ internal class ProceduralRoadMesh(
         vertexBuffer = null
         indexBuffer = null
         lastCenter = Double.NaN
+        sourceRoadEntity = 0
     }
 }
