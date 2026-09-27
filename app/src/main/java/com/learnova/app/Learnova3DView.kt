@@ -485,15 +485,17 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             if (vehicleRootEntity != 0 && baseRoot != null && tm.hasComponent(vehicleRootEntity)) {
                 val travel = vehicleDistance
                 val road = RoadSpline.sample(travel)
+                val suspensionBob = if (driving) kotlin.math.sin(travel * 4.2).toFloat() * 0.012f else 0f
                 val chassis = Mat4.of(*baseRoot) *
                         Mat4.of(
                             1f, 0f, 0f, road.x.toFloat(),
-                            0f, 1f, 0f, if (driving) kotlin.math.sin(travel * 4.2).toFloat() * 0.012f else 0f,
+                            0f, 1f, 0f, road.y.toFloat() + suspensionBob,
                             0f, 0f, 1f, road.z.toFloat(),
                             0f, 0f, 0f, 1f
                         ) *
                         rotation(Float3(0.0f, 1.0f, 0.0f), road.yaw) *
-                        rotation(Float3(0.0f, 0.0f, 1.0f), road.bank)
+                        rotation(Float3(0.0f, 0.0f, 1.0f), road.bank) *
+                        rotation(Float3(1.0f, 0.0f, 0.0f), road.grade)
                 tm.setTransform(tm.getInstance(vehicleRootEntity), chassis.toFloatArray())
             }
 
@@ -532,8 +534,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         val cameraZ = road.z - 6.8
 
         viewer.camera.lookAt(
-            cameraX, 2.82 + bodyBob, cameraZ,
-            lookAhead.x, 1.02, lookAhead.z,
+            cameraX, 2.82 + lookAhead.y + bodyBob, cameraZ,
+            lookAhead.x, lookAhead.y + 1.02, lookAhead.z,
             0.0, 1.0, 0.0
         )
 
