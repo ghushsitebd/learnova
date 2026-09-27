@@ -17,8 +17,10 @@ class LearnovaVoice(context: Context) : TextToSpeech.OnInitListener {
     override fun onInit(status: Int) {
         if (status != TextToSpeech.SUCCESS) return
         ready = true
-        tts.setSpeechRate(0.78f)
-        tts.setPitch(1.12f)
+        tts.setSpeechRate(0.72f)
+        // Child-friendly delivery: slightly brighter pitch and slower pacing.
+        // The actual voice remains the device TTS voice; no bundled voice engine is required.
+        tts.setPitch(1.18f)
         
         pendingText?.let {
             speak(it, pendingLocale)
