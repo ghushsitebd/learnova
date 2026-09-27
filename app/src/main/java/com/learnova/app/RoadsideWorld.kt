@@ -117,8 +117,23 @@ internal class RoadsideWorld(
                     3 -> 1.35 * scale
                     else -> 1.6 * scale
                 }
-                val groundY = roadsideGroundHeight(d, sample.bank.toDouble(), side * sideSign, biome, sample.y.toDouble())
-                addProp(vertices, indices, x, groundY, z, yaw.toDouble(), w, h, type)
+                    val groundY = roadsideGroundHeight(
+                    d,
+                    sample.bank.toDouble(),
+                    side * sideSign,
+                    biome,
+                    sample.y.toDouble()
+                )
+                val propBank = terrainSlopeAt(
+                    d,
+                    side * sideSign,
+                    biome,
+                    sample.bank.toDouble()
+                )
+                addProp(
+                    vertices, indices, x, groundY, z,
+                    yaw.toDouble(), w, h, type, propBank
+                )
                 vertexCount += 8
                 indexCount += 36
             }
@@ -181,7 +196,7 @@ internal class RoadsideWorld(
         vertices: ByteBuffer,
         indices: ByteBuffer,
         x: Double, y: Double, z: Double, yaw: Double,
-        width: Double, height: Double, type: Int
+        width: Double, height: Double, type: Int, bank: Double
     ) {
         val base = currentVertex(vertices)
         val depth = width * when (type) { 3 -> 1.8; 4,5 -> 1.5; else -> 0.9 }
@@ -190,6 +205,10 @@ internal class RoadsideWorld(
         val ground = y + when (type) { 3 -> 0.02; else -> 0.0 }
         val cx = cos(yaw); val cz = -sin(yaw)
         val sx = sin(yaw); val sz = cos(yaw)
+        // Props follow the local verge slope instead of standing perfectly
+        // vertical on a banked/uneven shoulder.
+        val bankRotation = rotation2D(bank);
+
 
         // Give each roadside family a recognisable silhouette while retaining
         // one fixed 8-vertex/36-index budget. Trees taper toward the crown,
@@ -217,14 +236,40 @@ internal class RoadsideWorld(
         )
         for (c in corners) {
             val lx = c[0]; val lz = c[2]
+            val slopedY = c[1] * height + lx * bankRotation.second
+            val slopedLateral = lz * bankRotation.first
+
             putVertex(vertices,
                 (x + lx*cx - lz*sx).toFloat(),
-                (ground + c[1]*height).toFloat(),
-                (z + lx*cz + lz*sz).toFloat(),
+                (ground + slopedY).toFloat(),
+                (z + (lx*cx - slopedLateral*sx)).toFloat(),
                 yaw.toFloat(), 0f, ((c[0]+halfW)/(2*halfW)).toFloat(), c[2].toFloat())
         }
         val faces = intArrayOf(0,1,2,0,2,3,4,6,5,4,7,6,0,4,5,0,5,1,1,5,6,1,6,2,2,6,7,2,7,3,4,0,3,4,3,7)
         for (i in faces) indices.putShort((base+i).toShort())
+    }
+
+
+    private fun rotation2D(angle: Double): Pair<Double, Double> =
+        Pair(cos(angle), sin(angle))
+
+    private fun terrainSlopeAt(
+        distance: Double,
+        lateral: Double,
+        biome: WorldDirector.Biome,
+        bank: Double
+    ): Double {
+        val slope = when (biome) {
+            WorldDirector.Biome.MOUNTAIN -> sin(distance * 0.040) * 0.10
+            WorldDirector.Biome.DESERT -> sin(distance * 0.055) * 0.06
+            WorldDirector.Biome.PLATEAU -> sin(distance * 0.035) * 0.05
+            WorldDirector.Biome.FOREST -> sin(distance * 0.075) * 0.035
+            WorldDirector.Biome.VILLAGE -> sin(distance * 0.065) * 0.025
+            WorldDirector.Biome.MARKET -> sin(distance * 0.090) * 0.015
+            WorldDirector.Biome.RIVER -> sin(distance * 0.060) * 0.018
+            WorldDirector.Biome.COAST -> sin(distance * 0.050) * 0.020
+        }
+        return (bank * 0.55 + slope * if (lateral < 0.0) -1.0 else 1.0).coerceIn(-0.12, 0.12)
     }
 
     private fun currentVertex(vertices: ByteBuffer): Int = vertices.position() / VERTEX_STRIDE
