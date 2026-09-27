@@ -12,7 +12,7 @@ def releaseKeyPassword = System.getenv("LEARNOVA_KEY_PASSWORD")
 
 android {
     namespace 'com.learnova.app'
-    compileSdk 37
+    compileSdk 36
 
     defaultConfig {
         applicationId 'com.learnova.app'
@@ -61,7 +61,7 @@ dependencies {
     implementation 'androidx.core:core-ktx:1.15.0'
     implementation 'androidx.appcompat:appcompat:1.7.0'
     // High-fidelity 3D/PBR renderer. Filament supports Vulkan with GLES fallback.
-    implementation 'com.google.android.filament:filament-android:1.76.1'
-    implementation 'com.google.android.filament:gltfio-android:1.76.1'
-    implementation 'com.google.android.filament:filament-utils-android:1.76.1'
+    implementation 'com.google.android.filament:filament-android:1.75.0'
+    implementation 'com.google.android.filament:gltfio-android:1.75.0'
+    implementation 'com.google.android.filament:filament-utils-android:1.75.0'
 }
