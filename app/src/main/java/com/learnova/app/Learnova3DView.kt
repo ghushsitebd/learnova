@@ -224,13 +224,15 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 if (!driving) lateralOffset *= (1.0 - (dt * 2.8).coerceAtMost(0.9))
                 lateralOffset = lateralOffset.coerceIn(-laneLimit, laneLimit)
 
-                // The camera follows the vehicle; the world itself is never
-                // animated backward. Procedural meshes are regenerated around the
-                // vehicle only to extend the visible horizon.
-                updateDriveScene()
-                if (kotlin.math.abs(vehicleDistance - renderOriginDistance) >= 4.0) {
+                // The vehicle owns forward motion. It now travels through a
+                // real local world coordinate window instead of being pinned to the
+                // origin every few metres. Rebase only after a long local segment;
+                // this preserves actual vehicle translation while still protecting
+                // floating-point depth precision on very long journeys.
+                if (kotlin.math.abs(vehicleDistance - renderOriginDistance) >= 180.0) {
                     renderOriginDistance = vehicleDistance
                 }
+                updateDriveScene()
                 proceduralRoad?.update(vehicleDistance)
                 terrainMesh?.update(vehicleDistance)
                 roadsideWorld?.update(vehicleDistance)
