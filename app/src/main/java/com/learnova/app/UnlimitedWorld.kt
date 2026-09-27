@@ -16,6 +16,15 @@ data class SmartScene(
     val activity: String
 )
 
+data class LevelInfo(
+    val number: Int,
+    val chapter: Int,
+    val stage: Int,
+    val targetDistance: Float,
+    val difficulty: String,
+    val lessonType: String
+)
+
 object LearnovaUnlimitedWorld {
     private val regions = listOf(
         "Forest","River","Mountain","Safari","Ocean","Island","Desert","Arctic",
@@ -36,8 +45,6 @@ object LearnovaUnlimitedWorld {
         "colors and shapes","science discovery","memory challenge","vehicle adventure"
     )
 
-    // Procedural IDs allow the world to keep expanding without storing thousands
-    // of duplicated scene records inside the APK.
     fun scene(id: Int): SmartScene {
         val safe = if (id < 1) 1 else id
         return SmartScene(
@@ -55,9 +62,32 @@ object LearnovaUnlimitedWorld {
         return (0 until count).map { scene(start + it) }
     }
 
-    // Lightweight catalog: names and learning roles stay in code; visuals are
-    // rendered procedurally so adding vehicles does not inflate the APK with
-    // large image/model files.
+    // 1000+ procedural levels. Each level has a small, child-friendly goal.
+    // The rules become gradually richer without requiring complicated controls.
+    fun level(number: Int): LevelInfo {
+        val safe = number.coerceAtLeast(1)
+        val chapter = ((safe - 1) / 25) + 1
+        val stage = ((safe - 1) % 25) + 1
+        val target = (0.035f + (stage - 1) * 0.0018f + (chapter - 1) * 0.0007f)
+            .coerceAtMost(0.095f)
+        val difficulty = when {
+            safe <= 25 -> "Starter"
+            safe <= 100 -> "Explorer"
+            safe <= 250 -> "Adventurer"
+            safe <= 500 -> "Discovery"
+            safe <= 750 -> "Advanced"
+            else -> "Master"
+        }
+        val lessonType = when {
+            safe <= 26 -> "English alphabet"
+            safe <= 52 -> "Arabic letters"
+            safe <= 68 -> "Arabic sounds"
+            safe <= 100 -> "Quran learning"
+            else -> activities[(safe * 13) % activities.size]
+        }
+        return LevelInfo(safe, chapter, stage, target, difficulty, lessonType)
+    }
+
     val vehicles = listOf(
         VehicleEntry(1,"Family Car","car","road safety"),
         VehicleEntry(2,"Sport Car","car","colors and shapes"),
