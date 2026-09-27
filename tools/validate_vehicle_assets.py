@@ -306,3 +306,5 @@ if ASSETS.exists():
 # CI validation 406: asset size guard.
 
 # CI validation 407: filename safety validation.
+
+# CI validation 401: asset inventory determinism.
