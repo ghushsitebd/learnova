@@ -232,3 +232,5 @@ if found == 0:
 # Engineering checkpoint 296: keep CI asset-contract validation reproducible.
 
 # Engineering checkpoint 297: keep CI asset-contract validation reproducible.
+
+# Engineering checkpoint 298: keep CI asset-contract validation reproducible.
