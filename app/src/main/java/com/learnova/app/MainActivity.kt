@@ -445,8 +445,9 @@ class MainActivity : AppCompatActivity() {
             // lane, shoulders, reflectors and surface texture expand toward the camera.
             val horizonY = h * 0.60f
             val bottomY = h
-            val curve = sin(frame / 120.0).toFloat()
-            val bend = curve * w * 0.065f
+            val roadPhase = worldSceneId * 0.73f
+            val curve = (sin(roadPhase + frame / 900.0) * 0.72 + sin(roadPhase * 0.47 + frame / 1450.0) * 0.28).toFloat()
+            val bend = curve * w * 0.085f
 
             fun roadCenter(t: Float): Float =
                 w * 0.50f + bend * (t * t) + laneOffset * w * t * 0.18f
@@ -606,22 +607,51 @@ class MainActivity : AppCompatActivity() {
             val wrappedX = ((x + travel) % (wSafe(c) + 180f)) - 90f
             val hop = if (running) sin((frame / 5.5) + x * 0.01).toFloat() * 2.5f else 0f
             val bobbedY = y + hop
+
+            // Depth + species variation: one lightweight renderer can represent a
+            // large catalog without loading hundreds of megabytes of textures.
+            val seed = abs((x.toInt() * 31L + frame / 18L).toInt())
+            val species = LearnovaUnlimitedWorld.animal(seed % 1000 + 1)
+            val depth = ((bobbedY / hSafe(c)).coerceIn(0.58f, 0.92f) - 0.58f) / 0.34f
+            val depthScale = 0.62f + depth * 0.48f
+            val scale = depthScale * species.scale
+            val shadowWidth = 22f + 28f * scale
+
+            paint.color = Color.argb((45f + depth * 45f).toInt(), 0, 0, 0)
+            c.drawOval(
+                RectF(
+                    wrappedX - shadowWidth,
+                    bobbedY + 18f * scale,
+                    wrappedX + shadowWidth,
+                    bobbedY + 25f * scale
+                ),
+                paint
+            )
+
+            c.save()
+            c.translate(wrappedX, bobbedY)
+            c.scale(scale, scale)
+            val localX = 0f
+            val localY = 0f
             when (kind) {
-                "elephant" -> drawElephant(c, wrappedX, bobbedY)
-                "bear" -> drawBear(c, wrappedX, bobbedY)
-                "deer" -> drawDeer(c, wrappedX, bobbedY)
-                "fox" -> drawFox(c, wrappedX, bobbedY)
-                "bird" -> drawBird(c, wrappedX, bobbedY - if (running) abs(sin(frame / 6.0).toFloat()) * 18f else 0f)
-                "giraffe" -> drawGiraffe(c, wrappedX, bobbedY)
-                "zebra" -> drawZebra(c, wrappedX, bobbedY)
-                "lion" -> drawLion(c, wrappedX, bobbedY)
-                "fish" -> drawFish(c, wrappedX, bobbedY)
-                "crocodile" -> drawCrocodile(c, wrappedX, bobbedY)
-                "penguin" -> drawPenguin(c, wrappedX, bobbedY)
-                "dinosaur" -> drawDinosaur(c, wrappedX, bobbedY)
-                "dolphin" -> drawDolphin(c, wrappedX, bobbedY)
+                "elephant" -> drawElephant(c, localX, localY)
+                "bear" -> drawBear(c, localX, localY)
+                "deer" -> drawDeer(c, localX, localY)
+                "fox" -> drawFox(c, localX, localY)
+                "bird" -> drawBird(c, localX, localY - if (running) abs(sin(frame / 6.0).toFloat()) * 18f else 0f)
+                "giraffe" -> drawGiraffe(c, localX, localY)
+                "zebra" -> drawZebra(c, localX, localY)
+                "lion" -> drawLion(c, localX, localY)
+                "fish" -> drawFish(c, localX, localY)
+                "crocodile" -> drawCrocodile(c, localX, localY)
+                "penguin" -> drawPenguin(c, localX, localY)
+                "dinosaur" -> drawDinosaur(c, localX, localY)
+                "dolphin" -> drawDolphin(c, localX, localY)
             }
+            c.restore()
         }
+
+        private fun hSafe(c: Canvas): Float = c.height.toFloat()
 
         private fun wSafe(c: Canvas): Float = c.width.toFloat()
 
