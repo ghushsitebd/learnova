@@ -71,6 +71,10 @@ if any(int(i) < 1 or int(i) > 100 for i, _ in keys):
     print("::error::Vehicle IDs must stay within the 1..100 production range.")
     sys.exit(1)
 
+if len(text.encode("utf-8")) > 512 * 1024:
+    print("::error::Vehicle catalog source unexpectedly exceeds 512 KiB.")
+    sys.exit(1)
+
 if not ASSETS.exists():
     print("::notice::No real vehicle GLB assets are committed yet; catalog/resolver fallback remains active.")
     sys.exit(0)
