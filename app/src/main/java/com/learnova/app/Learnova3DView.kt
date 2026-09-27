@@ -60,6 +60,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var vehicleRootBaseTransform: FloatArray? = null
     private var sunEntity = 0
     private var proceduralRoad: ProceduralRoadMesh? = null
+    private var terrainMesh: LearnovaTerrainMesh? = null
     private var activeVehicle: VehicleDefinition = VehicleCatalog.byId(1)
     private var targetSpeed = activeVehicle.targetSpeed
     private var wheelRadius = activeVehicle.wheelRadius
@@ -105,6 +106,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         // than crashing the entire app before the child can reach the learning screen.
         viewer.asset?.let { asset ->
             proceduralRoad = ProceduralRoadMesh(viewer.engine, viewer.scene, asset).also { it.build() }
+            terrainMesh = LearnovaTerrainMesh(viewer.engine, viewer.scene, asset).also { it.build() }
         }
         configureRealisticSunLight()
         viewer.scene.skybox = Skybox.Builder()
@@ -156,6 +158,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                     renderOriginDistance = vehicleDistance
                 }
                 proceduralRoad?.update(vehicleDistance)
+                terrainMesh?.update(vehicleDistance)
                 updateVehicleMechanics()
                 vehicleInteraction.update(dt.toFloat(), interactionProfile)
                 updateVehicleInteractionVisuals()
@@ -358,6 +361,10 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 loadedVehicleAssetKey = requestedKey
 
                 proceduralRoad?.destroy()
+                terrainMesh?.destroy()
+                terrainMesh = viewer.asset?.let { asset ->
+                    LearnovaTerrainMesh(viewer.engine, viewer.scene, asset).also { it.build() }
+                }
                 proceduralRoad = viewer.asset?.let {
                     ProceduralRoadMesh(viewer.engine, viewer.scene, it).also { road -> road.build() }
                 }
@@ -783,6 +790,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         frameCallback = null
         proceduralRoad?.destroy()
         proceduralRoad = null
+        terrainMesh?.destroy()
+        terrainMesh = null
         if (sunEntity != 0) {
             viewer.scene.removeEntity(sunEntity)
             viewer.engine.lightManager.destroy(sunEntity)
