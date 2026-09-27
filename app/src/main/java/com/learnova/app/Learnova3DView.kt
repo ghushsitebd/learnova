@@ -7,6 +7,8 @@ import android.view.SurfaceView
 import android.widget.FrameLayout
 import com.google.android.filament.utils.Float3
 import com.google.android.filament.utils.ModelViewer
+import com.google.android.filament.utils.Mat4
+import com.google.android.filament.utils.rotation
 import java.io.ByteArrayInputStream
 import java.util.zip.GZIPInputStream
 import java.nio.ByteBuffer
@@ -29,6 +31,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var driving = false
     private var driveTime = 0.0
     private var vehicleDistance = 0.0
+    private var wheelEntities = IntArray(0)
+    private val wheelBaseTransforms = HashMap<Int, FloatArray>()
 
     init {
         addView(
@@ -39,6 +43,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
         val modelBytes = decodeModel()
         viewer.loadModelGlb(ByteBuffer.wrap(modelBytes))
+        cacheWheelEntities()
 
         viewer.camera.lookAt(
             4.8, 2.8, 6.8,
@@ -72,6 +77,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                     vehicleDistance += 0.42 / 60.0
                 }
                 updateDriveScene()
+                updateVehicleMechanics()
                 viewer.render(time)
                 choreographer.postFrameCallback(frameCallback)
             }
@@ -80,6 +86,67 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     }
 
     fun setDriving(value: Boolean) { driving = value }
+
+
+    /**
+     * Real-time vehicle mechanics layer.
+     *
+     * Wheel nodes are discovered from glTF names rather than hard-coded entity ids.
+     * If a future vehicle asset uses FL/FR/RL/RR (or Wheel_*) names, the same
+     * runtime automatically animates it without changing the game controller.
+     */
+    private fun cacheWheelEntities() {
+        val asset = viewer.asset ?: return
+        val names = arrayOf(
+            "Wheel_FL", "Wheel_FR", "Wheel_RL", "Wheel_RR",
+            "wheel_fl", "wheel_fr", "wheel_rl", "wheel_rr",
+            "FrontLeftWheel", "FrontRightWheel", "RearLeftWheel", "RearRightWheel"
+        )
+        val found = ArrayList<Int>()
+        for (name in names) {
+            val entity = asset.getFirstEntityByName(name)
+            if (entity != 0 && !found.contains(entity)) found.add(entity)
+        }
+        wheelEntities = found.toIntArray()
+        val tm = viewer.engine.transformManager
+        wheelBaseTransforms.clear()
+        for (entity in wheelEntities) {
+            if (tm.hasComponent(entity)) {
+                wheelBaseTransforms[entity] = tm.getTransform(tm.getInstance(entity), null)
+            }
+        }
+    }
+
+    private fun updateVehicleMechanics() {
+        if (wheelEntities.isEmpty()) return
+        val tm = viewer.engine.transformManager
+        val wheelAngle = (vehicleDistance * 3.8).toFloat()
+        val suspension = if (driving) {
+            kotlin.math.sin(vehicleDistance * 8.0).toFloat() * 0.025f
+        } else 0f
+
+        tm.openLocalTransformTransaction()
+        try {
+            for (entity in wheelEntities) {
+                val base = wheelBaseTransforms[entity] ?: continue
+                if (!tm.hasComponent(entity)) continue
+                val wheelRotation = rotation(
+                    wheelAngle,
+                    Float3(1.0f, 0.0f, 0.0f)
+                )
+                val bob = Mat4.of(
+                    1f, 0f, 0f, 0f,
+                    0f, 1f, 0f, suspension,
+                    0f, 0f, 1f, 0f,
+                    0f, 0f, 0f, 1f
+                )
+                val transform = bob * Mat4.of(*base) * wheelRotation
+                tm.setTransform(tm.getInstance(entity), transform.toFloatArray())
+            }
+        } finally {
+            tm.commitLocalTransformTransaction()
+        }
+    }
 
     private fun updateDriveScene() {
         // Camera follows a shallow spline so the road reads as a real curved route,
