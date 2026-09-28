@@ -128,8 +128,10 @@ jobs:
           PROFILE="${{ steps.locate_profile.outputs.profile }}"
           TARGET="app/src/release/generated/baselineProfiles/baseline-prof.txt"
           mkdir -p "$(dirname "$TARGET")"
-          cp "$PROFILE" "$TARGET"
-          if git diff --quiet -- "$TARGET"; then
+          if [ "$PROFILE" != "$TARGET" ]; then
+            cp "$PROFILE" "$TARGET"
+          fi
+          if git ls-files --error-unmatch "$TARGET" >/dev/null 2>&1 && git diff --quiet -- "$TARGET"; then
             echo "Baseline Profile unchanged; nothing to commit."
             exit 0
           fi
