@@ -1,10 +1,11 @@
 plugins {
     id 'com.android.application'
+    id 'androidx.baselineprofile'
 }
 
 def ciVersionCode = System.getenv("GITHUB_RUN_NUMBER")
 def buildVersionCode = ciVersionCode != null ? ciVersionCode.toInteger() : 2
-def buildVersionName = System.getenv("LEARNOVA_VERSION_NAME") ?: (ciVersionCode != null ? "1.1.${ciVersionCode}" : "1.1.0")
+def buildVersionName = System.getenv("LEARNOVA_VERSION_NAME") ?: (ciVersionCode != null ? "1.1." + ciVersionCode : "1.1.0")
 
 def releaseStorePassword = System.getenv("LEARNOVA_STORE_PASSWORD")
 def releaseKeyAlias = System.getenv("LEARNOVA_KEY_ALIAS")
@@ -66,4 +67,7 @@ dependencies {
     implementation 'com.google.android.filament:filament-android:1.75.0'
     implementation 'com.google.android.filament:gltfio-android:1.75.0'
     implementation 'com.google.android.filament:filament-utils-android:1.75.0'
+    implementation 'androidx.profileinstaller:profileinstaller:1.4.1'
+
+    baselineProfile project(':baseline-profile')
 }
