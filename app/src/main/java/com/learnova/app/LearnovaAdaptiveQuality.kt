@@ -4,7 +4,7 @@ import android.content.Context
 import android.os.Build
 import android.os.CpuHeadroomParams
 import android.os.GpuHeadroomParams
-import android.os.SystemHealthManager
+import android.os.health.SystemHealthManager
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
