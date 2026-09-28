@@ -104,7 +104,7 @@ class MainActivity : AppCompatActivity() {
         private val prefs: SharedPreferences = getSharedPreferences("learnova_progress", MODE_PRIVATE)
         private val renderQuality = LearnovaRenderQuality(this@MainActivity)
         private val masterySystem = LearnovaMasterySystem(prefs)
-        private val progressionSystem = LearnovaProgressionSystem(prefs)
+        private val progressionSystem = LearnovaProgressionSystem()
 
         private val lessons = SmartLearningEngine.lessons.map { it.display }.toTypedArray()
 
