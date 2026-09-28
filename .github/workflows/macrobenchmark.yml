@@ -30,13 +30,15 @@ jobs:
 
       - name: Set up Android SDK 36 + API 35 emulator
         uses: android-actions/setup-android@v3
-        with:
-          packages: |
-            platform-tools
-            platforms;android-36
-            build-tools;36.0.0
-            emulator
-            system-images;android-35;google_apis;x86_64
+      - name: Install benchmark Android SDK packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager "platform-tools"
+          sdkmanager "platforms;android-36"
+          sdkmanager "build-tools;36.0.0"
+          sdkmanager "emulator"
+          sdkmanager "system-images;android-35;google_apis;x86_64"
 
       - name: Accept Android SDK licenses
         shell: bash
