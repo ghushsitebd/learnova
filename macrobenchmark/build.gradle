@@ -20,6 +20,9 @@ android {
 
     buildTypes {
         benchmark {
+            // The benchmark module itself is a test APK. It must be signed so
+            // Gradle Managed Device can install it before executing the tests.
+            signingConfig signingConfigs.debug
             debuggable false
             minifyEnabled true
             shrinkResources true
