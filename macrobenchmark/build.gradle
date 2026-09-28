@@ -8,6 +8,8 @@ android {
 
     defaultConfig {
         targetProjectPath = ':app'
+        // Keep the benchmark APK in its own process (required for Macrobenchmark).
+        experimentalProperties['android.experimental.self-instrumenting'] = true
         minSdk 28
         targetSdk 35
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
