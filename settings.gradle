@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Learnova"
 include(":app")
+include(":baseline-profile")
