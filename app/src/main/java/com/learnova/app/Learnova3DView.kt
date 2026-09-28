@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class Learnova3DView(context: Context) : FrameLayout(context) {
 
     private val surface = SurfaceView(context)
-    private val viewer = ModelViewer(surface)
+    private val viewer by lazy(LazyThreadSafetyMode.NONE) { ModelViewer(surface) }
     private val choreographer = Choreographer.getInstance()
     private var frameCallback: Choreographer.FrameCallback? = null
     private var started = false
@@ -126,6 +126,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private val doorHingeSigns = HashMap<Int, Float>()
 
     private var worldInitialized = false
+    private var rendererReady = false
 
     init {
         addView(
@@ -145,42 +146,39 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         if (worldInitialized) return
         worldInitialized = true
 
-        // Startup must remain recoverable even if the embedded model data is
-        // corrupted or a future build changes the compression format. The learning HUD
-        // can still open while the optional 3D world is unavailable.
+        // Filament is an optional presentation layer. A device/emulator that cannot
+        // initialize the native renderer must still be able to launch the learning app.
         try {
             val modelBytes = decodeModel()
             viewer.loadModelGlb(ByteBuffer.wrap(modelBytes))
+            viewer.asset?.let { asset ->
+                proceduralRoad = ProceduralRoadMesh(viewer.engine, viewer.scene, asset).also { it.build() }
+                terrainMesh = LearnovaTerrainMesh(viewer.engine, viewer.scene, asset).also { it.build() }
+                roadsideWorld = RoadsideWorld(viewer.engine, viewer.scene, asset).also { it.build() }
+                waterSurfaceWorld = WaterSurfaceWorld(viewer.engine, viewer.scene, asset).also { it.build() }
+                shorelineWorld = ShorelineWorld(viewer.engine, viewer.scene, asset).also { it.build() }
+                worldLife = WorldLifeSimulation(viewer.engine, viewer.scene, asset).also { it.build() }
+                childNPC = ChildNPCWorld(viewer.engine, viewer.scene, asset).also { it.build() }
+            }
+            configureRealisticSunLight()
+            updateSkybox(WorldDirector.atmosphere(0.0), force = true)
+            cacheWheelEntities()
+            cacheVehicleRoot()
+            cacheDoorEntities()
+            viewer.camera.lookAt(4.8, 2.8, 6.8, 0.0, 1.0, 14.0, 0.0, 1.0, 0.0)
+            viewer.view.antiAliasing = com.google.android.filament.View.AntiAliasing.FXAA
+            rendererReady = true
         } catch (_: Throwable) {
-            // Keep the renderer alive; all world components below are optional.
+            rendererReady = false
+            proceduralRoad = null
+            terrainMesh = null
+            roadsideWorld = null
+            waterSurfaceWorld = null
+            shorelineWorld = null
+            worldLife = null
+            childNPC = null
         }
-
-        // Never force-unwrap the parsed asset during Activity startup. A malformed
-        // or unsupported GLB must degrade to a renderer without the road mesh rather
-        // than crashing the entire app before the child can reach the learning screen.
-        viewer.asset?.let { asset ->
-            proceduralRoad = ProceduralRoadMesh(viewer.engine, viewer.scene, asset).also { it.build() }
-            terrainMesh = LearnovaTerrainMesh(viewer.engine, viewer.scene, asset).also { it.build() }
-            roadsideWorld = RoadsideWorld(viewer.engine, viewer.scene, asset).also { it.build() }
-            waterSurfaceWorld = WaterSurfaceWorld(viewer.engine, viewer.scene, asset).also { it.build() }
-            shorelineWorld = ShorelineWorld(viewer.engine, viewer.scene, asset).also { it.build() }
-            worldLife = WorldLifeSimulation(viewer.engine, viewer.scene, asset).also { it.build() }
-            childNPC = ChildNPCWorld(viewer.engine, viewer.scene, asset).also { it.build() }
-        }
-        configureRealisticSunLight()
-        updateSkybox(WorldDirector.atmosphere(0.0), force = true)
-        cacheWheelEntities()
-        cacheVehicleRoot()
-        cacheDoorEntities()
-
-        viewer.camera.lookAt(
-            4.8, 2.8, 6.8,
-            0.0, 1.0, 14.0,
-            0.0, 1.0, 0.0
-        )
-        viewer.view.antiAliasing = com.google.android.filament.View.AntiAliasing.FXAA
     }
-
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         if (assetIoExecutor.isShutdown || assetIoExecutor.isTerminated) {
@@ -189,11 +187,15 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         if (!started) {
             // Defer heavy scene construction until after the initial UI traversal.
             // The first frame remains usable even if GLB/world creation takes longer.
-            post { initializeWorldIfNeeded() }
+            post { runCatching { initializeWorldIfNeeded() } }
             started = true
             headroomMonitor.start()
             frameCallback = Choreographer.FrameCallback { time ->
                 if (!started) return@FrameCallback
+                if (!rendererReady) {
+                    choreographer.postFrameCallback(frameCallback)
+                    return@FrameCallback
+                }
 
                 val dt = if (lastFrameNanos == 0L) {
                     1.0 / 60.0
@@ -552,7 +554,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         vehicleInteraction.reset()
         targetSpeed = definition.targetSpeed.coerceIn(2.0, 18.0)
         wheelRadius = definition.wheelRadius.coerceIn(0.12, 0.80)
-        loadVehicleAsset(definition)
+        if (rendererReady) loadVehicleAsset(definition)
     }
 
     /**
@@ -1255,14 +1257,17 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         childNPC = null
         roadsideWorld = null
         waterSurfaceWorld = null
-        if (sunEntity != 0) {
+        if (rendererReady && sunEntity != 0) {
             viewer.scene.removeEntity(sunEntity)
             viewer.engine.lightManager.destroy(sunEntity)
             EntityManager.get().destroy(sunEntity)
             sunEntity = 0
         }
         assetIoExecutor.shutdownNow()
-        viewer.destroy()
+        if (rendererReady) {
+            runCatching { viewer.destroy() }
+            rendererReady = false
+        }
         super.onDetachedFromWindow()
     }
 
