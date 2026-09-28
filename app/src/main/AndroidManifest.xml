@@ -10,6 +10,7 @@
         android:supportsRtl="true"
         android:resizeableActivity="true"
         android:theme="@style/Theme.Learnova">
+        <profileable android:shell="true" />
 
         <activity
             android:name=".AdminPanelActivity"
