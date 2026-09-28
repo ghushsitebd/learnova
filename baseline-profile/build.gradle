@@ -12,6 +12,18 @@ android {
         targetSdk 35
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
+
+    testOptions {
+        managedDevices {
+            devices {
+                pixel2api35(com.android.build.api.dsl.ManagedVirtualDevice) {
+                    device = "Pixel 2"
+                    apiLevel = 35
+                    systemImageSource = "aosp"
+                }
+            }
+        }
+    }
 }
 
 dependencies {
@@ -22,5 +34,6 @@ dependencies {
 
 baselineProfile {
     targetProjectPath = ':app'
-    useConnectedDevices true
+    managedDevices = ['pixel2api35']
+    useConnectedDevices = false
 }
