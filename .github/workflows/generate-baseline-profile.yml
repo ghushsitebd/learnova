@@ -63,7 +63,7 @@ jobs:
           set -euo pipefail
           rm -rf baseline-profile-output
           mkdir -p baseline-profile-output
-          cp "$PROFILE" baseline-profile-output/baseline-prof.txt
+          cp "${{ steps.locate_profile.outputs.profile }}" baseline-profile-output/baseline-prof.txt
           sha256sum baseline-profile-output/baseline-prof.txt
 
       - name: Upload generated profile
