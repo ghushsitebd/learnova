@@ -35,26 +35,40 @@ jobs:
       - name: Generate Baseline Profile
         run: |
           set -euo pipefail
-          gradle :app:generateBaselineProfile --stacktrace
+          gradle :app:generateBaselineProfile \
+            -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=BaselineProfile \
+            --stacktrace
 
-      - name: Verify generated profile
+      - name: Locate generated profile
+        id: locate_profile
         run: |
           set -euo pipefail
           PROFILE=$(find app/src -type f -path '*/generated/baselineProfiles/*' | head -n 1 || true)
           if [ -z "$PROFILE" ]; then
-            PROFILE=$(find app/build/outputs -type f -iname '*baseline*' | head -n 1 || true)
+            PROFILE=$(find app/build/outputs -type f -iname '*baseline*prof*.txt' | head -n 1 || true)
           fi
           if [ -z "$PROFILE" ]; then
             echo "::error::No generated Baseline Profile was found."
             find app -type f -iname '*baseline*' -print
             exit 1
           fi
+
           echo "Generated profile: $PROFILE"
+          echo "profile=$PROFILE" >> "$GITHUB_OUTPUT"
           wc -c "$PROFILE"
           sha256sum "$PROFILE"
+
+      - name: Stage generated profile for artifact
+        run: |
+          set -euo pipefail
+          rm -rf baseline-profile-output
+          mkdir -p baseline-profile-output
+          cp "$PROFILE" baseline-profile-output/baseline-prof.txt
+          sha256sum baseline-profile-output/baseline-prof.txt
 
       - name: Upload generated profile
         uses: actions/upload-artifact@v4
         with:
           name: Learnova-Baseline-Profile
-          path: app/src/**/generated/baselineProfiles/*
+          path: baseline-profile-output/baseline-prof.txt
+          if-no-files-found: error
