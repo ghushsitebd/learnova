@@ -125,6 +125,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private val doorBaseTransforms = HashMap<Int, FloatArray>()
     private val doorHingeSigns = HashMap<Int, Float>()
 
+    private var worldInitialized = false
+
     init {
         addView(
             surface,
@@ -132,6 +134,16 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         )
         surface.setZOrderOnTop(false)
         configureDeviceRenderProfile()
+
+        // Keep Activity startup light: the expensive GLB decode and procedural-world
+        // construction are deferred until the view is attached and the first UI
+        // traversal has a chance to run. This reduces startup contention without
+        // changing the child's gameplay or the final 3D scene.
+    }
+
+    private fun initializeWorldIfNeeded() {
+        if (worldInitialized) return
+        worldInitialized = true
 
         // Startup must remain recoverable even if the embedded model data is
         // corrupted or a future build changes the compression format. The learning HUD
@@ -142,6 +154,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         } catch (_: Throwable) {
             // Keep the renderer alive; all world components below are optional.
         }
+
         // Never force-unwrap the parsed asset during Activity startup. A malformed
         // or unsupported GLB must degrade to a renderer without the road mesh rather
         // than crashing the entire app before the child can reach the learning screen.
@@ -174,6 +187,9 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             assetIoExecutor = newAssetIoExecutor()
         }
         if (!started) {
+            // Defer heavy scene construction until after the initial UI traversal.
+            // The first frame remains usable even if GLB/world creation takes longer.
+            post { initializeWorldIfNeeded() }
             started = true
             headroomMonitor.start()
             frameCallback = Choreographer.FrameCallback { time ->
