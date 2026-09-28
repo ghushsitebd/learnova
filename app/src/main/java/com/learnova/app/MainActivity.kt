@@ -103,6 +103,7 @@ class MainActivity : AppCompatActivity() {
         private var salamPlayedForSession = false
         private val prefs: SharedPreferences = getSharedPreferences("learnova_progress", MODE_PRIVATE)
         private val renderQuality = LearnovaRenderQuality(this@MainActivity)
+        private val masterySystem = LearnovaMasterySystem(prefs)
 
         private val lessons = SmartLearningEngine.lessons.map { it.display }.toTypedArray()
 
@@ -337,6 +338,7 @@ class MainActivity : AppCompatActivity() {
                 voice.speakQuranStage(current.name, current.mode, 2)
                 saveProgress()
             } else if (lessonStage == 1) {
+                masterySystem.recordWrong(question)
                 quranFeedback = "আবার চেষ্টা করো — মন দিয়ে শোনো"
                 voice.speakInstruction(false)
             } else if (lessonStage == 2 && correct && !quranStageSolved) {
@@ -2446,7 +2448,8 @@ class MainActivity : AppCompatActivity() {
             text.color = Color.rgb(35, 105, 78)
             text.textSize = 10f
             c.drawText(
-                lesson.prompt,
+                if (masterySystem.mastery(question) <= 1) masterySystem.reviewLabel(question) + " • " + lesson.prompt
+                else lesson.prompt,
                 w / 2f, top + 103f, text
             )
 
@@ -2485,13 +2488,14 @@ class MainActivity : AppCompatActivity() {
         private fun nextLesson() {
             if (!levelComplete) return
             completedLessons += 1
+            masterySystem.recordCorrect(question, completedLessons)
             val reward = ChildSafeEngagementPolicy.rewardForCorrectLesson(completedLessons)
             learningPoints += reward.points
             stars += 1
             if (reward.celebration != ChildSafeEngagementPolicy.Celebration.NONE) {
                 celebrationUntil = System.currentTimeMillis() + 1800L
             }
-            question = (question + 1) % lessons.size
+            question = masterySystem.nextLesson(question, lessons.size, completedLessons)
             lessonStage = 0
             quranStageSolved = false
             quranFeedback = ""
