@@ -981,13 +981,23 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
      * derives a small, filtered roll/yaw response from lateral acceleration so the
      * vehicle and camera visually carry momentum through a turn.
      */
+    private fun steeringLoadForDynamics(): Double {
+        if (!driving) return 0.0
+        val speedNorm = (vehicleSpeed / targetSpeed.coerceAtLeast(0.1)).coerceIn(0.0, 1.0)
+        return (steeringInput * (0.35 + 0.65 * speedNorm)).coerceIn(-1.0, 1.0)
+    }
+
     private fun updateDrivingInertia(dt: Double) {
         val safeDt = dt.coerceIn(1.0 / 240.0, 0.05)
-        val lateralAcceleration = ((lateralVelocity * vehicleSpeed) * 0.42)
-            .coerceIn(-4.5, 4.5)
+        // Approximate lateral load from the current velocity vector and steering.
+        // The child still gives only a simple left/right input; the dynamics layer
+        // turns that input into a smooth, speed-aware body response.
+        val lateralAcceleration = ((lateralVelocity * vehicleSpeed) * 0.58 +
+            steeringLoadForDynamics() * vehicleSpeed * vehicleSpeed * 0.018)
+            .coerceIn(-6.5, 6.5)
 
-        val rollTarget = (-lateralAcceleration * 0.018)
-            .coerceIn(-0.075, 0.075)
+        val rollTarget = (-lateralAcceleration * 0.022)
+            .coerceIn(-0.095, 0.095)
         // Road yaw rate is already measured from the authoritative spline. Blend a
         // small steering contribution into the visual chassis pitch/roll envelope.
         val steeringLoad = steeringInput * (vehicleSpeed / targetSpeed.coerceAtLeast(0.1))
