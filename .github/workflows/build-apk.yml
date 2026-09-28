@@ -1,4 +1,5 @@
 name: Build Learnova Release APK
+# CI checkpoint: verify permanent signing pipeline.
 
 on:
   push:
