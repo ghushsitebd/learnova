@@ -34,6 +34,11 @@ internal class WaterSurfaceWorld(
     private var lastCenter = Double.NaN
     private var lastWaveUpdateNanos = 0L
 
+    // Reused streaming buffer: water animation must not create a direct buffer
+    // every update, otherwise long river/coast drives can trigger mobile GC stalls.
+    private val vertexBufferData = ByteBuffer.allocate(VERTICES * STRIDE)
+        .order(ByteOrder.nativeOrder())
+
     fun build(): Boolean {
         if (entity != 0) return true
         val source = findMaterial() ?: return false
@@ -90,7 +95,7 @@ internal class WaterSurfaceWorld(
             now - lastWaveUpdateNanos < 160_000_000L) return
         val waveTime = now * 1.0e-9
 
-        val data = ByteBuffer.allocate(VERTICES * STRIDE).order(ByteOrder.nativeOrder())
+        val data = vertexBufferData.apply { clear() }
         val start = kotlin.math.floor((centerDistance - BEHIND) / STEP) * STEP
 
         for (i in 0 until SAMPLE_COUNT) {
