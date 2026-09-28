@@ -67,6 +67,29 @@ jobs:
           set -euo pipefail
           gradle :app:generateBaselineProfile             -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=BaselineProfile             --stacktrace
 
+      - name: Capture target-app runtime diagnostics
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          mkdir -p baseline-profile-runtime-diagnostics
+          adb devices -l > baseline-profile-runtime-diagnostics/adb-devices.txt 2>&1
+          adb shell dumpsys activity activities > baseline-profile-runtime-diagnostics/activity.txt 2>&1
+          adb shell dumpsys package com.learnova.app > baseline-profile-runtime-diagnostics/package.txt 2>&1
+          adb shell dumpsys gfxinfo com.learnova.app framestats > baseline-profile-runtime-diagnostics/gfxinfo.txt 2>&1
+          adb logcat -d -v threadtime -t 1200 > baseline-profile-runtime-diagnostics/logcat.txt 2>&1
+          grep -E "FATAL EXCEPTION|AndroidRuntime|Process: com\\.learnova\\.app|Caused by:|UnsatisfiedLinkError|SIGSEGV|ANR|SecurityException|RuntimeException" baseline-profile-runtime-diagnostics/logcat.txt > baseline-profile-runtime-diagnostics/app-crash-summary.txt 2>&1 || true
+          echo "=== APP CRASH SUMMARY ==="
+          cat baseline-profile-runtime-diagnostics/app-crash-summary.txt || true
+
+      - name: Upload runtime diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Learnova-Baseline-runtime-diagnostics
+          path: baseline-profile-runtime-diagnostics
+          if-no-files-found: warn
+
       - name: Locate generated profile
         id: locate_profile
         run: |
