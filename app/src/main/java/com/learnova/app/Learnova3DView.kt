@@ -4,6 +4,7 @@ import android.content.Context
 import android.app.ActivityManager
 import android.os.Build
 import android.os.PowerManager
+import android.os.Trace
 import android.util.Base64
 import android.view.Choreographer
 import android.view.SurfaceView
@@ -113,6 +114,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var thermalConstrained = false
     private var powerManager: PowerManager? = null
     private var thermalListener: PowerManager.OnThermalStatusChangedListener? = null
+    private var traceFrameCounter = 0
 
     // Physical entry/exit state is kept separate from the child-simple drive
     // control. If a vehicle asset contains named door nodes, this layer animates
@@ -197,28 +199,36 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                     physicsAccumulator -= physicsStepSeconds
                     physicsSteps++
                 }
-                updateDriveScene()
-                proceduralRoad?.update(vehicleDistance)
-                terrainMesh?.update(vehicleDistance)
-                roadsideWorld?.update(vehicleDistance)
-                waterSurfaceWorld?.update(vehicleDistance)
-                shorelineWorld?.update(vehicleDistance)
-                worldLife?.update(vehicleDistance)
-                childNPC?.update(vehicleDistance)
-                updateVehicleMechanics()
-                // Camera/body inertia reads the same lateral dynamics as the vehicle.
-                // This couples steering, chassis motion and the horizon instead of
-                // making the camera behave like a detached follow camera.
-                updateDrivingInertia(dt)
-                vehicleInteraction.update(dt.toFloat(), interactionProfile)
-                updateVehicleInteractionVisuals()
-                viewer.render(time)
-                adaptiveQuality.sample(
-                    dt * 1000.0,
-                    constrainedDevice || thermalConstrained,
-                    headroomMonitor.cpuHeadroom(),
-                    headroomMonitor.gpuHeadroom()
-                )?.let { applyQualityTier(it) }
+                val traceThisFrame = BuildConfig.DEBUG
+                traceFrameCounter = (traceFrameCounter + 1) and 0x7fffffff
+
+                traceSectionIfEnabled(traceThisFrame, "Learnova.scene") {
+                    updateDriveScene()
+                    proceduralRoad?.update(vehicleDistance)
+                    terrainMesh?.update(vehicleDistance)
+                    roadsideWorld?.update(vehicleDistance)
+                    waterSurfaceWorld?.update(vehicleDistance)
+                    shorelineWorld?.update(vehicleDistance)
+                    worldLife?.update(vehicleDistance)
+                    childNPC?.update(vehicleDistance)
+                }
+                traceSectionIfEnabled(traceThisFrame, "Learnova.vehicle") {
+                    updateVehicleMechanics()
+                    updateDrivingInertia(dt)
+                    vehicleInteraction.update(dt.toFloat(), interactionProfile)
+                    updateVehicleInteractionVisuals()
+                }
+                traceSectionIfEnabled(traceThisFrame, "Learnova.filamentRender") {
+                    viewer.render(time)
+                }
+                traceSectionIfEnabled(traceThisFrame, "Learnova.adaptiveQuality") {
+                    adaptiveQuality.sample(
+                        dt * 1000.0,
+                        constrainedDevice || thermalConstrained,
+                        headroomMonitor.cpuHeadroom(),
+                        headroomMonitor.gpuHeadroom()
+                    )?.let { applyQualityTier(it) }
+                }
                 // Thermal state can change while the game is running; keep expensive
                 // effects disabled immediately rather than waiting for the next
                 // frame-time evaluation window.
@@ -226,6 +236,29 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 choreographer.postFrameCallback(frameCallback)
             }
             choreographer.postFrameCallback(frameCallback)
+        }
+    }
+
+    /**
+     * Debug-only Perfetto trace slices. Release builds execute the body normally
+     * without adding tracing calls. These slices let us distinguish world generation,
+     * vehicle dynamics, Filament submission and the adaptive governor in a system
+     * trace instead of guessing from aggregate frame time.
+     */
+    private inline fun traceSectionIfEnabled(
+        enabled: Boolean,
+        name: String,
+        block: () -> Unit
+    ) {
+        if (!enabled) {
+            block()
+            return
+        }
+        Trace.beginSection(name)
+        try {
+            block()
+        } finally {
+            Trace.endSection()
         }
     }
 
