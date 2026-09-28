@@ -110,6 +110,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private val adaptiveQuality = LearnovaAdaptiveQuality()
     private var constrainedDevice = false
     private var thermalConstrained = false
+    private var powerManager: PowerManager? = null
+    private var thermalListener: PowerManager.OnThermalStatusChangedListener? = null
 
     // Physical entry/exit state is kept separate from the child-simple drive
     // control. If a vehicle asset contains named door nodes, this layer animates
@@ -210,6 +212,10 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 updateVehicleInteractionVisuals()
                 viewer.render(time)
                 adaptiveQuality.sample(dt * 1000.0, constrainedDevice || thermalConstrained)?.let { applyQualityTier(it) }
+                // Thermal state can change while the game is running; keep expensive
+                // effects disabled immediately rather than waiting for the next
+                // frame-time evaluation window.
+                if (thermalConstrained) applyThermalSafetyProfile()
                 choreographer.postFrameCallback(frameCallback)
             }
             choreographer.postFrameCallback(frameCallback)
@@ -287,12 +293,21 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         // serious thermal state; the adaptive frame-time sampler can recover
         // quality later when rendering becomes stable.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val power = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
-            thermalConstrained = when (power?.currentThermalStatus) {
-                PowerManager.THERMAL_STATUS_SEVERE,
-                PowerManager.THERMAL_STATUS_CRITICAL,
-                PowerManager.THERMAL_STATUS_EMERGENCY -> true
-                else -> false
+            powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+            val power = powerManager
+            thermalConstrained = isThermallyConstrained(power?.currentThermalStatus)
+
+            // Android exposes live thermal transitions on supported versions. This
+            // lets Learnova react before sustained frame-time degradation appears.
+            if (power != null) {
+                val listener = PowerManager.OnThermalStatusChangedListener { status ->
+                    thermalConstrained = isThermallyConstrained(status)
+                    if (thermalConstrained) {
+                        post { applyThermalSafetyProfile() }
+                    }
+                }
+                thermalListener = listener
+                power.addThermalStatusListener(mainExecutor, listener)
             }
         }
 
@@ -319,6 +334,27 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         }
     }
 
+    private fun isThermallyConstrained(status: Int?): Boolean = when (status) {
+        PowerManager.THERMAL_STATUS_SEVERE,
+        PowerManager.THERMAL_STATUS_CRITICAL,
+        PowerManager.THERMAL_STATUS_EMERGENCY -> true
+        else -> false
+    }
+
+    /** Immediate thermal safety ceiling; visual quality only, gameplay unchanged. */
+    private fun applyThermalSafetyProfile() {
+        viewer.view.dynamicResolutionOptions = viewer.view.dynamicResolutionOptions.apply {
+            enabled = true
+            quality = com.google.android.filament.View.QualityLevel.LOW
+        }
+        viewer.view.ambientOcclusionOptions = viewer.view.ambientOcclusionOptions.apply {
+            enabled = false
+        }
+        viewer.view.bloomOptions = viewer.view.bloomOptions.apply {
+            enabled = false
+        }
+    }
+
     /**
      * Physically plausible daylight foundation for the 3D world.
      *
@@ -329,6 +365,10 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private fun applyQualityTier(tier: LearnovaAdaptiveQuality.Tier) {
         when (tier) {
             LearnovaAdaptiveQuality.Tier.HIGH -> {
+                if (thermalConstrained) {
+                    applyThermalSafetyProfile()
+                    return
+                }
                 viewer.view.dynamicResolutionOptions = viewer.view.dynamicResolutionOptions.apply {
                     enabled = true
                     quality = com.google.android.filament.View.QualityLevel.HIGH
@@ -1105,6 +1145,16 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         assetLoadGeneration.incrementAndGet()
         frameCallback?.let { choreographer.removeFrameCallback(it) }
         frameCallback = null
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val power = powerManager
+            val listener = thermalListener
+            if (power != null && listener != null) {
+                power.removeThermalStatusListener(listener)
+            }
+        }
+        thermalListener = null
+        powerManager = null
+        physicsAccumulator = 0.0
         proceduralRoad?.destroy()
         proceduralRoad = null
         terrainMesh?.destroy()
