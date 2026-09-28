@@ -15,6 +15,10 @@ android {
     namespace 'com.learnova.app'
     compileSdk 36
 
+    buildFeatures {
+        buildConfig true
+    }
+
     defaultConfig {
         applicationId 'com.learnova.app'
         minSdk 23
@@ -37,6 +41,7 @@ android {
 
     buildTypes {
         release {
+            buildConfigField 'boolean', 'PERF_TRACE_ENABLED', 'false'
             // R8 removes unreachable Java/Kotlin code while keeping Filament/JNI entry points.
             minifyEnabled true
             shrinkResources true
@@ -51,6 +56,17 @@ android {
 
         debug {
             minifyEnabled false
+            buildConfigField 'boolean', 'PERF_TRACE_ENABLED', 'true'
+        }
+
+        benchmark {
+            initWith release
+            debuggable false
+            minifyEnabled false
+            shrinkResources false
+            signingConfig signingConfigs.debug
+            matchingFallbacks = ['release']
+            buildConfigField 'boolean', 'PERF_TRACE_ENABLED', 'true'
         }
     }
 
