@@ -30,6 +30,7 @@ jobs:
 
       - name: Set up Android SDK 36 + API 35 emulator
         uses: android-actions/setup-android@v3
+
       - name: Install benchmark Android SDK packages
         shell: bash
         run: |
