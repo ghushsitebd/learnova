@@ -35,6 +35,6 @@ dependencies {
 }
 
 baselineProfile {
-    managedDevices = ['pixel2api35']
+    managedDevices += ['pixel2api35']
     useConnectedDevices = false
 }
