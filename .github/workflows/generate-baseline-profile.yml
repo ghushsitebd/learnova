@@ -26,10 +26,27 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      - name: Set up Android SDK 36
+      - name: Set up Android SDK 36 + API 35 emulator
         uses: android-actions/setup-android@v3
         with:
-          packages: 'platform-tools platforms;android-36 build-tools;36.0.0 emulator system-images;android-35;aosp;x86_64'
+          packages: |
+            platform-tools
+            platforms;android-36
+            build-tools;36.0.0
+            emulator
+            system-images;android-35;google_apis;x86_64
+
+      - name: Accept Android SDK licenses
+        shell: bash
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+
+      - name: Verify Gradle Managed Device system image
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager --list_installed | grep -F "system-images;android-35;google_apis;x86_64"
 
       - name: Set up Gradle 9.3.1
         uses: gradle/actions/setup-gradle@v4
@@ -61,6 +78,14 @@ jobs:
           echo "profile=$PROFILE" >> "$GITHUB_OUTPUT"
           wc -c "$PROFILE"
           sha256sum "$PROFILE"
+
+      - name: Validate profile size and readability
+        run: |
+          set -euo pipefail
+          PROFILE="${{ steps.locate_profile.outputs.profile }}"
+          BYTES=$(wc -c < "$PROFILE")
+          test "$BYTES" -lt 1572864 || { echo "::error::Baseline Profile exceeds 1.5 MB."; exit 1; }
+          grep -Eq '^[HLSP]L' "$PROFILE" || { echo "::error::Generated profile does not contain expected readable ART rules."; exit 1; }
 
       - name: Stage generated profile for artifact
         run: |
