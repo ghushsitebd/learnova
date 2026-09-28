@@ -21,7 +21,8 @@ android {
 
     defaultConfig {
         applicationId 'com.learnova.app'
-        minSdk 23
+        // GMA Next-Gen SDK requires API 24+.
+        minSdk 24
         targetSdk 35
         versionCode buildVersionCode
         versionName buildVersionName
@@ -42,7 +43,6 @@ android {
     buildTypes {
         release {
             buildConfigField 'boolean', 'PERF_TRACE_ENABLED', 'false'
-            // R8 removes unreachable Java/Kotlin code while keeping Filament/JNI entry points.
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -79,11 +79,14 @@ android {
 dependencies {
     implementation 'androidx.core:core-ktx:1.15.0'
     implementation 'androidx.appcompat:appcompat:1.7.0'
-    // High-fidelity 3D/PBR renderer. Filament supports Vulkan with GLES fallback.
     implementation 'com.google.android.filament:filament-android:1.75.0'
     implementation 'com.google.android.filament:gltfio-android:1.75.0'
     implementation 'com.google.android.filament:filament-utils-android:1.75.0'
     implementation 'androidx.profileinstaller:profileinstaller:1.4.1'
+
+    // Prepare the current GMA Next-Gen runtime. Real production ads remain
+    // disabled until the owner's real App ID and ad-unit IDs are supplied.
+    implementation 'com.google.android.libraries.ads.mobile.sdk:ads-mobile-sdk:1.5.0'
 
     baselineProfile project(':baseline-profile')
 }
