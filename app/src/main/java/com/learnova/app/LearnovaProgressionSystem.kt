@@ -1,8 +1,6 @@
 package com.learnova.app
 
-import android.content.SharedPreferences
-
-class LearnovaProgressionSystem(private val prefs: SharedPreferences) {
+class LearnovaProgressionSystem {
     enum class Stage(val title: String, val level: Int) {
         FOUNDATION("Foundation", 1),
         BUILDING("Building", 2),
@@ -23,8 +21,15 @@ class LearnovaProgressionSystem(private val prefs: SharedPreferences) {
     fun masteryAverage(totalLessons: Int, masteryOf: (Int) -> Int): Float {
         if (totalLessons <= 0) return 0f
         var sum = 0
-        for (i in 0 until totalLessons) sum += masteryOf(i).coerceIn(0, 5)
-        return sum.toFloat() / totalLessons
+        var observed = 0
+        for (i in 0 until totalLessons) {
+            val mastery = masteryOf(i).coerceIn(0, 5)
+            if (mastery > 0) {
+                sum += mastery
+                observed++
+            }
+        }
+        return if (observed == 0) 0f else sum.toFloat() / observed
     }
 
     fun stageTitle(totalLessons: Int, masteryOf: (Int) -> Int, completedLessons: Int): String =
