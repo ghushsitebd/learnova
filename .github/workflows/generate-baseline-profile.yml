@@ -25,7 +25,7 @@ jobs:
       - name: Set up Android SDK 36
         uses: android-actions/setup-android@v3
         with:
-          packages: 'platform-tools platforms;android-36 build-tools;36.0.0 emulator system-images;android-35;google_apis;x86_64'
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0 emulator system-images;android-35;aosp;x86_64'
 
       - name: Set up Gradle 9.3.1
         uses: gradle/actions/setup-gradle@v4
@@ -40,9 +40,12 @@ jobs:
       - name: Verify generated profile
         run: |
           set -euo pipefail
-          PROFILE=$(find app/src -type f -path '*/generated/baselineProfiles/*.prof' -o -path '*/generated/baselineProfiles/*.txt' | head -n 1 || true)
+          PROFILE=$(find app/src -type f -path '*/generated/baselineProfiles/*' | head -n 1 || true)
           if [ -z "$PROFILE" ]; then
-            echo "::error::No generated Baseline Profile was found under app/src."
+            PROFILE=$(find app/build/outputs -type f -iname '*baseline*' | head -n 1 || true)
+          fi
+          if [ -z "$PROFILE" ]; then
+            echo "::error::No generated Baseline Profile was found."
             find app -type f -iname '*baseline*' -print
             exit 1
           fi
