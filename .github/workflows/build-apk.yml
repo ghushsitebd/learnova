@@ -230,3 +230,5 @@ jobs:
       - name: Remove signing material
         if: always()
         run: rm -f learnova-release.keystore
+
+# CI validation checkpoint: bounded benchmark diagnostics
