@@ -1,5 +1,6 @@
 package com.learnova.macrobenchmark
 
+import androidx.benchmark.macro.CompilationMode
 import androidx.benchmark.macro.FrameTimingMetric
 import androidx.benchmark.macro.MacrobenchmarkRule
 import androidx.benchmark.macro.StartupMode
@@ -15,9 +16,22 @@ class LearnovaMacrobenchmark {
     val benchmarkRule = MacrobenchmarkRule()
 
     @Test
-    fun coldStartup() = benchmarkRule.measureRepeated(
+    fun coldStartupWithBaselineProfile() = benchmarkRule.measureRepeated(
         packageName = "com.learnova.app",
         metrics = listOf(StartupTimingMetric()),
+        compilationMode = CompilationMode.DEFAULT,
+        iterations = 10,
+        startupMode = StartupMode.COLD,
+        setupBlock = { pressHome() }
+    ) {
+        startActivityAndWait()
+    }
+
+    @Test
+    fun coldStartupWithoutCompilation() = benchmarkRule.measureRepeated(
+        packageName = "com.learnova.app",
+        metrics = listOf(StartupTimingMetric()),
+        compilationMode = CompilationMode.None(),
         iterations = 10,
         startupMode = StartupMode.COLD,
         setupBlock = { pressHome() }
@@ -29,6 +43,7 @@ class LearnovaMacrobenchmark {
     fun drivingFrameTiming() = benchmarkRule.measureRepeated(
         packageName = "com.learnova.app",
         metrics = listOf(FrameTimingMetric()),
+        compilationMode = CompilationMode.DEFAULT,
         iterations = 5,
         startupMode = StartupMode.WARM,
         setupBlock = {
