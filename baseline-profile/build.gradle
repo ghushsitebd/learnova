@@ -13,14 +13,12 @@ android {
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
 
-    // Target app for Baseline Profile generation.
     targetProjectPath = ':app'
 
-    // AGP 9.1 managed-device DSL.
     testOptions {
         managedDevices {
-            localDevices {
-                pixel2api35 {
+            devices {
+                pixel2api35(com.android.build.api.dsl.ManagedVirtualDevice) {
                     device = 'Pixel 2'
                     apiLevel = 35
                     systemImageSource = 'aosp'
