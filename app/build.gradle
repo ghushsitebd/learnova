@@ -62,8 +62,8 @@ android {
         benchmark {
             initWith release
             debuggable false
-            minifyEnabled false
-            shrinkResources false
+            minifyEnabled true
+            shrinkResources true
             signingConfig signingConfigs.debug
             matchingFallbacks = ['release']
             buildConfigField 'boolean', 'PERF_TRACE_ENABLED', 'true'
