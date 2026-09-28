@@ -20,6 +20,7 @@ class LearnovaRenderQuality(context: Context) {
     private var frameSamples = 0
     private var slowFrames = 0
     private var goodFrames = 0
+    private var thermalDowngrades = 0
     private var quality = when {
         memoryClassMb >= 512 -> 3
         memoryClassMb >= 256 -> 2
@@ -33,11 +34,11 @@ class LearnovaRenderQuality(context: Context) {
         val ms = (System.nanoTime() - startNanos) / 1_000_000.0
         frameSamples++
         when {
-            ms > 22.0 -> {
+            ms > 18.0 -> {
                 slowFrames++
                 goodFrames = 0
             }
-            ms < 14.0 -> {
+            ms < 13.0 -> {
                 goodFrames++
             }
             else -> {
@@ -46,8 +47,8 @@ class LearnovaRenderQuality(context: Context) {
         }
 
         if (frameSamples >= 45) {
-            if (slowFrames >= 8) quality = max(0, quality - 1)
-            else if (slowFrames == 0 && goodFrames >= 30) quality = min(3, quality + 1)
+            if (slowFrames >= 6) quality = max(0, quality - 1)
+            else if (slowFrames == 0 && goodFrames >= 32) quality = min(3, quality + 1)
             frameSamples = 0
             slowFrames = 0
             goodFrames = 0
