@@ -62,8 +62,9 @@ android {
         benchmark {
             initWith release
             debuggable false
-            minifyEnabled true
-            shrinkResources true
+            // Macrobenchmark requires the tested APK to remain unobfuscated.
+            minifyEnabled false
+            shrinkResources false
             signingConfig signingConfigs.debug
             matchingFallbacks = ['release']
             buildConfigField 'boolean', 'PERF_TRACE_ENABLED', 'true'
