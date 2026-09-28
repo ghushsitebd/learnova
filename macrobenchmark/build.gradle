@@ -11,8 +11,6 @@ android {
         minSdk 28
         targetSdk 35
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
-        // CI uses an API 35 emulator as a deterministic regression signal.
-        // Android's Macrobenchmark docs require this opt-in when benchmarking an emulator.
         testInstrumentationRunnerArguments = [
             'androidx.benchmark.suppressErrors': 'EMULATOR'
         ]
@@ -20,8 +18,6 @@ android {
 
     buildTypes {
         benchmark {
-            // The benchmark module itself is a test APK. It must be signed so
-            // Gradle Managed Device can install it before executing the tests.
             signingConfig signingConfigs.debug
             debuggable false
             minifyEnabled false
@@ -51,11 +47,11 @@ androidComponents {
 }
 
 dependencies {
-    implementation 'androidx.test.ext:junit:1.2.1'
-    implementation 'androidx.test.uiautomator:uiautomator:2.3.0'
-    implementation 'androidx.benchmark:benchmark-macro-junit4:1.5.0'
-    implementation 'androidx.tracing:tracing:1.2.0'
-    implementation 'androidx.profileinstaller:profileinstaller:1.4.1'
-    implementation 'androidx.startup:startup-runtime:1.2.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.3.0'
+    androidTestImplementation 'androidx.benchmark:benchmark-macro-junit4:1.5.0'
+    androidTestImplementation 'androidx.tracing:tracing:1.2.0'
+    androidTestImplementation 'androidx.profileinstaller:profileinstaller:1.4.1'
+    androidTestImplementation 'androidx.startup:startup-runtime:1.2.0'
     compileOnly 'com.google.errorprone:error_prone_annotations:2.36.0'
 }
