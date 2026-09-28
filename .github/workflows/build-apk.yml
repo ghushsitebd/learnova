@@ -142,6 +142,17 @@ jobs:
           # device task; this step catches variant/AGP/dependency regressions early.
           gradle :app:assembleBenchmark :macrobenchmark:assembleBenchmark --stacktrace
 
+      - name: Validate benchmark outputs
+        run: |
+          set -euo pipefail
+          BENCHMARK_APK=$(find app/build/outputs/apk/benchmark -type f -name '*.apk' | head -n 1)
+          BENCHMARK_TEST_APK=$(find macrobenchmark/build/outputs/apk/benchmark -type f -name '*.apk' | head -n 1)
+          test -n "$BENCHMARK_APK" || { echo "::error::Learnova benchmark APK was not generated."; exit 1; }
+          test -n "$BENCHMARK_TEST_APK" || { echo "::error::Macrobenchmark test APK was not generated."; exit 1; }
+          echo "Benchmark target: $BENCHMARK_APK"
+          echo "Benchmark test:   $BENCHMARK_TEST_APK"
+          sha256sum "$BENCHMARK_APK" "$BENCHMARK_TEST_APK"
+
       - name: Find Generated APK and AAB
         id: find_outputs
         shell: bash
