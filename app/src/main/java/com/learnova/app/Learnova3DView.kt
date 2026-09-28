@@ -307,7 +307,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                     }
                 }
                 thermalListener = listener
-                power.addThermalStatusListener(mainExecutor, listener)
+                power.addThermalStatusListener(context.mainExecutor, listener)
             }
         }
 
