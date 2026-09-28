@@ -76,6 +76,21 @@ jobs:
           echo "Executing Gradle Managed Device task: :macrobenchmark:$TASK"
           gradle ":macrobenchmark:$TASK" --stacktrace
 
+      - name: Capture target-app runtime diagnostics
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          mkdir -p benchmark-results/runtime-diagnostics
+          adb devices -l > benchmark-results/runtime-diagnostics/adb-devices.txt 2>&1
+          adb shell dumpsys activity activities > benchmark-results/runtime-diagnostics/activity.txt 2>&1
+          adb shell dumpsys package com.learnova.app > benchmark-results/runtime-diagnostics/package.txt 2>&1
+          adb shell dumpsys gfxinfo com.learnova.app framestats > benchmark-results/runtime-diagnostics/gfxinfo.txt 2>&1
+          adb logcat -d -v threadtime -t 1200 > benchmark-results/runtime-diagnostics/logcat.txt 2>&1
+          grep -E "FATAL EXCEPTION|AndroidRuntime|Process: com\\.learnova\\.app|Caused by:|UnsatisfiedLinkError|SIGSEGV|ANR|SecurityException|RuntimeException" benchmark-results/runtime-diagnostics/logcat.txt > benchmark-results/runtime-diagnostics/app-crash-summary.txt 2>&1 || true
+          echo "=== APP CRASH SUMMARY ==="
+          cat benchmark-results/runtime-diagnostics/app-crash-summary.txt || true
+
       - name: Collect benchmark outputs
         if: always()
         shell: bash
