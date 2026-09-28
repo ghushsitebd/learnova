@@ -83,9 +83,10 @@ jobs:
           timeout 20s adb shell dumpsys package com.learnova.app > baseline-profile-runtime-diagnostics/package.txt 2>&1 || true
           timeout 20s adb shell dumpsys gfxinfo com.learnova.app framestats > baseline-profile-runtime-diagnostics/gfxinfo.txt 2>&1 || true
           timeout 30s adb logcat -d -v threadtime -t 1200 > baseline-profile-runtime-diagnostics/logcat.txt 2>&1 || true
-          grep -E 'FATAL EXCEPTION|AndroidRuntime|Process: com\\.learnova\\.app|Caused by:|UnsatisfiedLinkError|SIGSEGV|ANR|SecurityException|RuntimeException' baseline-profile-runtime-diagnostics/logcat.txt > baseline-profile-runtime-diagnostics/app-crash-summary.txt 2>&1 || true
+          grep -E 'FATAL EXCEPTION|AndroidRuntime|Process: com\.learnova\.app|Caused by:|UnsatisfiedLinkError|SIGSEGV|ANR|SecurityException|RuntimeException' baseline-profile-runtime-diagnostics/logcat.txt > baseline-profile-runtime-diagnostics/app-crash-summary.txt 2>&1 || true
           echo "=== APP CRASH SUMMARY ==="
           cat baseline-profile-runtime-diagnostics/app-crash-summary.txt || true
+
       - name: Upload runtime diagnostics
         if: always()
         uses: actions/upload-artifact@v4
@@ -139,7 +140,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add "$TARGET"
           git commit -m "perf: update generated Learnova Baseline Profile [baseline-profile]"
-          git push
+          git push origin HEAD:main
 
       - name: Stage generated profile for artifact
         run: |
