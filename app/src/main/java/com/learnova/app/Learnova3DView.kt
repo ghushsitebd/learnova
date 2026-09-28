@@ -199,7 +199,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                     physicsAccumulator -= physicsStepSeconds
                     physicsSteps++
                 }
-                val traceThisFrame = BuildConfig.DEBUG
+                val traceThisFrame = BuildConfig.PERF_TRACE_ENABLED
                 traceFrameCounter = (traceFrameCounter + 1) and 0x7fffffff
 
                 traceSectionIfEnabled(traceThisFrame, "Learnova.scene") {
