@@ -11,6 +11,11 @@ android {
         minSdk 28
         targetSdk 35
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+        // CI uses an API 35 emulator as a deterministic regression signal.
+        // Android's Macrobenchmark docs require this opt-in when benchmarking an emulator.
+        testInstrumentationRunnerArguments = [
+            'androidx.benchmark.suppressErrors': 'EMULATOR'
+        ]
     }
 
     buildTypes {
