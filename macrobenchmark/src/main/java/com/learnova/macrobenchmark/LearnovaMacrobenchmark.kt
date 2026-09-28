@@ -47,10 +47,10 @@ class LearnovaMacrobenchmark {
         packageName = "com.learnova.app",
         metrics = listOf(
             FrameTimingMetric(),
-            TraceSectionMetric("Learnova.scene"),
-            TraceSectionMetric("Learnova.vehicle"),
-            TraceSectionMetric("Learnova.filamentRender"),
-            TraceSectionMetric("Learnova.adaptiveQuality")
+            TraceSectionMetric("Learnova.scene", TraceSectionMetric.Mode.Sum),
+            TraceSectionMetric("Learnova.vehicle", TraceSectionMetric.Mode.Sum),
+            TraceSectionMetric("Learnova.filamentRender", TraceSectionMetric.Mode.Sum),
+            TraceSectionMetric("Learnova.adaptiveQuality", TraceSectionMetric.Mode.Sum)
         ),
         compilationMode = CompilationMode.DEFAULT,
         iterations = 5,
