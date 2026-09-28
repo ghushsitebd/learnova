@@ -19,6 +19,7 @@ android {
             minifyEnabled true
             shrinkResources true
             matchingFallbacks = ['release']
+            proguardFiles 'proguard-rules.pro'
         }
     }
 
