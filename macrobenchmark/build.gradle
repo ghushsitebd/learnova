@@ -16,6 +16,8 @@ android {
     buildTypes {
         benchmark {
             debuggable false
+            minifyEnabled true
+            shrinkResources true
             matchingFallbacks = ['release']
         }
     }
