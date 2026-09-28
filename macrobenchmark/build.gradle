@@ -29,7 +29,7 @@ android {
                 pixel2api35 {
                     device = 'Pixel 2'
                     apiLevel = 35
-                    systemImageSource = 'aosp'
+                    systemImageSource = 'google_apis'
                 }
             }
         }
