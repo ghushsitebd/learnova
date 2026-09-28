@@ -34,7 +34,7 @@ jobs:
             platforms;android-36
             build-tools;36.0.0
             emulator
-            system-images;android-35;default;x86_64
+            system-images;android-35;google_apis;x86_64
 
       - name: Accept Android SDK licenses
         shell: bash
@@ -46,7 +46,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sdkmanager --list_installed | grep -F "system-images;android-35;default;x86_64"
+          sdkmanager --list_installed | grep -F "system-images;android-35;google_apis;x86_64"
 
       - name: Set up Gradle 9.3.1
         uses: gradle/actions/setup-gradle@v4
