@@ -53,6 +53,14 @@ internal class LearnovaTerrainMesh(
     private var material: com.google.android.filament.MaterialInstance? = null
     private var lastCenter = Double.NaN
 
+    // Reused CPU staging buffers keep terrain streaming allocation-free during
+    // normal driving. This is important on low-memory Android devices where
+    // repeated direct-buffer allocation can cause visible GC pauses.
+    private val nearVertexData = ByteBuffer.allocate(VERTICES * STRIDE)
+        .order(ByteOrder.nativeOrder())
+    private val farVertexData = ByteBuffer.allocate(FAR_VERTICES * STRIDE)
+        .order(ByteOrder.nativeOrder())
+
     fun build(): Boolean {
         if (entity != 0) return true
         material = findTerrainMaterial() ?: return false
@@ -168,7 +176,7 @@ internal class LearnovaTerrainMesh(
         val vb = farVertexBuffer ?: return
         if (farEntity == 0) return
 
-        val data = ByteBuffer.allocate(FAR_VERTICES * STRIDE).order(ByteOrder.nativeOrder())
+        val data = farVertexData.apply { clear() }
         val start = centerDistance
         for (i in 0 until FAR_SAMPLE_COUNT) {
             val distance = start + i * FAR_STEP
@@ -234,7 +242,7 @@ internal class LearnovaTerrainMesh(
         if (entity == 0) return
         if (!lastCenter.isNaN() && kotlin.math.abs(centerDistance - lastCenter) < 4.0) return
 
-        val data = ByteBuffer.allocate(VERTICES * STRIDE).order(ByteOrder.nativeOrder())
+        val data = nearVertexData.apply { clear() }
         val start = centerDistance - BEHIND
 
         for (i in 0 until SAMPLE_COUNT) {
