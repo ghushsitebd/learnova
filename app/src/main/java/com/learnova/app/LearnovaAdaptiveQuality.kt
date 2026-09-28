@@ -1,11 +1,11 @@
 package com.learnova.app
 
 /**
- * Lightweight runtime quality governor for the mobile 3D world.
+ * Runtime quality governor for the mobile 3D world.
  *
- * It reacts to measured frame time rather than assuming that every Android phone
- * has the same CPU/GPU/thermal budget. The renderer can move between quality
- * tiers without changing gameplay or lesson logic.
+ * Uses an exponential moving average (EMA) plus hysteresis/cooldown so quality
+ * changes follow sustained performance evidence instead of reacting to single
+ * frame spikes. Gameplay is unaffected; only expensive visual features change.
  */
 internal class LearnovaAdaptiveQuality {
 
@@ -15,58 +15,64 @@ internal class LearnovaAdaptiveQuality {
         LOW
     }
 
-    private var accumulatedMs = 0.0
-    private var samples = 0
-    private var badFrames = 0
-    private var goodFrames = 0
+    private var emaMs = 16.67
+    private var initialized = false
+    private var evaluationFrames = 0
+    private var cooldownFrames = 0
 
     var tier: Tier = Tier.MEDIUM
         private set
 
     /**
-     * Returns a new tier only when the controller has enough evidence to avoid
-     * oscillating quality every frame.
+     * Samples render-frame time. A tier change requires sustained evidence and a
+     * cooldown, preventing visible quality oscillation during brief stalls.
      */
     fun sample(frameMs: Double, constrainedDevice: Boolean): Tier? {
         val clamped = frameMs.coerceIn(1.0, 100.0)
-        accumulatedMs += clamped
-        samples++
-
-        if (clamped > 18.5) {
-            badFrames++
-            goodFrames = 0
-        } else if (clamped < 12.5) {
-            goodFrames++
-            badFrames = 0
+        emaMs = if (!initialized) {
+            initialized = true
+            clamped
         } else {
-            badFrames = (badFrames - 1).coerceAtLeast(0)
-            goodFrames = (goodFrames - 1).coerceAtLeast(0)
+            // EMA reacts quickly enough to sustained load while filtering spikes.
+            emaMs * 0.90 + clamped * 0.10
         }
 
-        if (samples < 30) return null
+        evaluationFrames++
+        if (cooldownFrames > 0) cooldownFrames--
 
-        val average = accumulatedMs / samples
+        if (evaluationFrames < 30) return null
+
         val old = tier
+        val severe = emaMs >= 24.0
+        val degraded = emaMs >= 18.0
+        val excellent = emaMs <= 12.0
 
-        if (badFrames >= 6 || average > 18.5) {
+        // Constrained/thermal devices never promote above MEDIUM automatically.
+        if (constrainedDevice && tier == Tier.HIGH) {
+            tier = Tier.MEDIUM
+            cooldownFrames = 90
+        } else if (cooldownFrames == 0) {
             tier = when (tier) {
-                Tier.HIGH -> Tier.MEDIUM
-                Tier.MEDIUM -> Tier.LOW
-                Tier.LOW -> Tier.LOW
+                Tier.HIGH -> if (severe) Tier.MEDIUM else Tier.HIGH
+                Tier.MEDIUM -> when {
+                    severe -> Tier.LOW
+                    !constrainedDevice && excellent -> Tier.HIGH
+                    else -> Tier.MEDIUM
+                }
+                Tier.LOW -> when {
+                    severe -> Tier.LOW
+                    !constrainedDevice && excellent -> Tier.MEDIUM
+                    else -> Tier.LOW
+                }
             }
-        } else if (!constrainedDevice && goodFrames >= 30 && average < 12.5) {
-            tier = when (tier) {
-                Tier.LOW -> Tier.MEDIUM
-                Tier.MEDIUM -> Tier.HIGH
-                Tier.HIGH -> Tier.HIGH
+
+            if (old != tier) {
+                // Roughly 1.5 seconds at 60Hz before another automatic transition.
+                cooldownFrames = 90
             }
         }
 
-        accumulatedMs = 0.0
-        samples = 0
-        badFrames = 0
-        goodFrames = 0
-
+        evaluationFrames = 0
         return if (old != tier) tier else null
     }
 }
