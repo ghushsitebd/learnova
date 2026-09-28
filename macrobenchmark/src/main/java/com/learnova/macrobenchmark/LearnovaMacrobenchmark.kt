@@ -1,7 +1,9 @@
 package com.learnova.macrobenchmark
 
 import androidx.benchmark.macro.CompilationMode
+import androidx.benchmark.macro.ExperimentalMetricApi
 import androidx.benchmark.macro.FrameTimingMetric
+import androidx.benchmark.macro.TraceSectionMetric
 import androidx.benchmark.macro.MacrobenchmarkRule
 import androidx.benchmark.macro.StartupMode
 import androidx.benchmark.macro.StartupTimingMetric
@@ -11,6 +13,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
+@OptIn(ExperimentalMetricApi::class)
 class LearnovaMacrobenchmark {
     @get:Rule
     val benchmarkRule = MacrobenchmarkRule()
@@ -42,7 +45,13 @@ class LearnovaMacrobenchmark {
     @Test
     fun drivingFrameTiming() = benchmarkRule.measureRepeated(
         packageName = "com.learnova.app",
-        metrics = listOf(FrameTimingMetric()),
+        metrics = listOf(
+            FrameTimingMetric(),
+            TraceSectionMetric("Learnova.scene"),
+            TraceSectionMetric("Learnova.vehicle"),
+            TraceSectionMetric("Learnova.filamentRender"),
+            TraceSectionMetric("Learnova.adaptiveQuality")
+        ),
         compilationMode = CompilationMode.DEFAULT,
         iterations = 5,
         startupMode = StartupMode.WARM,
