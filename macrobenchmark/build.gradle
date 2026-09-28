@@ -17,11 +17,11 @@ android {
 
     testOptions {
         managedDevices {
-            devices {
-                pixel2api35(com.android.build.api.dsl.ManagedVirtualDevice) {
-                    device = "Pixel 2"
+            localDevices {
+                pixel2api35 {
+                    device = 'Pixel 2'
                     apiLevel = 35
-                    systemImageSource = "aosp"
+                    systemImageSource = 'aosp'
                 }
             }
         }
