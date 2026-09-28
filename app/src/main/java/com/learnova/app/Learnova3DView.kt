@@ -55,6 +55,10 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var lastFrameNanos = 0L
     // Shared render-loop timestep keeps vehicle physics deterministic across devices.
     private var frameDeltaSeconds = 1.0 / 60.0
+    // Fixed-step simulation keeps gameplay independent of display refresh rate.
+    private var physicsAccumulator = 0.0
+    private val physicsStepSeconds = 1.0 / 60.0
+    private val maxPhysicsStepsPerFrame = 4
     private var wheelEntities = IntArray(0)
     private val frontWheelEntities = HashSet<Int>()
     private val wheelBaseTransforms = HashMap<Int, FloatArray>()
@@ -177,84 +181,17 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 lastFrameNanos = time
                 frameDeltaSeconds = dt
 
-                // Child-simple input, physically smoother motion: one tap starts,
-                // the next tap requests a controlled stop. Speed is integrated with
-                // acceleration/deceleration instead of assuming a fixed 60 FPS rate.
-                val requestedSpeed = if (driving) targetSpeed else 0.0
-                // Vehicle classes have different mass/power responses. The child
-                // still has one simple tap-to-drive control, but a bus/truck does
-                // not accelerate like a motorcycle and braking remains progressive.
-                val accelerationResponse = when (activeVehicle.type) {
-                    "motorcycle", "cycle", "three_wheeler", "electric" -> 3.8
-                    "sport", "concept" -> 3.4
-                    "truck", "bus", "emergency", "construction", "farm" -> 2.15
-                    "offroad", "safari" -> 2.55
-                    else -> 2.85
-                }
-                val brakingResponse = when (activeVehicle.type) {
-                    "motorcycle", "cycle" -> 7.2
-                    "truck", "bus", "construction" -> 5.4
-                    else -> 6.6
-                }
-                val response = if (driving) accelerationResponse else brakingResponse
-                val blend = (response * dt).coerceAtMost(1.0)
-                previousVehicleSpeed = vehicleSpeed
-                vehicleSpeed += (requestedSpeed - vehicleSpeed) * blend
-                vehicleAcceleration = ((vehicleSpeed - previousVehicleSpeed) / dt)
-                    .coerceIn(-8.0, 8.0)
-                driveTime += dt * (if (vehicleSpeed > 0.02) 1.0 else 0.0)
-                vehicleDistance += vehicleSpeed * dt
-
-                // Speed-sensitive tyre grip: the child still uses only left/right
-                // touch input, but the car becomes progressively more stable as speed
-                // rises. This prevents arcade-like sideways sliding while preserving
-                // gentle steering at low speed.
-                val speedRatio = (vehicleSpeed / targetSpeed.coerceAtLeast(0.1))
-                    .coerceIn(0.0, 1.0)
-                val steeringAuthority = (1.12 - 0.48 * speedRatio)
-                    .coerceIn(0.64, 1.12)
-                val maxLateralVelocity = (0.92 - 0.16 * speedRatio)
-                    .coerceIn(0.62, 0.92)
-                val desiredLateralVelocity = if (driving) {
-                    steeringInput * maxLateralVelocity * steeringAuthority
-                } else 0.0
-
-                val gripResponse = (dt * (6.8 - 1.4 * speedRatio))
-                    .coerceAtMost(1.0)
-                val lateralError = desiredLateralVelocity - lateralVelocity
-                lateralVelocity += lateralError * gripResponse
-
-                // Tyre scrub rises with steering load and speed. It is deliberately
-                // small: the goal is believable grip, not a drifting mechanic.
-                val targetSlip = (lateralError * speedRatio * 0.22)
-                    .coerceIn(-0.18, 0.18)
-                lateralSlip += (targetSlip - lateralSlip) * (dt * 8.0).coerceAtMost(1.0)
-                lateralVelocity -= kotlin.math.sign(lateralVelocity) *
-                    (kotlin.math.abs(lateralSlip) * 0.055 * speedRatio) * dt
-
-                lateralOffset += lateralVelocity * dt * (2.6 + vehicleSpeed * 0.08)
-
-                // Keep the child-friendly steering inside the actual driving lane.
-                // Near the road edge, progressive resistance slows the lateral motion
-                // before the vehicle can cross onto the shoulder. This feels much more
-                // natural than a hard invisible wall.
-                val laneLimit = 2.72
-                val edgeRatio = (kotlin.math.abs(lateralOffset) / laneLimit).coerceIn(0.0, 1.25)
-                if (edgeRatio > 0.82) {
-                    val edgeBrake = ((edgeRatio - 0.82) / 0.43).coerceIn(0.0, 1.0)
-                    lateralVelocity *= (1.0 - edgeBrake * dt * 7.5).coerceAtLeast(0.20)
-                    lateralOffset *= (1.0 - edgeBrake * dt * 1.8).coerceAtLeast(0.70)
-                }
-                if (!driving) lateralOffset *= (1.0 - (dt * 2.8).coerceAtMost(0.9))
-                lateralOffset = lateralOffset.coerceIn(-laneLimit, laneLimit)
-
-                // The vehicle owns forward motion. It now travels through a
-                // real local world coordinate window instead of being pinned to the
-                // origin every few metres. Rebase only after a long local segment;
-                // this preserves actual vehicle translation while still protecting
-                // floating-point depth precision on very long journeys.
-                if (kotlin.math.abs(vehicleDistance - renderOriginDistance) >= 180.0) {
-                    renderOriginDistance = vehicleDistance
+                // Rendering may run at 60/90/120Hz, but gameplay advances in
+                // deterministic 60Hz steps. Long stalls are capped to avoid a spiral
+                // of catch-up work while preserving stable vehicle speed.
+                physicsAccumulator = (physicsAccumulator + dt).coerceAtMost(
+                    physicsStepSeconds * maxPhysicsStepsPerFrame
+                )
+                var physicsSteps = 0
+                while (physicsAccumulator >= physicsStepSeconds && physicsSteps < maxPhysicsStepsPerFrame) {
+                    updatePhysicsStep(physicsStepSeconds)
+                    physicsAccumulator -= physicsStepSeconds
+                    physicsSteps++
                 }
                 updateDriveScene()
                 proceduralRoad?.update(vehicleDistance)
@@ -276,6 +213,56 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 choreographer.postFrameCallback(frameCallback)
             }
             choreographer.postFrameCallback(frameCallback)
+        }
+    }
+
+    /** Fixed 60Hz gameplay simulation; rendering remains driven by Choreographer. */
+    private fun updatePhysicsStep(dt: Double) {
+        val requestedSpeed = if (driving) targetSpeed else 0.0
+        val accelerationResponse = when (activeVehicle.type) {
+            "motorcycle", "cycle", "three_wheeler", "electric" -> 3.8
+            "sport", "concept" -> 3.4
+            "truck", "bus", "emergency", "construction", "farm" -> 2.15
+            "offroad", "safari" -> 2.55
+            else -> 2.85
+        }
+        val brakingResponse = when (activeVehicle.type) {
+            "motorcycle", "cycle" -> 7.2
+            "truck", "bus", "construction" -> 5.4
+            else -> 6.6
+        }
+        val response = if (driving) accelerationResponse else brakingResponse
+        val blend = (response * dt).coerceAtMost(1.0)
+        previousVehicleSpeed = vehicleSpeed
+        vehicleSpeed += (requestedSpeed - vehicleSpeed) * blend
+        vehicleAcceleration = ((vehicleSpeed - previousVehicleSpeed) / dt).coerceIn(-8.0, 8.0)
+        driveTime += dt * (if (vehicleSpeed > 0.02) 1.0 else 0.0)
+        vehicleDistance += vehicleSpeed * dt
+
+        val speedRatio = (vehicleSpeed / targetSpeed.coerceAtLeast(0.1)).coerceIn(0.0, 1.0)
+        val steeringAuthority = (1.12 - 0.48 * speedRatio).coerceIn(0.64, 1.12)
+        val maxLateralVelocity = (0.92 - 0.16 * speedRatio).coerceIn(0.62, 0.92)
+        val desiredLateralVelocity = if (driving) steeringInput * maxLateralVelocity * steeringAuthority else 0.0
+        val gripResponse = (dt * (6.8 - 1.4 * speedRatio)).coerceAtMost(1.0)
+        val lateralError = desiredLateralVelocity - lateralVelocity
+        lateralVelocity += lateralError * gripResponse
+        val targetSlip = (lateralError * speedRatio * 0.22).coerceIn(-0.18, 0.18)
+        lateralSlip += (targetSlip - lateralSlip) * (dt * 8.0).coerceAtMost(1.0)
+        lateralVelocity -= kotlin.math.sign(lateralVelocity) * (kotlin.math.abs(lateralSlip) * 0.055 * speedRatio) * dt
+        lateralOffset += lateralVelocity * dt * (2.6 + vehicleSpeed * 0.08)
+
+        val laneLimit = 2.72
+        val edgeRatio = (kotlin.math.abs(lateralOffset) / laneLimit).coerceIn(0.0, 1.25)
+        if (edgeRatio > 0.82) {
+            val edgeBrake = ((edgeRatio - 0.82) / 0.43).coerceIn(0.0, 1.0)
+            lateralVelocity *= (1.0 - edgeBrake * dt * 7.5).coerceAtLeast(0.20)
+            lateralOffset *= (1.0 - edgeBrake * dt * 1.8).coerceAtLeast(0.70)
+        }
+        if (!driving) lateralOffset *= (1.0 - (dt * 2.8).coerceAtMost(0.9))
+        lateralOffset = lateralOffset.coerceIn(-laneLimit, laneLimit)
+
+        if (kotlin.math.abs(vehicleDistance - renderOriginDistance) >= 180.0) {
+            renderOriginDistance = vehicleDistance
         }
     }
 
