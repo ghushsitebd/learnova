@@ -53,6 +53,14 @@ class MainActivity : AppCompatActivity() {
         if (::garageView.isInitialized) garageView.visibility = View.GONE
     }
 
+    private fun openParentReport() {
+        if (!::rootLayout.isInitialized) return
+        val report = LearnovaParentReportView(this) {
+            rootLayout.removeViewAt(rootLayout.childCount - 1)
+        }
+        rootLayout.addView(report, FrameLayout.LayoutParams(-1, -1))
+    }
+
     private inner class LearnovaGameView : View(this@MainActivity) {
 
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -84,6 +92,7 @@ class MainActivity : AppCompatActivity() {
         private var lessonStage = 0
         private var completedLessons = 0
         private var learningPoints = 0
+        private var stars = 0
         private var celebrationUntil = 0L
         private var quranFeedback = ""
         private var quranStageSolved = false
@@ -114,6 +123,9 @@ class MainActivity : AppCompatActivity() {
             worldSceneId = prefs.getInt("worldSceneId", 1).coerceAtLeast(1)
             levelProgress = prefs.getFloat("levelProgress", 0f).coerceIn(0f, 1f)
             question = prefs.getInt("question", 0).coerceIn(0, lessons.lastIndex)
+            completedLessons = prefs.getInt("completed_lessons", 0).coerceAtLeast(0)
+            learningPoints = prefs.getInt("learning_points", 0).coerceAtLeast(0)
+            stars = prefs.getInt("stars", 0).coerceAtLeast(0)
             speakCurrentLesson()
         }
 
@@ -149,6 +161,12 @@ class MainActivity : AppCompatActivity() {
 
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
+                    // A quiet parent-only entry point: it is outside the child's main
+                    // drive/learning controls and requires the game to be stopped.
+                    if (!running && y < h * 0.12f && x < w * 0.20f) {
+                        openParentReport()
+                        return true
+                    }
                     if (handleQuranChoice(x, y, w, h)) return true
                     // The vehicle badge opens the real 100-slot garage.
                     if (y < h * 0.22f && x > w * 0.76f) {
@@ -2469,6 +2487,7 @@ class MainActivity : AppCompatActivity() {
             completedLessons += 1
             val reward = ChildSafeEngagementPolicy.rewardForCorrectLesson(completedLessons)
             learningPoints += reward.points
+            stars += 1
             if (reward.celebration != ChildSafeEngagementPolicy.Celebration.NONE) {
                 celebrationUntil = System.currentTimeMillis() + 1800L
             }
@@ -2491,6 +2510,9 @@ class MainActivity : AppCompatActivity() {
                 .putInt("worldSceneId", worldSceneId)
                 .putInt("question", question)
                 .putFloat("levelProgress", levelProgress)
+                .putInt("completed_lessons", completedLessons)
+                .putInt("learning_points", learningPoints)
+                .putInt("stars", stars)
                 .apply()
         }
 
@@ -2995,15 +3017,30 @@ class MainActivity : AppCompatActivity() {
             text.setShadowLayer(5f,0f,2f,Color.DKGRAY)
             text.textSize = 15f
 
-            val sessionMinutes = ((System.currentTimeMillis() - sessionStartedAt) / 60000L).toInt()
-            c.drawText(
-                if (ChildSafeEngagementPolicy.shouldSuggestBreak(sessionMinutes))
+            val elapsed = System.currentTimeMillis() - sessionStartedAt
+            val sessionMinutes = (elapsed / 60000L).toInt()
+
+            val hint = when {
+                elapsed < 10_000L -> "1/3  TAP THE CENTRE  →  DRIVE"
+                elapsed < 20_000L -> "2/3  TOUCH LEFT / RIGHT  →  STEER"
+                elapsed < 30_000L -> "3/3  LEARN BY TOUCH  →  FINISH  →  ⭐"
+                ChildSafeEngagementPolicy.shouldSuggestBreak(sessionMinutes) ->
                     "Nice learning • Take a short break when you are ready"
-                else if (levelComplete) "Level complete • Tap NEXT LEVEL"
-                else if (running) "Drive • Touch left/right to steer • Tap centre to stop"
-                else "Tap centre to drive",
-                w/2f,h*.965f,text
-            )
+                levelComplete -> "Level complete • Tap NEXT LEVEL  •  ⭐ +1"
+                running -> "Drive • Touch left/right to steer • Tap centre to stop"
+                else -> "Tap centre to drive"
+            }
+
+            c.drawText(hint, w/2f, h*.965f, text)
+
+            // A tiny achievement burst makes progress feel rewarding without
+            // interrupting the child's flow with a modal screen.
+            if (celebrationUntil > System.currentTimeMillis()) {
+                text.textSize = 25f
+                text.color = Color.rgb(255, 220, 90)
+                c.drawText("⭐ GREAT JOB!  +1 STAR", w/2f, h*.60f, text)
+                postInvalidateDelayed(80L)
+            }
 
             text.clearShadowLayer()
         }
