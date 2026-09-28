@@ -318,12 +318,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             }
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            surface.holder.surface.setFrameRate(
-                60.0f,
-                android.view.Surface.FRAME_RATE_COMPATIBILITY_DEFAULT
-            )
-        }
+        configureAdaptiveRefreshRateHint()
 
         viewer.view.dynamicResolutionOptions = viewer.view.dynamicResolutionOptions.apply {
             enabled = true
@@ -339,6 +334,41 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         viewer.view.bloomOptions = viewer.view.bloomOptions.apply {
             enabled = !constrained && !thermalConstrained
         }
+    }
+
+    /**
+     * Android 16+ adaptive-refresh integration.
+     *
+     * Gameplay remains deterministic at 60 Hz; this only tells the display scheduler
+     * the preferred presentation rate. On older Android versions we retain the
+     * stable 60 Hz hint. The call is intentionally made once at startup rather than
+     * every frame, because frequent refresh-rate requests can introduce frame drops.
+     */
+    private fun configureAdaptiveRefreshRateHint() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return
+
+        var preferredRate = 60.0f
+        if (Build.VERSION.SDK_INT >= 36) {
+            surface.display?.let { display ->
+                try {
+                    if (display.hasArrSupport()) {
+                        val suggested = display.getSuggestedFrameRate(
+                            android.view.Display.FRAME_RATE_CATEGORY_NORMAL
+                        )
+                        if (suggested.isFinite() && suggested > 0.0f) {
+                            preferredRate = suggested
+                        }
+                    }
+                } catch (_: Throwable) {
+                    // OEM/API rollout differences must never block renderer startup.
+                }
+            }
+        }
+
+        surface.holder.surface.setFrameRate(
+            preferredRate,
+            android.view.Surface.FRAME_RATE_COMPATIBILITY_DEFAULT
+        )
     }
 
     private fun isThermallyConstrained(status: Int?): Boolean = when (status) {
