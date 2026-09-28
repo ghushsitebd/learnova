@@ -104,6 +104,7 @@ class MainActivity : AppCompatActivity() {
         private val prefs: SharedPreferences = getSharedPreferences("learnova_progress", MODE_PRIVATE)
         private val renderQuality = LearnovaRenderQuality(this@MainActivity)
         private val masterySystem = LearnovaMasterySystem(prefs)
+        private val progressionSystem = LearnovaProgressionSystem(prefs)
 
         private val lessons = SmartLearningEngine.lessons.map { it.display }.toTypedArray()
 
@@ -2447,10 +2448,23 @@ class MainActivity : AppCompatActivity() {
 
             text.color = Color.rgb(35, 105, 78)
             text.textSize = 10f
+            val progressionHint = progressionSystem.difficultyHint(
+                lessons.size,
+                masterySystem::mastery,
+                completedLessons
+            )
             c.drawText(
                 if (masterySystem.mastery(question) <= 1) masterySystem.reviewLabel(question) + " • " + lesson.prompt
                 else lesson.prompt,
                 w / 2f, top + 103f, text
+            )
+            c.drawText(
+                progressionSystem.stageTitle(
+                    lessons.size,
+                    masterySystem::mastery,
+                    completedLessons
+                ) + " • " + progressionHint,
+                w / 2f, top + 135f, text
             )
 
             // Quran levels use three large, touch-only choices below the learning card.
