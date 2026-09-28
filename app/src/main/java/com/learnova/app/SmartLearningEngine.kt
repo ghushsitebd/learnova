@@ -123,7 +123,71 @@ object SmartLearningEngine {
         rtl = true
     )
 
-    val lessons: List<SmartLesson> = english + arabic + quran
+    // Core basic-knowledge track: short, concrete lessons a child can learn by touch.
+    // Kept after the language/Quran foundations so the existing progression stays intact.
+    private val foundations = listOf(
+        Triple("Math", "1", "Count one"),
+        Triple("Math", "2", "Count two"),
+        Triple("Math", "3", "Count three"),
+        Triple("Math", "4", "Count four"),
+        Triple("Math", "5", "Count five"),
+        Triple("Math", "10", "Count to ten"),
+        Triple("Math", "+", "Addition means putting together"),
+        Triple("Math", "−", "Subtraction means taking away"),
+        Triple("Math", "△", "Triangle has three sides"),
+        Triple("Math", "○", "Circle is round"),
+        Triple("Math", "□", "Square has four equal sides"),
+        Triple("Science", "Sun", "The Sun gives Earth light and heat"),
+        Triple("Science", "Water", "Water is needed by people, animals and plants"),
+        Triple("Science", "Air", "We need air to breathe"),
+        Triple("Science", "Plant", "Plants need light and water to grow"),
+        Triple("Science", "Seed", "A seed can grow into a plant"),
+        Triple("Science", "Rain", "Rain is water falling from clouds"),
+        Triple("Science", "Moon", "The Moon travels around Earth"),
+        Triple("Science", "Earth", "Earth is our home planet"),
+        Triple("Science", "Magnet", "A magnet can attract some metals"),
+        Triple("Nature", "Tree", "Trees give shade and help nature"),
+        Triple("Nature", "Bee", "Bees help pollinate many plants"),
+        Triple("Nature", "Bird", "Birds have feathers and wings"),
+        Triple("Nature", "Fish", "Fish live in water and breathe with gills"),
+        Triple("Nature", "Forest", "Forests are homes for many living things"),
+        Triple("Safety", "STOP", "Stop and look before crossing a road"),
+        Triple("Safety", "Seat belt", "Wear a seat belt in a car"),
+        Triple("Safety", "Helmet", "Wear a helmet when riding a bicycle"),
+        Triple("Safety", "Traffic light", "Red means stop and green means go"),
+        Triple("Safety", "Fire", "Never play with fire"),
+        Triple("Safety", "Stranger", "Stay with a trusted adult when unsure"),
+        Triple("Life Skills", "Clean", "Wash hands to help keep them clean"),
+        Triple("Life Skills", "Teeth", "Brush teeth regularly"),
+        Triple("Life Skills", "Water", "Drink safe water regularly"),
+        Triple("Life Skills", "Food", "Eat a variety of healthy foods"),
+        Triple("Life Skills", "Sleep", "Good sleep helps the body and mind"),
+        Triple("Life Skills", "Share", "Sharing can help others"),
+        Triple("Life Skills", "Kindness", "Use kind words and actions"),
+        Triple("Life Skills", "Please", "Say please when asking politely"),
+        Triple("Life Skills", "Thank you", "Say thank you when someone helps"),
+        Triple("Community", "Doctor", "Doctors help care for sick people"),
+        Triple("Community", "Teacher", "Teachers help children learn"),
+        Triple("Community", "Firefighter", "Firefighters help keep people safe"),
+        Triple("Community", "Police", "Police help protect the community"),
+        Triple("Community", "Farmer", "Farmers grow food"),
+        Triple("Environment", "Recycle", "Some materials can be reused or recycled"),
+        Triple("Environment", "Litter", "Put rubbish in the proper bin"),
+        Triple("Environment", "Energy", "Turn off unused lights to save energy")
+    ).mapIndexed { index, item ->
+        SmartLesson(
+            id = "foundation_" + (index + 1),
+            domain = item.first,
+            display = item.second,
+            spokenName = item.second,
+            sound = item.second,
+            example = item.third,
+            visualKey = "foundation_" + (index + 1),
+            prompt = "Touch to learn: " + item.third
+        )
+    }
+
+    val lessons: List<SmartLesson> = english + arabic + quran + foundations
 
     fun lesson(index: Int): SmartLesson = lessons[index.coerceIn(0, lessons.lastIndex)]
 
