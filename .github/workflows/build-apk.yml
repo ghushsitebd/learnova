@@ -134,6 +134,14 @@ jobs:
           test -n "${LEARNOVA_KEY_PASSWORD:-}"
           gradle clean assembleRelease bundleRelease --stacktrace
 
+      - name: Compile production-like benchmark variant
+        run: |
+          set -euo pipefail
+          # CI validates the non-debuggable benchmark variant even when no physical
+          # Android device is attached. Runtime Macrobenchmark execution remains a
+          # device task; this step catches variant/AGP/dependency regressions early.
+          gradle :app:assembleBenchmark :macrobenchmark:assembleBenchmark --stacktrace
+
       - name: Find Generated APK and AAB
         id: find_outputs
         shell: bash
