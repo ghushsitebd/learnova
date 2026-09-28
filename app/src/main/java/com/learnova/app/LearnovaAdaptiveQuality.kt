@@ -1,5 +1,16 @@
 package com.learnova.app
 
+import android.content.Context
+import android.os.Build
+import android.os.CpuHeadroomParams
+import android.os.GpuHeadroomParams
+import android.os.SystemHealthManager
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
+
 /**
  * Runtime quality governor for the mobile 3D world.
  *
@@ -68,4 +79,74 @@ internal class LearnovaAdaptiveQuality {
         evaluationFrames = 0
         return if (old != tier) tier else null
     }
+}
+
+/**
+ * Android 16 ADPF headroom monitor.
+ *
+ * Polling is deliberately off the render thread because Android documents
+ * headroom queries as potentially taking more than 1ms. Unsupported devices
+ * simply keep NaN and the frame-time governor remains authoritative.
+ */
+internal class LearnovaHeadroomMonitor(context: Context) {
+    private val executor: ScheduledExecutorService =
+        Executors.newSingleThreadScheduledExecutor { runnable ->
+            Thread(runnable, "LearnovaHeadroom").apply { isDaemon = true }
+        }
+    private val running = AtomicBoolean(false)
+    private val cpu = AtomicReference(Float.NaN)
+    private val gpu = AtomicReference(Float.NaN)
+
+    private val health: SystemHealthManager? =
+        if (Build.VERSION.SDK_INT >= 36) {
+            context.getSystemService(Context.SYSTEM_HEALTH_SERVICE) as? SystemHealthManager
+        } else null
+
+    fun start() {
+        val manager = health ?: return
+        if (!running.compareAndSet(false, true)) return
+
+        executor.execute {
+            poll(manager)
+            val interval = maxOf(
+                safeInterval(manager.getCpuHeadroomMinIntervalMillis()),
+                safeInterval(manager.getGpuHeadroomMinIntervalMillis())
+            )
+            executor.scheduleAtFixedRate(
+                { poll(manager) },
+                interval,
+                interval,
+                TimeUnit.MILLISECONDS
+            )
+        }
+    }
+
+    fun cpuHeadroom(): Float = cpu.get()
+    fun gpuHeadroom(): Float = gpu.get()
+
+    fun stop() {
+        running.set(false)
+        executor.shutdownNow()
+    }
+
+    private fun poll(manager: SystemHealthManager) {
+        if (!running.get()) return
+        try {
+            val cpuParams = CpuHeadroomParams.Builder()
+                .setCalculationType(CpuHeadroomParams.CPU_HEADROOM_CALCULATION_TYPE_MIN)
+                .build()
+            val gpuParams = GpuHeadroomParams.Builder()
+                .setCalculationType(GpuHeadroomParams.GPU_HEADROOM_CALCULATION_TYPE_MIN)
+                .build()
+
+            cpu.set(manager.getCpuHeadroom(cpuParams))
+            gpu.set(manager.getGpuHeadroom(gpuParams))
+        } catch (_: Throwable) {
+            cpu.set(Float.NaN)
+            gpu.set(Float.NaN)
+        }
+    }
+
+    private fun safeInterval(value: Long): Long =
+        value.coerceIn(250L, 5_000L)
 }
