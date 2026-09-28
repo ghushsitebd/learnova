@@ -108,6 +108,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var loadedVehicleAssetKey = "base"
     private var requestedVehicleAssetKey = "base"
     private val adaptiveQuality = LearnovaAdaptiveQuality()
+    private val headroomMonitor = LearnovaHeadroomMonitor(context)
     private var constrainedDevice = false
     private var thermalConstrained = false
     private var powerManager: PowerManager? = null
@@ -172,6 +173,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         }
         if (!started) {
             started = true
+            headroomMonitor.start()
             frameCallback = Choreographer.FrameCallback { time ->
                 if (!started) return@FrameCallback
 
@@ -211,7 +213,12 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 vehicleInteraction.update(dt.toFloat(), interactionProfile)
                 updateVehicleInteractionVisuals()
                 viewer.render(time)
-                adaptiveQuality.sample(dt * 1000.0, constrainedDevice || thermalConstrained)?.let { applyQualityTier(it) }
+                adaptiveQuality.sample(
+                    dt * 1000.0,
+                    constrainedDevice || thermalConstrained,
+                    headroomMonitor.cpuHeadroom(),
+                    headroomMonitor.gpuHeadroom()
+                )?.let { applyQualityTier(it) }
                 // Thermal state can change while the game is running; keep expensive
                 // effects disabled immediately rather than waiting for the next
                 // frame-time evaluation window.
@@ -1145,6 +1152,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         assetLoadGeneration.incrementAndGet()
         frameCallback?.let { choreographer.removeFrameCallback(it) }
         frameCallback = null
+        headroomMonitor.stop()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val power = powerManager
             val listener = thermalListener
