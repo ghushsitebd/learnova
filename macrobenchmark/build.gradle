@@ -13,7 +13,12 @@ android {
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
 
-    testBuildType = 'benchmark'
+    buildTypes {
+        benchmark {
+            debuggable false
+            matchingFallbacks = ['release']
+        }
+    }
 
     testOptions {
         managedDevices {
@@ -25,6 +30,12 @@ android {
                 }
             }
         }
+    }
+}
+
+androidComponents {
+    beforeVariants(selector().all()) {
+        enabled = buildType == 'benchmark'
     }
 }
 
