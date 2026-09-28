@@ -3019,6 +3019,7 @@ class MainActivity : AppCompatActivity() {
 
             val elapsed = System.currentTimeMillis() - sessionStartedAt
             val sessionMinutes = (elapsed / 60000L).toInt()
+            if (elapsed < 30_000L) postInvalidateDelayed(100L)
 
             val hint = when {
                 elapsed < 10_000L -> "1/3  TAP THE CENTRE  →  DRIVE"
