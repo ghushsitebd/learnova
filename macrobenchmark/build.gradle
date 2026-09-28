@@ -24,8 +24,8 @@ android {
             // Gradle Managed Device can install it before executing the tests.
             signingConfig signingConfigs.debug
             debuggable false
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled false
+            shrinkResources false
             matchingFallbacks = ['release']
             proguardFiles 'proguard-rules.pro'
         }
