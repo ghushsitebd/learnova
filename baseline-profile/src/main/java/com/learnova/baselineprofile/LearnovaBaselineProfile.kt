@@ -15,9 +15,32 @@ class LearnovaBaselineProfile {
     @get:Rule
     val baselineProfileRule = BaselineProfileRule()
 
+    /**
+     * Keep only the true launch path in the Startup Profile so primary-dex layout
+     * stays focused on the code required for first usable render.
+     */
     @Test
-    fun startupAndCoreGameJourney() = baselineProfileRule.collect(
+    fun startupProfile() = baselineProfileRule.collect(
         packageName = "com.learnova.app",
+        includeInStartupProfile = true,
+        strictStability = true,
+        profileBlock = {
+            uiAutomator {
+                startApp()
+                device.waitForIdle()
+            }
+        }
+    )
+
+    /**
+     * The full child gameplay journey remains in the Baseline Profile but is not
+     * promoted into the Startup Profile. This keeps launch optimization focused
+     * while still pre-compiling the real driving/learning/garage paths.
+     */
+    @Test
+    fun coreGameJourney() = baselineProfileRule.collect(
+        packageName = "com.learnova.app",
+        strictStability = true,
         profileBlock = {
             uiAutomator {
                 startApp()
@@ -51,8 +74,7 @@ class LearnovaBaselineProfile {
                 )
                 device.waitForIdle()
 
-                // Stop driving and open the vehicle garage, covering the real
-                // navigation path without requiring text selectors.
+                // Stop driving and open the vehicle garage.
                 device.click(device.displayWidth / 2, (device.displayHeight * 0.42f).toInt())
                 device.waitForIdle()
                 device.click(
