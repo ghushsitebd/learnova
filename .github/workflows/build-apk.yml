@@ -198,15 +198,12 @@ jobs:
             echo "Baseline Profile verified in APK: $APK_PROFILE"
             echo "Baseline Profile verified in AAB: $AAB_PROFILE"
           else
-            # Bootstrap is intentionally allowed once: the successful CI build
-            # unlocks the dedicated Gradle Managed Device Baseline Profile job.
-            # Later commits are strict because the generated profile is checked in.
-            if git ls-files --error-unmatch app/src/release/generated/baselineProfiles/baseline-prof.txt >/dev/null 2>&1; then
-              echo "::error::Checked-in Baseline Profile exists but was not packaged."
-              exit 1
-            fi
-            echo "::warning::Baseline Profile not present yet; continuing bootstrap CI."
-            echo "The dedicated baseline-profile workflow will generate and persist it."
+            echo "::error::Release APK/AAB is missing the required Baseline Profile."
+            echo "Expected APK entry: assets/dexopt/baseline.prof"
+            echo "Expected AAB entry: BUNDLE-METADATA/com.android.tools.build.profiles/baseline.prof"
+            echo "Checked-in source profile:"
+            git ls-files --error-unmatch app/src/release/generated/baselineProfiles/baseline-prof.txt
+            exit 1
           fi
 
       - name: Verify APK and AAB integrity
