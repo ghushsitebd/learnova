@@ -2500,7 +2500,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         private fun speakCurrentLesson() {
-            voice.speakSmartLesson(SmartLearningEngine.lesson(question))
+            val lesson = SmartLearningEngine.lesson(question)
+            // Learning words are also world events: C -> Cat makes the matching
+            // animal cross the road ahead of the child, so the word is experienced
+            // rather than shown as a static label.
+            when (lesson.visualKey) {
+                "cat" -> threeDWorld.triggerLearningAnimal("cat")
+            }
+            voice.speakSmartLesson(lesson)
         }
 
         private fun nextLesson() {
