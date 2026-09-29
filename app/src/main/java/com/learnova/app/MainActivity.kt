@@ -3141,9 +3141,13 @@ class MainActivity : AppCompatActivity() {
                     (companionInteractionUntil - companionInteractionStart).coerceAtLeast(1L)).coerceIn(0f, 1f)
             } else 0f
             val walkOut = if (interactionActive) sin(interactionProgress * Math.PI).toFloat() else 0f
-            val fx = cx + (58f + 92f * walkOut) * scale
+            // In normal travel the friend stays visibly inside the vehicle/cabin;
+            // during a learning discovery the same friend naturally steps outside.
+            // This keeps the companion persistent without adding bitmap assets.
+            val glance = if (running && !interactionActive) sin(frame / 18.0).toFloat() else 0f
+            val fx = cx + (14f + 92f * walkOut) * scale + glance * 3.5f * scale
             val walk = if (running || interactionActive) sin(frame / 7.0).toFloat() * 3.5f else 0f
-            val fy = cy - (55f + 8f * walkOut) * scale + walk
+            val fy = cy - (48f + 8f * walkOut) * scale + walk
 
             // Soft contact shadow keeps the friend grounded when briefly walking beside
             // the vehicle; in the vehicle it is hidden by the body naturally.
@@ -3179,8 +3183,8 @@ class MainActivity : AppCompatActivity() {
 
             // Friendly face
             paint.color = Color.rgb(38, 35, 32)
-            c.drawCircle(fx - 5f * scale, fy - 13f * scale, 1.7f * scale, paint)
-            c.drawCircle(fx + 5f * scale, fy - 13f * scale, 1.7f * scale, paint)
+            c.drawCircle(fx - 5f * scale + glance * 1.8f * scale, fy - 13f * scale, 1.7f * scale, paint)
+            c.drawCircle(fx + 5f * scale + glance * 1.8f * scale, fy - 13f * scale, 1.7f * scale, paint)
             paint.color = Color.rgb(250, 240, 220)
             c.drawOval(RectF(fx - 7f * scale, fy - 7f * scale, fx + 7f * scale, fy + 1f * scale), paint)
             paint.color = Color.rgb(45, 38, 34)
