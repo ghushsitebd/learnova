@@ -2463,14 +2463,6 @@ class MainActivity : AppCompatActivity() {
                     top + 46f), 3f, 3f, paint
             )
 
-            if (levelComplete) {
-                paint.color = Color.rgb(25, 145, 82)
-                c.drawRoundRect(RectF(w - 112f, 82f, w - 16f, 124f), 18f, 18f, paint)
-                text.textAlign = Paint.Align.CENTER
-                text.color = Color.WHITE
-                text.textSize = 12f
-                c.drawText("NEXT  ›", w - 64f, 108f, text)
-            }
         }
 
         private fun speakCurrentLesson() {
