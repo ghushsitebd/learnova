@@ -209,6 +209,26 @@ jobs:
             echo "The dedicated baseline-profile workflow will generate and persist it."
           fi
 
+      - name: Verify APK and AAB integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="Learnova.apk"
+          AAB="Learnova.aab"
+          test -s "$APK"
+          test -s "$AAB"
+
+          echo "== APK signature =="
+          apksigner verify --verbose --print-certs "$APK"
+
+          echo "== APK alignment =="
+          zipalign -c -P 4 -v 4 "$APK"
+
+          echo "== AAB signature/container =="
+          jarsigner -verify -strict "$AAB"
+
+          echo "Integrity validation passed."
+
       - name: Generate SHA-256
         run: |
           sha256sum Learnova.apk | tee Learnova.apk.sha256
