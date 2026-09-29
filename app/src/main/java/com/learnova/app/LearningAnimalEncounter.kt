@@ -87,7 +87,7 @@ internal class LearningAnimalEncounter(
         val (x, y, z, yaw) = when {
             isFlying -> {
                 val forward = (phase - 0.5) * 10.0
-                val lateral = sin(t * Math.PI) * 2.0
+                val lateral = sin(t.toDouble() * Math.PI) * 2.0
                 Quad(
                     road.x + cos(road.yaw) * forward + sin(road.yaw) * lateral,
                     road.y + 2.6 + wave * 0.22,
