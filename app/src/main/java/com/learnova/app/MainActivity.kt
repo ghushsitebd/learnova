@@ -69,7 +69,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         private var running = false
-        private val use3DWorld = true
+        private val use3DWorld: Boolean
+            get() = threeDWorld.isPresentationReady()
         private var frame = 0L
         private var distance = 0f
         private var vehicleProgress = 0.78f
@@ -429,6 +430,9 @@ class MainActivity : AppCompatActivity() {
             // compatibility fallback. This makes migration incremental instead of a
             // risky all-at-once rewrite.
             if (!use3DWorld) {
+                // Keep the procedural Canvas world visible while Filament is
+                // initializing or unavailable on a device. This prevents a dark/
+                // black screen and gives the child a usable fallback renderer.
                 drawSky(canvas, w, h, world)
                 drawSun(canvas, w, h, world)
                 drawClouds(canvas, w, h)
