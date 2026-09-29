@@ -130,8 +130,6 @@ class MainActivity : AppCompatActivity() {
         private var listeningForChild = false
         private var companionInteractionUntil = 0L
         private var companionInteractionStart = 0L
-        private var companionInteractionUntil = 0L
-        private var companionInteractionStart = 0L
         private val childVoiceRecognizer = ChildVoiceRecognizer(this@MainActivity, { heard -> onChildVoice(heard) }, { listeningForChild = false; invalidate() })
 
         private val lessons = SmartLearningEngine.lessons.map { it.display }.toTypedArray()
