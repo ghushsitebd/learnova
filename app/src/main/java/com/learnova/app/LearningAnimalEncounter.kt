@@ -18,6 +18,7 @@ internal class LearningAnimalEncounter(
     private var ib: IndexBuffer? = null
     private var material: MaterialInstance? = null
     private var active = false
+    private var activeAnimal = "cat"
     private var start = 0.0
     private var center = 0.0
     private var lastNow = 0L
@@ -49,7 +50,17 @@ internal class LearningAnimalEncounter(
 
     /** Triggered when the child hears the matching word, e.g. C -> Cat. */
     fun trigger(animal: String, worldDistance: Double) {
-        if (!animal.equals("cat", true) || entity == 0) return
+        if (entity == 0) return
+        val key = animal.trim().lowercase()
+        val supported = setOf(
+            "cat", "dog", "elephant", "fish", "lion", "tiger",
+            "rabbit", "parrot", "whale", "yak", "zebra",
+            "fox", "camel", "bear", "giraffe", "frog", "bird",
+            "gazelle", "falcon"
+        )
+        if (key !in supported) return
+        activeAnimal = key
+        applyAnimalStyle(key)
         center = worldDistance
         start = System.nanoTime() * 1e-9
         active = true
@@ -72,12 +83,12 @@ internal class LearningAnimalEncounter(
         val z = road.z - sin(road.yaw) * across * side
         val y = road.y + 0.03
         val yaw = road.yaw + if (across < 0) 1.57 else -1.57
-        drawCat(x, y, z, yaw, 0.92 + 0.04 * sin(t * Math.PI * 4))
+        drawAnimal(x, y, z, yaw, animalScale(activeAnimal) + 0.04 * sin(t * Math.PI * 4))
         vb!!.setBufferAt(engine, 0, vertexData())
         ib!!.setBuffer(engine, indexData())
     }
 
-    private fun drawCat(x: Double, y: Double, z: Double, yaw: Double, scale: Double) {
+    private fun drawAnimal(x: Double, y: Double, z: Double, yaw: Double, scale: Double) {
         val v = ByteBuffer.allocate(40 * 36).order(ByteOrder.nativeOrder())
         val i = ByteBuffer.allocate(180 * 2).order(ByteOrder.nativeOrder())
         box(v,i,x,y+0.38*scale,z,yaw,0.30*scale,0.38*scale,0.72*scale)
@@ -90,6 +101,29 @@ internal class LearningAnimalEncounter(
         while (i.position() < 180 * 2) i.putShort(0)
         v.flip(); i.flip()
         vb!!.setBufferAt(engine,0,v); ib!!.setBuffer(engine,i)
+    }
+
+    private fun animalScale(key: String): Double = when (key) {
+        "elephant", "whale" -> 1.55
+        "lion", "tiger", "zebra", "yak", "camel", "giraffe" -> 1.18
+        "rabbit", "frog", "bird", "falcon" -> 0.72
+        else -> 0.92
+    }
+
+    private fun applyAnimalStyle(key: String) {
+        val rgb = when (key) {
+            "elephant" -> floatArrayOf(0.42f, 0.46f, 0.50f)
+            "fish", "whale" -> floatArrayOf(0.12f, 0.42f, 0.72f)
+            "lion", "giraffe", "camel", "gazelle" -> floatArrayOf(0.72f, 0.50f, 0.20f)
+            "tiger", "fox" -> floatArrayOf(0.78f, 0.28f, 0.10f)
+            "zebra" -> floatArrayOf(0.72f, 0.72f, 0.68f)
+            "bear", "yak" -> floatArrayOf(0.20f, 0.14f, 0.10f)
+            "rabbit" -> floatArrayOf(0.74f, 0.62f, 0.58f)
+            "parrot", "bird", "falcon" -> floatArrayOf(0.16f, 0.50f, 0.24f)
+            "frog" -> floatArrayOf(0.16f, 0.56f, 0.18f)
+            else -> floatArrayOf(0.48f, 0.28f, 0.16f)
+        }
+        try { material?.setParameter("baseColor", rgb[0], rgb[1], rgb[2], 1f) } catch (_: Throwable) {}
     }
 
     private fun box(v: ByteBuffer,i: ByteBuffer,x:Double,y:Double,z:Double,yaw:Double,w:Double,h:Double,d:Double) {
