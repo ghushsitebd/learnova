@@ -261,3 +261,4 @@ jobs:
         run: rm -f learnova-release.keystore
 
 # CI validation checkpoint: bounded benchmark diagnostics
+# CI verification trigger: run the corrected release/integrity gate before the next stage.
