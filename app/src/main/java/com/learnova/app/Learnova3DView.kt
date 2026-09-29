@@ -85,6 +85,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var shorelineWorld: ShorelineWorld? = null
     private var worldLife: WorldLifeSimulation? = null
     private var childNPC: ChildNPCWorld? = null
+    private var learningAnimalEncounter: LearningAnimalEncounter? = null
     private var activeVehicle: VehicleDefinition = VehicleCatalog.byId(1)
     private var targetSpeed = activeVehicle.targetSpeed
     private var wheelRadius = activeVehicle.wheelRadius
@@ -160,6 +161,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 shorelineWorld = ShorelineWorld(viewer.engine, viewer.scene, asset).also { it.build() }
                 worldLife = WorldLifeSimulation(viewer.engine, viewer.scene, asset).also { it.build() }
                 childNPC = ChildNPCWorld(viewer.engine, viewer.scene, asset).also { it.build() }
+                learningAnimalEncounter = LearningAnimalEncounter(viewer.engine, viewer.scene, asset).also { it.build() }
             }
             configureRealisticSunLight()
             updateSkybox(WorldDirector.atmosphere(0.0), force = true)
@@ -186,6 +188,12 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
     /** True only when the Filament surface is initialized and safe to show. */
     fun isPresentationReady(): Boolean = rendererReady
+
+    /** Shows the named learning animal directly in the child's current journey. */
+    fun triggerLearningAnimal(animal: String) {
+        if (!rendererReady) return
+        learningAnimalEncounter?.trigger(animal, vehicleDistance + 12.0)
+    }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
@@ -237,6 +245,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                     shorelineWorld?.update(vehicleDistance)
                     worldLife?.update(vehicleDistance)
                     childNPC?.update(vehicleDistance)
+                    learningAnimalEncounter?.update(vehicleDistance)
                 }
                 traceSectionIfEnabled(traceThisFrame, "Learnova.vehicle") {
                     updateVehicleMechanics()
@@ -1264,6 +1273,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         worldLife = null
         childNPC?.destroy()
         childNPC = null
+        learningAnimalEncounter?.destroy()
+        learningAnimalEncounter = null
         roadsideWorld = null
         waterSurfaceWorld = null
         if (rendererReady && sunEntity != 0) {
