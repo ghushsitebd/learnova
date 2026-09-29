@@ -467,7 +467,7 @@ class MainActivity : AppCompatActivity() {
                 laneOffset += (-laneOffset) * 0.06f
                 suspensionVelocity *= 0.70f
                 suspensionOffset *= 0.78f
-                if (levelProgress >= 1f && !levelComplete) {
+                if (levelProgress >= 1f && levelElapsedMs >= minimumLevelDurationMs && !levelComplete) {
                     levelComplete = true
                     celebrationUntil = System.currentTimeMillis() + 1400L
                 }
