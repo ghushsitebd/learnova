@@ -134,6 +134,9 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
         )
         surface.setZOrderOnTop(false)
+        // Never let an uninitialized/failed Filament SurfaceView cover the
+        // child-friendly Canvas fallback with a black rectangle.
+        surface.visibility = android.view.View.INVISIBLE
         // Keep Activity startup light: the expensive GLB decode and procedural-world
         // construction are deferred until the view is attached and the first UI
         // traversal has a chance to run. This reduces startup contention without
@@ -167,6 +170,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             viewer.view.antiAliasing = com.google.android.filament.View.AntiAliasing.FXAA
             configureDeviceRenderProfile()
             rendererReady = true
+            surface.visibility = android.view.View.VISIBLE
         } catch (_: Throwable) {
             rendererReady = false
             proceduralRoad = null
@@ -176,8 +180,13 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             shorelineWorld = null
             worldLife = null
             childNPC = null
+            surface.visibility = android.view.View.INVISIBLE
         }
     }
+
+    /** True only when the Filament surface is initialized and safe to show. */
+    fun isPresentationReady(): Boolean = rendererReady
+
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         if (assetIoExecutor.isShutdown || assetIoExecutor.isTerminated) {
@@ -1210,6 +1219,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
     override fun onDetachedFromWindow() {
         started = false
+        surface.visibility = android.view.View.INVISIBLE
         lastFrameNanos = 0L
         vehicleSpeed = 0.0
         previousVehicleSpeed = 0.0
