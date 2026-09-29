@@ -148,8 +148,10 @@ object LearnovaUnlimitedWorld {
         val safe = number.coerceAtLeast(1)
         val chapter = ((safe - 1) / 25) + 1
         val stage = ((safe - 1) % 25) + 1
-        val target = (0.035f + (stage - 1) * 0.0018f + (chapter - 1) * 0.0007f)
-            .coerceAtMost(0.095f)
+        // A level is a real driving journey, not a quick question.
+        // Distance grows by chapter so later worlds feel like longer adventures.
+        val target = (0.36f + (stage - 1) * 0.018f + (chapter - 1) * 0.012f)
+            .coerceAtMost(0.82f)
         val difficulty = when {
             safe <= 25 -> "Starter"
             safe <= 100 -> "Explorer"
