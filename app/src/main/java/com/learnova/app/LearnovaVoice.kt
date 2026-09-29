@@ -3,6 +3,7 @@ package com.learnova.app
 import android.content.Context
 import android.media.MediaPlayer
 import android.speech.tts.TextToSpeech
+import android.speech.tts.Voice
 import java.util.Locale
 
 /**
@@ -104,6 +105,54 @@ class LearnovaVoice(private val context: Context) : TextToSpeech.OnInitListener 
             true
         }
         player.start()
+    }
+
+    fun speakCharacter(character: String, line: String) {
+        if (!ready) return
+        val profile = CharacterVoiceProfile.forName(character)
+        val locale = profile.locale
+        if (tts.isLanguageAvailable(locale) < TextToSpeech.LANG_AVAILABLE) return
+        tts.language = locale
+        selectCharacterVoice(profile)
+        tts.setSpeechRate(profile.rate)
+        tts.setPitch(profile.pitch)
+        tts.speak(line, TextToSpeech.QUEUE_FLUSH, null, "learnova-character-${profile.id}")
+        tts.setSpeechRate(0.72f)
+        tts.setPitch(1.18f)
+    }
+
+    fun characterDiscover(character: String, word: String) {
+        val line = when (character.lowercase()) {
+            "bear" -> "Oh! Look, a $word!"
+            "monkey" -> "Wow! A $word! Come and see!"
+            "rabbit" -> "Look! A $word! Let's go!"
+            "panda" -> "Look! A $word!"
+            "tiger" -> "Look! A $word. Amazing!"
+            "lion" -> "Wow! Look at the $word!"
+            else -> "Look! A $word!"
+        }
+        speakCharacter(character, line)
+    }
+
+    fun characterPraise(character: String, word: String) {
+        val line = when (character.lowercase()) {
+            "bear" -> "Very good! You said $word."
+            "monkey" -> "Yes! $word! Great!"
+            "rabbit" -> "Great job! $word!"
+            "panda" -> "Wonderful! $word!"
+            else -> "Yes! $word! Very good!"
+        }
+        speakCharacter(character, line)
+    }
+
+    private fun selectCharacterVoice(profile: CharacterVoiceProfile) {
+        val voices = runCatching { tts.voices ?: emptySet() }.getOrDefault(emptySet())
+        val candidates = voices.filter { it.locale.language == profile.locale.language && !it.isNetworkConnectionRequired }
+        val preferred = candidates.firstOrNull { v ->
+            val n = v.name.lowercase()
+            profile.voiceHints.any { n.contains(it) }
+        } ?: candidates.firstOrNull()
+        runCatching { tts.voice = preferred }
     }
 
     fun speakQuranStage(surahName: String, mode: String, stage: Int) {
