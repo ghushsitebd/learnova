@@ -436,6 +436,13 @@ class MainActivity : AppCompatActivity() {
                     currentRoadsideSign = roadsideSign
                     companionInteractionStart = System.currentTimeMillis()
                     companionInteractionUntil = companionInteractionStart + 4200L
+
+                    // The discovery begins in the world itself: show the matching
+                    // animal as soon as the vehicle reaches the Magic Learning Point.
+                    // The child can see/hear the object before being invited to speak,
+                    // keeping learning inside the journey instead of opening a quiz.
+                    roadsideSign.visualKey?.let { threeDWorld.triggerLearningAnimal(it) }
+
                     running = false
                     speed = 0f
                     threeDWorld.setDriving(false)
@@ -2533,6 +2540,11 @@ class MainActivity : AppCompatActivity() {
             c.drawRoundRect(RectF(board.left + 5f, board.top + 5f, board.right - 5f, board.bottom - 5f), 9f, 9f, paint)
             paint.color = Color.rgb(116, 82, 48)
             c.drawRect(board.centerX() - 5f, board.bottom, board.centerX() + 5f, board.bottom + h * 0.14f, paint)
+            val pulse = if (listeningForChild || companionInteractionUntil > System.currentTimeMillis()) {
+                (0.88f + 0.12f * (0.5f + 0.5f * sin(frame / 8.0))).toFloat()
+            } else 1f
+            c.save()
+            c.scale(pulse, pulse, board.centerX(), board.centerY())
             text.textAlign = Paint.Align.CENTER
             text.color = Color.WHITE
             text.textSize = minOf(22f, w * .055f)
@@ -2546,6 +2558,7 @@ class MainActivity : AppCompatActivity() {
             text.color = Color.rgb(35, 91, 61)
             text.textSize = 11f
             c.drawText(if (listeningForChild) "Say it!" else "🎙 Say it!", board.centerX(), board.bottom + 28f, text)
+            c.restore()
         }
 
         private fun currentFriendName(): String = when (vehicle % 8) {
