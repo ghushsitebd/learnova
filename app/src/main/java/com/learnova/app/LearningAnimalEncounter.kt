@@ -76,13 +76,47 @@ internal class LearningAnimalEncounter(
         if (t >= 1.0) { active = false; hide(); return }
 
         val road = RoadSpline.sampleRelative(center, worldDistance)
-        // The cat crosses in front of the vehicle, never spawning on the road center.
-        val across = -1.0 + 2.0 * smooth(t)
-        val side = 6.2
-        val x = road.x + cos(road.yaw) * across * side
-        val z = road.z - sin(road.yaw) * across * side
-        val y = road.y + 0.03
-        val yaw = road.yaw + if (across < 0) 1.57 else -1.57
+        val isFlying = activeAnimal in setOf("bird", "parrot", "falcon")
+        val isAquatic = activeAnimal in setOf("fish", "whale")
+        val phase = smooth(t)
+        val wave = sin(t * Math.PI * 2.0)
+
+        // Keep the encounter lightweight but make movement match the animal's habitat:
+        // land animals cross the roadside, birds fly above it, and aquatic animals
+        // glide along the world-side water corridor rather than crossing the road.
+        val (x, y, z, yaw) = when {
+            isFlying -> {
+                val forward = (phase - 0.5) * 10.0
+                val lateral = sin(t * Math.PI) * 2.0
+                Quad(
+                    road.x + cos(road.yaw) * forward + sin(road.yaw) * lateral,
+                    road.y + 2.6 + wave * 0.22,
+                    road.z - sin(road.yaw) * forward + cos(road.yaw) * lateral,
+                    road.yaw + if (wave >= 0.0) 0.18 else -0.18
+                )
+            }
+            isAquatic -> {
+                val forward = (phase - 0.5) * 11.0
+                val waterSide = 7.0
+                Quad(
+                    road.x + cos(road.yaw) * forward + sin(road.yaw) * waterSide,
+                    road.y - 0.20 + wave * 0.08,
+                    road.z - sin(road.yaw) * forward + cos(road.yaw) * waterSide,
+                    road.yaw
+                )
+            }
+            else -> {
+                val across = -1.0 + 2.0 * phase
+                val side = 6.2
+                Quad(
+                    road.x + cos(road.yaw) * across * side,
+                    road.y + 0.03,
+                    road.z - sin(road.yaw) * across * side,
+                    road.yaw + if (across < 0.0) 1.57 else -1.57
+                )
+            }
+        }
+
         drawAnimal(x, y, z, yaw, animalScale(activeAnimal) + 0.04 * sin(t * Math.PI * 4))
         vb!!.setBufferAt(engine, 0, vertexData())
         ib!!.setBuffer(engine, indexData())
@@ -95,8 +129,6 @@ internal class LearningAnimalEncounter(
         box(v,i,x+cos(yaw)*0.62*scale,y+0.70*scale,z-sin(yaw)*0.62*scale,yaw,0.27*scale,0.28*scale,0.30*scale)
         box(v,i,x+cos(yaw)*0.77*scale,y+0.98*scale,z-sin(yaw)*0.77*scale,yaw,0.08*scale,0.16*scale,0.09*scale)
         box(v,i,x+cos(yaw)*0.56*scale,y+0.55*scale,z-sin(yaw)*0.56*scale,yaw+0.45,0.055*scale,0.055*scale,0.55*scale)
-        val used = v.position() / 36
-        while (used + (v.position() / 36 - used) < 40) { /* fixed-size mesh */ break }
         while (v.position() < 40 * 36) { v.putFloat(0f); v.putFloat(-5000f); v.putFloat(0f); repeat(6) { v.putFloat(0f) } }
         while (i.position() < 180 * 2) i.putShort(0)
         v.flip(); i.flip()
@@ -144,6 +176,8 @@ internal class LearningAnimalEncounter(
         repeat(180){i.putShort(0)}
         v.flip();i.flip();vb?.setBufferAt(engine,0,v);ib?.setBuffer(engine,i)
     }
+    private data class Quad(val x: Double, val y: Double, val z: Double, val yaw: Double)
+
     private fun smooth(t:Double)=t*t*(3.0-2.0*t)
     private fun findMaterial():MaterialInstance? {
         val rm=engine.renderableManager
