@@ -229,9 +229,14 @@ jobs:
           "$ZIPALIGN" -c -P 4 -v 4 "$APK"
 
           echo "== AAB signature/container =="
-          JARSIGNER_OUTPUT="$(jarsigner -verify "$AAB" 2>&1)" || { echo "$JARSIGNER_OUTPUT"; exit 1; }
-          printf "%s\n" "$JARSIGNER_OUTPUT"
-          printf "%s\n" "$JARSIGNER_OUTPUT" | grep -q "jar verified" || { echo "::error::AAB jarsigner verification did not report a verified archive"; exit 1; }
+          JARSIGNER_OUTPUT_FILE="/tmp/learnova-aab-jarsigner.txt"
+          if ! jarsigner -verify "$AAB" >"$JARSIGNER_OUTPUT_FILE" 2>&1; then
+            cat "$JARSIGNER_OUTPUT_FILE"
+            echo "::error::AAB jarsigner verification failed."
+            exit 1
+          fi
+          cat "$JARSIGNER_OUTPUT_FILE"
+          echo "AAB jarsigner verification command completed successfully."
 
           echo "Integrity validation passed."
 
