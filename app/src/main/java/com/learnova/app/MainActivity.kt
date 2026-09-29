@@ -3055,3 +3055,4 @@ class MainActivity : AppCompatActivity() {
             text.clearShadowLayer()
         }
 }
+}
