@@ -8,8 +8,9 @@ import java.util.Locale
 /**
  * Voice controller.
  *
- * Child dialogue is ONLY played from human-recorded audio assets.
- * Android TTS remains available for non-character system guidance.
+ * Child dialogue prefers bundled human-recorded audio assets.
+ * If an asset is not bundled yet, a higher-pitched, slower TTS fallback keeps
+ * the learning flow audible instead of silently failing.
  */
 class LearnovaVoice(private val context: Context) : TextToSpeech.OnInitListener {
     private val tts = TextToSpeech(context.applicationContext, this)
@@ -83,6 +84,11 @@ class LearnovaVoice(private val context: Context) : TextToSpeech.OnInitListener 
                 descriptor.close()
             }
         } catch (_: Exception) {
+            // The current repository does not yet contain the recorded .ogg files.
+            // Do not fail silently: use a child-style TTS fallback until those
+            // recordings are added. The real recordings will automatically take
+            // priority once their assets exist.
+            speakChildFallback(dialogue.transcript, dialogue.locale)
             return
         }
 
@@ -127,6 +133,22 @@ class LearnovaVoice(private val context: Context) : TextToSpeech.OnInitListener 
         if (availability < TextToSpeech.LANG_AVAILABLE) return
         tts.language = locale
         tts.speak(value, TextToSpeech.QUEUE_FLUSH, null, "learnova-system")
+    }
+
+    private fun speakChildFallback(value: String, localeTag: String) {
+        if (!ready) return
+        val locale = when {
+            localeTag.equals("bn-BD", ignoreCase = true) -> Locale("bn", "BD")
+            localeTag.startsWith("ar", ignoreCase = true) -> Locale("ar")
+            else -> Locale.US
+        }
+        if (tts.isLanguageAvailable(locale) < TextToSpeech.LANG_AVAILABLE) return
+        tts.language = locale
+        tts.setSpeechRate(0.80f)
+        tts.setPitch(1.30f)
+        tts.speak(value, TextToSpeech.QUEUE_FLUSH, null, "learnova-child-fallback")
+        tts.setSpeechRate(0.72f)
+        tts.setPitch(1.18f)
     }
 
     private fun stopChildAudio() {
