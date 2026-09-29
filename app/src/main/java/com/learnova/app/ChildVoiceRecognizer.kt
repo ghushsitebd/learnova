@@ -8,12 +8,14 @@ import android.os.Build
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
-import java.util.Locale
 
 /**
- * Optional on-device child speech input used only at a roadside learning sign.
- * It never blocks the driving loop and falls back to the platform recognizer
- * when an on-device recognizer is unavailable.
+ * Optional child speech input used at a roadside learning sign.
+ *
+ * The recognizer is multilingual-first: it tries the requested language and,
+ * when the platform reports a recognition error, retries with Bangla and
+ * Arabic before giving up. Recognition remains local/offline when the device
+ * supports Android's on-device recognizer.
  */
 internal class ChildVoiceRecognizer(
     private val activity: Activity,
@@ -23,8 +25,22 @@ internal class ChildVoiceRecognizer(
     companion object { const val REQUEST_CODE = 9417 }
 
     private var recognizer: SpeechRecognizer? = null
+    private var languageQueue: List<String> = emptyList()
+    private var languageIndex = 0
+    private var retrying = false
 
     fun start(languageTag: String = "en-US") {
+        languageQueue = listOf(
+            languageTag,
+            "bn-BD",
+            "ar-SA"
+        ).distinct()
+        languageIndex = 0
+        retrying = false
+        startCurrentLanguage()
+    }
+
+    private fun startCurrentLanguage() {
         if (Build.VERSION.SDK_INT >= 23 &&
             activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             activity.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), REQUEST_CODE)
@@ -35,7 +51,8 @@ internal class ChildVoiceRecognizer(
             return
         }
 
-        stop()
+        stopRecognizerOnly()
+
         recognizer = try {
             if (Build.VERSION.SDK_INT >= 31 &&
                 SpeechRecognizer.isOnDeviceRecognitionAvailable(activity)) {
@@ -44,6 +61,11 @@ internal class ChildVoiceRecognizer(
                 SpeechRecognizer.createSpeechRecognizer(activity)
             }
         } catch (_: Throwable) {
+            retryOrFail()
+            return
+        }
+
+        val languageTag = languageQueue.getOrNull(languageIndex) ?: run {
             onError()
             return
         }
@@ -56,11 +78,15 @@ internal class ChildVoiceRecognizer(
             override fun onEndOfSpeech() = Unit
             override fun onPartialResults(partialResults: android.os.Bundle?) = Unit
             override fun onEvent(eventType: Int, params: android.os.Bundle?) = Unit
-            override fun onError(error: Int) { onError() }
+
+            override fun onError(error: Int) {
+                retryOrFail()
+            }
+
             override fun onResults(results: android.os.Bundle?) {
                 val values = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 val heard = values?.firstOrNull().orEmpty()
-                if (heard.isBlank()) onError() else onResult(heard)
+                if (heard.isBlank()) retryOrFail() else onResult(heard)
             }
         })
 
@@ -72,12 +98,37 @@ internal class ChildVoiceRecognizer(
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false)
             putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
         }
-        try { recognizer?.startListening(intent) } catch (_: Throwable) { onError() }
+
+        try {
+            recognizer?.startListening(intent)
+        } catch (_: Throwable) {
+            retryOrFail()
+        }
     }
 
-    fun stop() {
+    private fun retryOrFail() {
+        if (retrying) return
+        retrying = true
+        stopRecognizerOnly()
+        if (languageIndex + 1 < languageQueue.size) {
+            languageIndex += 1
+            retrying = false
+            activity.runOnUiThread { startCurrentLanguage() }
+        } else {
+            onError()
+        }
+    }
+
+    private fun stopRecognizerOnly() {
         try { recognizer?.cancel() } catch (_: Throwable) {}
         try { recognizer?.destroy() } catch (_: Throwable) {}
         recognizer = null
+    }
+
+    fun stop() {
+        languageQueue = emptyList()
+        languageIndex = 0
+        retrying = false
+        stopRecognizerOnly()
     }
 }
