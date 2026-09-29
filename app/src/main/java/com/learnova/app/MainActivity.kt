@@ -2528,7 +2528,22 @@ class MainActivity : AppCompatActivity() {
             val sign = currentRoadsideSign ?: return
             listeningForChild = false
             if (roadsideDirector.matches(sign, heard)) {
+                // A successful sign answer becomes a real world discovery.
+                // The child does not leave the journey for a quiz screen:
+                // the matching animal appears in front of the vehicle, moves
+                // naturally for a few seconds, then disappears back into the world.
+                sign.visualKey?.let { threeDWorld.triggerLearningAnimal(it) }
                 voice.characterPraise(currentFriendName(), sign.english)
+                postDelayed({
+                    if (!isFinishing && currentRoadsideSign != null) {
+                        voice.speakCharacter(
+                            currentFriendName(),
+                            "Wow! Look at the " + sign.english.lowercase() + "!"
+                        )
+                    }
+                }, 260L)
+                learningPoints += 1
+                saveProgress()
                 currentRoadsideSign = null
                 postDelayed({
                     if (!isFinishing && !levelComplete) {
@@ -2537,7 +2552,7 @@ class MainActivity : AppCompatActivity() {
                         natureAudio.start()
                         invalidate()
                     }
-                }, 900L)
+                }, 2400L)
             } else {
                 voice.speakCharacter(currentFriendName(), "Nice try. Listen again. " + sign.english + ".")
                 postDelayed({ if (!isFinishing && currentRoadsideSign != null) startChildListening() }, 700L)
