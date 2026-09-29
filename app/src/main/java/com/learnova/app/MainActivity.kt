@@ -2471,7 +2471,10 @@ class MainActivity : AppCompatActivity() {
             // animal cross the road ahead of the child, so the word is experienced
             // rather than shown as a static label.
             when (lesson.visualKey) {
-                "cat" -> threeDWorld.triggerLearningAnimal("cat")
+                "cat", "dog", "elephant", "fish", "lion", "tiger",
+                "rabbit", "parrot", "whale", "yak", "zebra",
+                "fox", "camel", "bear", "giraffe", "frog", "bird",
+                "gazelle", "falcon" -> threeDWorld.triggerLearningAnimal(lesson.visualKey)
             }
             voice.speakSmartLesson(lesson)
         }
