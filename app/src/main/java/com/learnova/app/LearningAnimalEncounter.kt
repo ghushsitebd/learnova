@@ -84,6 +84,10 @@ internal class LearningAnimalEncounter(
         box(v,i,x+cos(yaw)*0.62*scale,y+0.70*scale,z-sin(yaw)*0.62*scale,yaw,0.27*scale,0.28*scale,0.30*scale)
         box(v,i,x+cos(yaw)*0.77*scale,y+0.98*scale,z-sin(yaw)*0.77*scale,yaw,0.08*scale,0.16*scale,0.09*scale)
         box(v,i,x+cos(yaw)*0.56*scale,y+0.55*scale,z-sin(yaw)*0.56*scale,yaw+0.45,0.055*scale,0.055*scale,0.55*scale)
+        val used = v.position() / 36
+        while (used + (v.position() / 36 - used) < 40) { /* fixed-size mesh */ break }
+        while (v.position() < 40 * 36) { v.putFloat(0f); v.putFloat(-5000f); v.putFloat(0f); repeat(6) { v.putFloat(0f) } }
+        while (i.position() < 180 * 2) i.putShort(0)
         v.flip(); i.flip()
         vb!!.setBufferAt(engine,0,v); ib!!.setBuffer(engine,i)
     }
