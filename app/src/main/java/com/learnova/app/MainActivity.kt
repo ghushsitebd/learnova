@@ -61,6 +61,11 @@ class MainActivity : AppCompatActivity() {
         rootLayout.addView(report, FrameLayout.LayoutParams(-1, -1))
     }
 
+    override fun onPause() {
+        if (::gameView.isInitialized) gameView.persistForLifecycle()
+        super.onPause()
+    }
+
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == ChildVoiceRecognizer.REQUEST_CODE &&
@@ -100,6 +105,10 @@ class MainActivity : AppCompatActivity() {
         private var vehicle = 0
         private var levelProgress = 0f
         private var levelComplete = false
+        private val minimumLevelDurationMs = 180_000L
+        private var levelElapsedMs = 0L
+        private var lastGameplayTickMs = 0L
+        private var lastProgressSaveMs = 0L
         private var lessonStage = 0
         private var completedLessons = 0
         private var learningPoints = 0
@@ -139,6 +148,7 @@ class MainActivity : AppCompatActivity() {
             vehicle = prefs.getInt("vehicle", 0).coerceIn(0, LearnovaUnlimitedWorld.vehicles.lastIndex)
             worldSceneId = prefs.getInt("worldSceneId", 1).coerceAtLeast(1)
             levelProgress = prefs.getFloat("levelProgress", 0f).coerceIn(0f, 1f)
+            levelElapsedMs = prefs.getLong("levelElapsedMs", 0L).coerceIn(0L, minimumLevelDurationMs)
             question = prefs.getInt("question", 0).coerceIn(0, lessons.lastIndex)
             completedLessons = prefs.getInt("completed_lessons", 0).coerceAtLeast(0)
             learningPoints = prefs.getInt("learning_points", 0).coerceAtLeast(0)
@@ -356,6 +366,10 @@ class MainActivity : AppCompatActivity() {
             return true
         }
 
+        fun persistForLifecycle() {
+            saveProgress()
+        }
+
         override fun onDraw(canvas: Canvas) {
             super.onDraw(canvas)
             val frameStart = renderQuality.beginFrame()
@@ -366,6 +380,15 @@ class MainActivity : AppCompatActivity() {
 
             if (running) {
                 frame++
+                val gameplayNow = System.currentTimeMillis()
+                if (lastGameplayTickMs == 0L) lastGameplayTickMs = gameplayNow
+                val elapsedDelta = (gameplayNow - lastGameplayTickMs).coerceIn(0L, 1000L)
+                levelElapsedMs = (levelElapsedMs + elapsedDelta).coerceAtMost(minimumLevelDurationMs)
+                lastGameplayTickMs = gameplayNow
+                if (gameplayNow - lastProgressSaveMs >= 1000L) {
+                    lastProgressSaveMs = gameplayNow
+                    saveProgress()
+                }
 
                 // Vehicle dynamics: acceleration, road-following steering, lateral
                 // inertia and suspension are derived from the same road curve used by
@@ -402,7 +425,7 @@ class MainActivity : AppCompatActivity() {
 
                 }
 
-                if (levelProgress >= 1f && !levelComplete) {
+                if (levelProgress >= 1f && levelElapsedMs >= minimumLevelDurationMs && !levelComplete) {
                     // A journey finishes by driving, not by answering a question.
                     // Pause naturally for a short celebration, then open the next
                     // journey automatically so the child never needs a NEXT button.
@@ -2591,6 +2614,9 @@ class MainActivity : AppCompatActivity() {
             level += 1
             worldSceneId += 1
             levelProgress = 0f
+            levelElapsedMs = 0L
+            lastGameplayTickMs = 0L
+            lastProgressSaveMs = 0L
             levelComplete = false
             saveProgress()
             speakCurrentLesson()
@@ -2603,6 +2629,7 @@ class MainActivity : AppCompatActivity() {
                 .putInt("worldSceneId", worldSceneId)
                 .putInt("question", question)
                 .putFloat("levelProgress", levelProgress)
+                .putLong("levelElapsedMs", levelElapsedMs)
                 .putInt("completed_lessons", completedLessons)
                 .putInt("learning_points", learningPoints)
                 .putInt("stars", stars)
@@ -3114,8 +3141,11 @@ class MainActivity : AppCompatActivity() {
             text.textSize = 12f
             text.setShadowLayer(4f, 0f, 1f, Color.DKGRAY)
 
-            val hint = if (levelComplete) "✓ JOURNEY COMPLETE" else "TAP THE ROAD TO DRIVE"
-            c.drawText(hint, w / 2f, h * .965f, text)
+            val elapsedSeconds = (levelElapsedMs / 1000L).coerceAtMost(180L)
+            val remainingSeconds = (180L - elapsedSeconds).coerceAtLeast(0L)
+            val secondsText = remainingSeconds % 60L
+            val timerText = if (levelComplete) "✓ JOURNEY COMPLETE" else "TIME " + (remainingSeconds / 60L) + ":" + (if (secondsText < 10L) "0" else "") + secondsText
+            c.drawText(timerText, w / 2f, h * .965f, text)
             text.clearShadowLayer()
         }
 }
