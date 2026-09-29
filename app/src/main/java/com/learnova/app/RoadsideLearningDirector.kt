@@ -20,20 +20,20 @@ internal class RoadsideLearningDirector {
     )
 
     private val lessons = listOf(
-        SignLesson("fox", "FOX", "fox", "শিয়াল", "ثعلب", "Say: fox", setOf("fox", "ফক্স", "ثعلب")),
-        SignLesson("bear", "BEAR", "bear", "ভাল্লুক", "دب", "Say: bear", setOf("bear", "বিয়ার", "دب")),
-        SignLesson("monkey", "MONKEY", "monkey", "বানর", "قرد", "Say: monkey", setOf("monkey", "মাঙ্কি", "قرد")),
-        SignLesson("book", "BOOK", null, "বই", "كتاب", "Say: book", setOf("book", "বুক", "كتاب")),
-        SignLesson("cat", "CAT", "cat", "বিড়াল", "قطة", "Say: cat", setOf("cat", "ক্যাট", "قطة")),
-        SignLesson("dog", "DOG", "dog", "কুকুর", "كلب", "Say: dog", setOf("dog", "ডগ", "كلب")),
-        SignLesson("elephant", "ELEPHANT", "elephant", "হাতি", "فيل", "Say: elephant", setOf("elephant", "এলিফ্যান্ট", "فيل")),
-        SignLesson("lion", "LION", "lion", "সিংহ", "أسد", "Say: lion", setOf("lion", "লায়ন", "أسد")),
-        SignLesson("rabbit", "RABBIT", "rabbit", "খরগোশ", "أرنب", "Say: rabbit", setOf("rabbit", "র‍্যাবিট", "أرنب")),
-        SignLesson("fish", "FISH", "fish", "মাছ", "سمكة", "Say: fish", setOf("fish", "ফিশ", "سمكة")),
-        SignLesson("tree", "TREE", null, "গাছ", "شجرة", "Say: tree", setOf("tree", "ট্রি", "شجرة")),
-        SignLesson("sun", "SUN", null, "সূর্য", "شمس", "Say: sun", setOf("sun", "সান", "شمس")),
-        SignLesson("moon", "MOON", null, "চাঁদ", "قمر", "Say: moon", setOf("moon", "মুন", "قمر")),
-        SignLesson("car", "CAR", null, "গাড়ি", "سيارة", "Say: car", setOf("car", "কার", "سيارة"))
+        SignLesson("fox", "FOX", "fox", "শিয়াল", "ثعلب", "Say: fox", setOf("fox", "ফক্স", "শিয়াল", "ثعلب")),
+        SignLesson("bear", "BEAR", "bear", "ভাল্লুক", "دب", "Say: bear", setOf("bear", "বিয়ার", "ভাল্লুক", "دب")),
+        SignLesson("monkey", "MONKEY", "monkey", "বানর", "قرد", "Say: monkey", setOf("monkey", "মাঙ্কি", "বানর", "قرد")),
+        SignLesson("book", "BOOK", null, "বই", "كتاب", "Say: book", setOf("book", "বুক", "বই", "كتاب")),
+        SignLesson("cat", "CAT", "cat", "বিড়াল", "قطة", "Say: cat", setOf("cat", "ক্যাট", "বিড়াল", "قطة")),
+        SignLesson("dog", "DOG", "dog", "কুকুর", "كلب", "Say: dog", setOf("dog", "ডগ", "কুকুর", "كلب")),
+        SignLesson("elephant", "ELEPHANT", "elephant", "হাতি", "فيل", "Say: elephant", setOf("elephant", "এলিফ্যান্ট", "হাতি", "فيل")),
+        SignLesson("lion", "LION", "lion", "সিংহ", "أسد", "Say: lion", setOf("lion", "লায়ন", "সিংহ", "أسد")),
+        SignLesson("rabbit", "RABBIT", "rabbit", "খরগোশ", "أرنب", "Say: rabbit", setOf("rabbit", "র‍্যাবিট", "খরগোশ", "أرنب")),
+        SignLesson("fish", "FISH", "fish", "মাছ", "سمكة", "Say: fish", setOf("fish", "ফিশ", "মাছ", "سمكة")),
+        SignLesson("tree", "TREE", null, "গাছ", "شجرة", "Say: tree", setOf("tree", "ট্রি", "গাছ", "شجرة")),
+        SignLesson("sun", "SUN", null, "সূর্য", "شمس", "Say: sun", setOf("sun", "সান", "সূর্য", "شمس")),
+        SignLesson("moon", "MOON", null, "চাঁদ", "قمر", "Say: moon", setOf("moon", "মুন", "চাঁদ", "قمر")),
+        SignLesson("car", "CAR", null, "গাড়ি", "سيارة", "Say: car", setOf("car", "কার", "গাড়ি", "سيارة"))
     )
 
     private var lastLevel = -1
@@ -61,9 +61,17 @@ internal class RoadsideLearningDirector {
     }
 
     fun matches(sign: SignLesson, heard: String): Boolean {
-        val normalized = heard.trim().lowercase()
+        val normalized = normalizeForMatch(heard)
+        return sign.accepted.any { normalizeForMatch(it) == normalized || normalized.contains(normalizeForMatch(it)) }
+    }
+
+    private fun normalizeForMatch(value: String): String {
+        return value.trim()
+            .lowercase()
+            // Arabic tashkeel/harakat should not make an otherwise correct answer fail.
+            .replace(Regex("[\\u064B-\\u065F\\u0670]"), "")
             .replace(Regex("""[^\p{L}\p{N} ]"""), "")
             .replace(Regex("""\s+"""), " ")
-        return sign.accepted.any { normalized.contains(it.lowercase()) }
+            .trim()
     }
 }
