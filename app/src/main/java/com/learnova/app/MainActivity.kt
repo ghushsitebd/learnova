@@ -397,11 +397,9 @@ class MainActivity : AppCompatActivity() {
                     speed = 0f
                     threeDWorld.setDriving(false)
                     natureAudio.stop()
-                    voice.speak(
-                        "Look! " + roadsideSign.english + ". " + roadsideSign.bangla + ". " + roadsideSign.arabic + ". " + roadsideSign.prompt + ".",
-                        java.util.Locale.US
-                    )
-                    startChildListening()
+                    voice.speakCharacter(currentFriendName(), "Look! " + roadsideSign.english + "!")
+                    postDelayed({ if (!isFinishing && currentRoadsideSign != null) startChildListening() }, 450L)
+
                 }
 
                 if (levelProgress >= 1f && !levelComplete) {
@@ -2503,6 +2501,17 @@ class MainActivity : AppCompatActivity() {
             text.color = Color.rgb(35, 91, 61)
             text.textSize = 11f
             c.drawText(if (listeningForChild) "Say it!" else "🎙 Say it!", board.centerX(), board.bottom + 28f, text)
+        }
+
+        private fun currentFriendName(): String = when (vehicle % 8) {
+            0 -> "Fox"
+            1 -> "Bear"
+            2 -> "Monkey"
+            3 -> "Rabbit"
+            4 -> "Panda"
+            5 -> "Tiger"
+            6 -> "Lion"
+            else -> "Dog"
         }
 
         private fun startChildListening() {
