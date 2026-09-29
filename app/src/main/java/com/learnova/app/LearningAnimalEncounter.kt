@@ -117,9 +117,9 @@ internal class LearningAnimalEncounter(
             }
         }
 
+        // drawAnimal() uploads the populated geometry buffer. Replacing it with
+        // an empty buffer here made the encounter disappear on every update frame.
         drawAnimal(x, y, z, yaw, animalScale(activeAnimal) + 0.04 * sin(t * Math.PI * 4))
-        vb!!.setBufferAt(engine, 0, vertexData())
-        ib!!.setBuffer(engine, indexData())
     }
 
     private fun drawAnimal(x: Double, y: Double, z: Double, yaw: Double, scale: Double) {
