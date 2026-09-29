@@ -149,6 +149,10 @@ class MainActivity : AppCompatActivity() {
             worldSceneId = prefs.getInt("worldSceneId", 1).coerceAtLeast(1)
             levelProgress = prefs.getFloat("levelProgress", 0f).coerceIn(0f, 1f)
             levelElapsedMs = prefs.getLong("levelElapsedMs", 0L).coerceIn(0L, minimumLevelDurationMs)
+            levelComplete = prefs.getBoolean("level_complete", false)
+            if (levelComplete) {
+                celebrationUntil = System.currentTimeMillis() + 1400L
+            }
             question = prefs.getInt("question", 0).coerceIn(0, lessons.lastIndex)
             completedLessons = prefs.getInt("completed_lessons", 0).coerceAtLeast(0)
             learningPoints = prefs.getInt("learning_points", 0).coerceAtLeast(0)
@@ -207,10 +211,14 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     if (inDriveArea) {
-                        // Holding either side of the road steers. This deliberately
-                        // avoids a virtual joystick: the child only needs a finger.
-
-
+                        // One-finger side hold steers while the vehicle is moving.
+                        if (running && (x < w * 0.30f || x > w * 0.70f)) {
+                            steeringTouchActive = true
+                            steeringInput = (((x / w) * 2f) - 1f).coerceIn(-1f, 1f)
+                            threeDWorld.setSteeringInput(steeringInput)
+                            invalidate()
+                            return true
+                        }
 
                         // Centre tap remains the primary child-simple drive/stop control.
                         val now = System.currentTimeMillis()
@@ -356,11 +364,19 @@ class MainActivity : AppCompatActivity() {
                 voice.speakInstruction(false)
             } else if (lessonStage == 2 && correct && !quranStageSolved) {
                 quranStageSolved = true
-                quranFeedback = "✓ দারুণ — এই অংশটি শেষ হয়েছে"
-                levelProgress = 1f
-                levelComplete = true
-                voice.speakQuranStage(current.name, current.mode, 2)
-                saveProgress()
+                if (levelElapsedMs >= minimumLevelDurationMs) {
+                    quranFeedback = "✓ দারুণ — এই অংশটি শেষ হয়েছে"
+                    levelProgress = 1f
+                    levelComplete = true
+                    celebrationUntil = System.currentTimeMillis() + 1400L
+                    voice.speakQuranStage(current.name, current.mode, 2)
+                    saveProgress()
+                } else {
+                    val remaining = ((minimumLevelDurationMs - levelElapsedMs + 999L) / 1000L)
+                    quranFeedback = "✓ শেখাটা ঠিক হয়েছে — আরও " + (remaining / 60L) + ":" + (remaining % 60L).toString().padStart(2, '0') + " ড্রাইভ করো"
+                    voice.speakInstruction(false)
+                    quranStageSolved = false
+                }
             }
             invalidate()
             return true
@@ -437,6 +453,7 @@ class MainActivity : AppCompatActivity() {
                     threeDWorld.setSteeringInput(0f)
                     threeDWorld.setDriving(false)
                     natureAudio.stop()
+                    saveProgress()
                     voice.speakInstruction(true)
                 }
 
@@ -2630,6 +2647,7 @@ class MainActivity : AppCompatActivity() {
                 .putInt("question", question)
                 .putFloat("levelProgress", levelProgress)
                 .putLong("levelElapsedMs", levelElapsedMs)
+                .putBoolean("level_complete", levelComplete)
                 .putInt("completed_lessons", completedLessons)
                 .putInt("learning_points", learningPoints)
                 .putInt("stars", stars)
