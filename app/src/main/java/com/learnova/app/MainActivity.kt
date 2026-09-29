@@ -2398,104 +2398,78 @@ class MainActivity : AppCompatActivity() {
         }
 
         private fun drawLearningCard(c: Canvas, w: Float, h: Float, world: SmartScene) {
-            val top = h * .63f
-            val left = 18f
-            val right = w - 18f
+            // Clean child-first HUD: keep learning information at the edge of the
+            // screen so the road, animals and scenery remain fully visible.
             val lesson = SmartLearningEngine.lesson(question)
 
-            paint.color = Color.argb(235, 255, 255, 255)
-            c.drawRoundRect(RectF(left, top, right, top + 108f), 22f, 22f, paint)
-
-            text.textAlign = Paint.Align.LEFT
-            text.color = Color.rgb(27, 105, 69)
-            text.textSize = 12f
-            c.drawText(
-                lesson.domain + " • " + lesson.spokenName,
-                left + 18f, top + 23f, text
-            )
-
-            // The glyph is the visual anchor. Arabic is rendered large and right-to-left
-            // so the child learns the actual script, not only a Latin label.
-            text.color = Color.rgb(25, 35, 38)
-            text.textSize = if (lesson.rtl) 38f else 34f
-            c.drawText(lesson.display, left + 18f, top + 61f, text)
-
-            text.color = Color.rgb(72, 84, 84)
-            text.textSize = 11f
-            c.drawText(
-                lesson.example + " • " + lesson.sound,
-                left + 18f, top + 81f, text
-            )
-
-            paint.color = Color.rgb(225, 232, 228)
-            c.drawRoundRect(RectF(left + 18f, top + 88f, right - 112f, top + 95f), 4f, 4f, paint)
-            paint.color = Color.rgb(28, 155, 91)
-            c.drawRoundRect(
-                RectF(
-                    left + 18f,
-                    top + 88f,
-                    left + 18f + (right - left - 130f) * levelProgress,
-                    top + 95f
-                ), 4f, 4f, paint
-            )
-
-            paint.color = if (running) Color.rgb(20, 150, 83) else Color.rgb(45, 100, 80)
-            c.drawRoundRect(RectF(right - 90f, top + 18f, right - 18f, top + 86f), 18f, 18f, paint)
-
-            text.textAlign = Paint.Align.CENTER
-            text.color = Color.WHITE
-            text.textSize = 12f
-            c.drawText(
-                if (levelComplete) "NEXT" else if (running) "DRIVING" else "LEARN",
-                right - 54f, top + 56f, text
-            )
-
-            text.color = Color.rgb(35, 105, 78)
-            text.textSize = 10f
-            val progressionHint = progressionSystem.difficultyHint(
-                lessons.size,
-                masterySystem::mastery,
-                completedLessons
-            )
-            c.drawText(
-                if (masterySystem.mastery(question) <= 1) masterySystem.reviewLabel(question) + " • " + lesson.prompt
-                else lesson.prompt,
-                w / 2f, top + 103f, text
-            )
-            c.drawText(
-                progressionSystem.stageTitle(
-                    lessons.size,
-                    masterySystem::mastery,
-                    completedLessons
-                ) + " • " + progressionHint,
-                w / 2f, top + 135f, text
-            )
-
-            // Quran levels use three large, touch-only choices below the learning card.
-            // No joystick, keyboard or precise gesture is required.
             if (isQuranLevel()) {
                 val choices = quranChoiceLabels()
                 val buttonTop = h * 0.735f
                 val buttonBottom = h * 0.885f
                 val gap = 8f
                 val buttonW = (w - 36f - gap * 2f) / 3f
+
                 for (i in 0..2) {
                     val l = 18f + i * (buttonW + gap)
-                    paint.color = Color.argb(242, 247, 250, 248)
+                    paint.color = Color.argb(238, 247, 250, 248)
                     c.drawRoundRect(RectF(l, buttonTop, l + buttonW, buttonBottom), 18f, 18f, paint)
                     text.textAlign = Paint.Align.CENTER
                     text.color = Color.rgb(32, 86, 66)
                     text.textSize = if (choices[i].length > 10) 11f else 14f
                     c.drawText(choices[i], l + buttonW / 2f, buttonTop + 57f, text)
                 }
-                text.color = Color.rgb(70, 88, 82)
+
                 text.textSize = 10f
+                text.color = Color.WHITE
+                text.setShadowLayer(4f, 0f, 1f, Color.DKGRAY)
                 c.drawText(
                     if (quranFeedback.isNotEmpty()) quranFeedback
                     else if (lessonStage == 1) LearnovaQuranCatalog.lesson(level - 68).prompt
                     else "শিখতে ছুঁয়ে দাও",
                     w / 2f, h * 0.925f, text
                 )
+                text.clearShadowLayer()
+                return
+            }
+
+            // Small learning pill under the top bar. It replaces the large middle card.
+            val left = 16f
+            val top = 78f
+            val right = minOf(w - 16f, 270f)
+            val bottom = 128f
+
+            paint.color = Color.argb(178, 255, 255, 255)
+            c.drawRoundRect(RectF(left, top, right, bottom), 18f, 18f, paint)
+
+            text.textAlign = Paint.Align.LEFT
+            text.color = Color.rgb(25, 100, 68)
+            text.textSize = 11f
+            c.drawText(lesson.domain, left + 14f, top + 17f, text)
+
+            text.color = Color.rgb(25, 35, 38)
+            text.textSize = if (lesson.rtl) 28f else 24f
+            c.drawText(lesson.display, left + 14f, top + 43f, text)
+
+            text.color = Color.rgb(65, 78, 78)
+            text.textSize = 11f
+            c.drawText(lesson.example + " • " + lesson.sound, left + 58f, top + 36f, text)
+
+            paint.color = Color.argb(85, 220, 232, 226)
+            c.drawRoundRect(RectF(left + 58f, top + 42f, right - 14f, top + 46f), 3f, 3f, paint)
+            paint.color = Color.rgb(32, 154, 92)
+            c.drawRoundRect(
+                RectF(left + 58f, top + 42f,
+                    left + 58f + (right - left - 72f) * levelProgress,
+                    top + 46f), 3f, 3f, paint
+            )
+
+            if (levelComplete) {
+                paint.color = Color.rgb(25, 145, 82)
+                c.drawRoundRect(RectF(w - 112f, 82f, w - 16f, 124f), 18f, 18f, paint)
+                text.textAlign = Paint.Align.CENTER
+                text.color = Color.WHITE
+                text.textSize = 12f
+                c.drawText("NEXT  ›", w - 64f, 108f, text)
             }
         }
 
@@ -3041,50 +3015,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         private fun drawHint(c: Canvas, w: Float, h: Float) {
+            // Keep the centre of the display completely free for the world.
+            // Guidance is voice-first; only a tiny edge hint remains when stopped.
+            if (running || isQuranLevel()) return
+
             text.textAlign = Paint.Align.CENTER
             text.color = Color.WHITE
-            text.setShadowLayer(5f,0f,2f,Color.DKGRAY)
-            text.textSize = 15f
+            text.textSize = 12f
+            text.setShadowLayer(4f, 0f, 1f, Color.DKGRAY)
 
-            val elapsed = System.currentTimeMillis() - sessionStartedAt
-            val sessionMinutes = (elapsed / 60000L).toInt()
-            if (elapsed < 30_000L) postInvalidateDelayed(100L)
-
-            val hint = when {
-                elapsed < 10_000L -> "1/3  TAP THE CENTRE  →  DRIVE"
-                elapsed < 20_000L -> "2/3  TOUCH LEFT / RIGHT  →  STEER"
-                elapsed < 30_000L -> "3/3  LEARN BY TOUCH  →  FINISH  →  ⭐"
-                ChildSafeEngagementPolicy.shouldSuggestBreak(sessionMinutes) ->
-                    "Nice learning • Take a short break when you are ready"
-                levelComplete -> "Level complete • Tap NEXT LEVEL  •  ⭐ +1"
-                running -> "Drive • Touch left/right to steer • Tap centre to stop"
-                else -> "Tap centre to drive"
-            }
-
-            c.drawText(hint, w/2f, h*.965f, text)
-
-            // A tiny achievement burst makes progress feel rewarding without
-            // interrupting the child's flow with a modal screen.
-            if (celebrationUntil > System.currentTimeMillis()) {
-                text.textSize = 25f
-                text.color = Color.rgb(255, 220, 90)
-                c.drawText("⭐ GREAT JOB!  +1 STAR", w/2f, h*.60f, text)
-                postInvalidateDelayed(80L)
-            }
-
+            val hint = if (levelComplete) "NEXT  ›" else "TAP THE ROAD TO DRIVE"
+            c.drawText(hint, w / 2f, h * .965f, text)
             text.clearShadowLayer()
         }
-    }
-
-    override fun onPause() {
-        natureAudio.stop()
-        if (::voice.isInitialized) voice.stop()
-        super.onPause()
-    }
-
-    override fun onDestroy() {
-        natureAudio.release()
-        if (::voice.isInitialized) voice.shutdown()
-        super.onDestroy()
-    }
 }
