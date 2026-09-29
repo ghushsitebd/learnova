@@ -2594,11 +2594,15 @@ class MainActivity : AppCompatActivity() {
                 companionInteractionStart = System.currentTimeMillis()
                 companionInteractionUntil = companionInteractionStart + 4200L
                 voice.characterPraise(currentFriendName(), sign.english)
+                // Keep the discovered word available for the short follow-up voice line
+                // even after the roadside sign state is cleared.
+                val discoveredWord = sign.english.lowercase()
+                val friendName = currentFriendName()
                 postDelayed({
-                    if (!isFinishing && currentRoadsideSign != null) {
+                    if (!isFinishing) {
                         voice.speakCharacter(
-                            currentFriendName(),
-                            "Wow! Look at the " + sign.english.lowercase() + "!"
+                            friendName,
+                            "Wow! Look at the " + discoveredWord + "!"
                         )
                     }
                 }, 260L)
