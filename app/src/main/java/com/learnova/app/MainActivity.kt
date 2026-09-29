@@ -2528,7 +2528,7 @@ class MainActivity : AppCompatActivity() {
             val sign = currentRoadsideSign ?: return
             listeningForChild = false
             if (roadsideDirector.matches(sign, heard)) {
-                voice.speak("Great! " + sign.english + ". " + sign.bangla + ". " + sign.arabic + ". Let's go!", java.util.Locale.US)
+                voice.characterPraise(currentFriendName(), sign.english)
                 currentRoadsideSign = null
                 postDelayed({
                     if (!isFinishing && !levelComplete) {
@@ -2539,7 +2539,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }, 900L)
             } else {
-                voice.speak("Nice try. Listen again. " + sign.prompt + ".", java.util.Locale.US)
+                voice.speakCharacter(currentFriendName(), "Nice try. Listen again. " + sign.english + ".")
                 postDelayed({ if (!isFinishing && currentRoadsideSign != null) startChildListening() }, 700L)
             }
             invalidate()
