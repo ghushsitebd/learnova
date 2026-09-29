@@ -123,7 +123,7 @@ class LearnovaVoice(private val context: Context) : TextToSpeech.OnInitListener 
         speak(name, Locale.US)
     }
 
-    private fun speak(value: String, locale: Locale) {
+    fun speak(value: String, locale: Locale) {
         if (!ready) {
             pendingText = value
             pendingLocale = locale
