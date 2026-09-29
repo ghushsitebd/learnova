@@ -102,7 +102,7 @@ internal class LearningAnimalEncounter(
                     road.x + cos(road.yaw) * forward + sin(road.yaw) * waterSide,
                     road.y - 0.20 + wave * 0.08,
                     road.z - sin(road.yaw) * forward + cos(road.yaw) * waterSide,
-                    road.yaw
+                    road.yaw.toDouble()
                 )
             }
             else -> {
