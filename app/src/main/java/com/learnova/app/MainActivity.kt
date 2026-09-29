@@ -538,6 +538,7 @@ class MainActivity : AppCompatActivity() {
                 drawAnimals(canvas, w, h, world)
                 drawVehicle(canvas, w, h)
                 drawVehicleContactEffects(canvas, w, h, world)
+                drawCompanion(canvas, w, h, world)
             }
             drawRoadsideLearningSign(canvas, w, h)
             drawTopBar(canvas, w, h, world)
@@ -3111,6 +3112,79 @@ class MainActivity : AppCompatActivity() {
          * Contact cues make the vehicle feel attached to the road rather than floating:
          * soft tire shadows, reflected body light and a tiny road spray/dust response.
          */
+        /**
+         * Each vehicle has a persistent little travel companion. The companion is
+         * procedural (no bitmap asset), so it stays lightweight and can animate on
+         * every world without increasing APK size. Its identity is deterministic
+         * from the selected garage vehicle, giving each vehicle a consistent friend.
+         */
+        private fun drawCompanion(c: Canvas, w: Float, h: Float, world: SmartScene) {
+            val selected = LearnovaUnlimitedWorld.vehicles[vehicle.coerceIn(0, LearnovaUnlimitedWorld.vehicles.lastIndex)]
+            val p = vehicleProgress.coerceIn(0f, 1f)
+            val roadX = roadCenterAt(p, w, worldSceneId)
+            val cx = roadX + laneOffset * w * (0.10f + 0.34f * p)
+            val cy = h * (0.66f + 0.22f * p) + suspensionOffset +
+                if (running) sin(frame / 4.5).toFloat() * (0.65f + 2.6f * p) else 0f
+            val scale = 0.42f + 0.80f * p
+            val friend = selected.id % 4
+            val fx = cx + 58f * scale
+            val seated = selected.kind == "air" || selected.kind == "boat" || selected.kind == "space"
+            val walk = if (!seated && running) sin(frame / 7.0).toFloat() * 3.5f else 0f
+            val fy = cy - 55f * scale + walk
+
+            // Soft contact shadow keeps the friend grounded when briefly walking beside
+            // the vehicle; in the vehicle it is hidden by the body naturally.
+            if (!seated && !running) {
+                paint.color = Color.argb(42, 10, 14, 16)
+                c.drawOval(RectF(fx - 18f * scale, cy + 20f * scale, fx + 18f * scale, cy + 27f * scale), paint)
+            }
+
+            c.save()
+            if (running && !seated) {
+                c.rotate(sin(frame / 12.0).toFloat() * 4f, fx, fy)
+            }
+
+            // Body
+            paint.color = when (friend) {
+                0 -> Color.rgb(232, 142, 61)   // Fox
+                1 -> Color.rgb(133, 101, 76)   // Bear
+                2 -> Color.rgb(151, 91, 57)    // Monkey
+                else -> Color.rgb(242, 239, 231) // Rabbit
+            }
+            c.drawOval(RectF(fx - 16f * scale, fy - 3f * scale, fx + 16f * scale, fy + 27f * scale), paint)
+
+            // Head and ears
+            c.drawCircle(fx, fy - 12f * scale, 15f * scale, paint)
+            paint.color = when (friend) {
+                0 -> Color.rgb(188, 103, 48)
+                1 -> Color.rgb(108, 80, 62)
+                2 -> Color.rgb(126, 73, 47)
+                else -> Color.rgb(232, 225, 216)
+            }
+            c.drawCircle(fx - 10f * scale, fy - 23f * scale, 6f * scale, paint)
+            c.drawCircle(fx + 10f * scale, fy - 23f * scale, 6f * scale, paint)
+
+            // Friendly face
+            paint.color = Color.rgb(38, 35, 32)
+            c.drawCircle(fx - 5f * scale, fy - 13f * scale, 1.7f * scale, paint)
+            c.drawCircle(fx + 5f * scale, fy - 13f * scale, 1.7f * scale, paint)
+            paint.color = Color.rgb(250, 240, 220)
+            c.drawOval(RectF(fx - 7f * scale, fy - 7f * scale, fx + 7f * scale, fy + 1f * scale), paint)
+            paint.color = Color.rgb(45, 38, 34)
+            c.drawCircle(fx, fy - 4f * scale, 1.7f * scale, paint)
+
+            // Small waving hand while driving: a simple, readable gesture instead of
+            // a menu or popup, reinforcing the companion's presence in the journey.
+            if (running) {
+                paint.strokeWidth = 3f * scale
+                paint.strokeCap = Paint.Cap.ROUND
+                c.drawLine(fx + 13f * scale, fy + 8f * scale, fx + 24f * scale, fy - 1f * scale, paint)
+                c.drawCircle(fx + 26f * scale, fy - 3f * scale, 4f * scale, paint)
+                paint.strokeCap = Paint.Cap.BUTT
+            }
+            c.restore()
+        }
+
         private fun drawVehicleContactEffects(c: Canvas, w: Float, h: Float, world: SmartScene) {
             val selected = LearnovaUnlimitedWorld.vehicles[vehicle]
             if (selected.kind == "air" || selected.kind == "space") return
