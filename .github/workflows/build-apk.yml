@@ -270,3 +270,4 @@ jobs:
 
 # CI validation checkpoint: bounded benchmark diagnostics
 # CI verification trigger: run the corrected release/integrity gate before the next stage.
+# CI checkpoint 2026-09-30: validate current production pipeline after benchmark hardening.
