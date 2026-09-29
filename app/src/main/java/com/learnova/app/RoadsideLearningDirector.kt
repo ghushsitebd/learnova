@@ -5,7 +5,7 @@ package com.learnova.app
  *
  * A journey contains one calm learning stop. The stop is presented as a
  * roadside sign rather than a white information card. The same system can
- * scale to thousands of levels without storing thousands of scenes.
+ * scale to hundreds of levels without storing hundreds of scenes.
  */
 internal class RoadsideLearningDirector {
 
@@ -20,20 +20,20 @@ internal class RoadsideLearningDirector {
     )
 
     private val lessons = listOf(
-        SignLesson("fox","FOX","শিয়াল","ثعلب","Say: fox","fox".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("fox","ফক্স")),
-        SignLesson("bear","BEAR","ভাল্লুক","دب","Say: bear","bear".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("bear","বিয়ার")),
-        SignLesson("monkey","MONKEY","বানর","قرد","Say: monkey","monkey".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("monkey","মাঙ্কি")),
-        SignLesson("book","BOOK","বই","كتاب","Say: book","book".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("book","বুক")),
-        SignLesson("cat","CAT","বিড়াল","قطة","Say: cat","cat".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("cat","ক্যাট")),
-        SignLesson("dog","DOG","কুকুর","كلب","Say: dog","dog".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("dog","ডগ")),
-        SignLesson("elephant","ELEPHANT","হাতি","فيل","Say: elephant","elephant".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("elephant","এলিফ্যান্ট")),
-        SignLesson("lion","LION","সিংহ","أسد","Say: lion","lion".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("lion","লায়ন")),
-        SignLesson("rabbit","RABBIT","খরগোশ","أرنب","Say: rabbit","rabbit".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("rabbit","র‍্যাবিট")),
-        SignLesson("fish","FISH","মাছ","سمكة","Say: fish","fish".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("fish","ফিশ")),
-        SignLesson("tree","TREE","গাছ","شجرة","Say: tree","tree".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("tree","ট্রি")),
-        SignLesson("sun","SUN","সূর্য","شمس","Say: sun","sun".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("sun","সান")),
-        SignLesson("moon","MOON","চাঁদ","قمر","Say: moon","moon".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("moon","মুন")),
-        SignLesson("car","CAR","গাড়ি","سيارة","Say: car","car".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("car","কার"))
+        SignLesson("fox", "FOX", "fox", "শিয়াল", "ثعلب", "Say: fox", setOf("fox", "ফক্স")),
+        SignLesson("bear", "BEAR", "bear", "ভাল্লুক", "دب", "Say: bear", setOf("bear", "বিয়ার")),
+        SignLesson("monkey", "MONKEY", "monkey", "বানর", "قرد", "Say: monkey", setOf("monkey", "মাঙ্কি")),
+        SignLesson("book", "BOOK", null, "বই", "كتاب", "Say: book", setOf("book", "বুক")),
+        SignLesson("cat", "CAT", "cat", "বিড়াল", "قطة", "Say: cat", setOf("cat", "ক্যাট")),
+        SignLesson("dog", "DOG", "dog", "কুকুর", "كلب", "Say: dog", setOf("dog", "ডগ")),
+        SignLesson("elephant", "ELEPHANT", "elephant", "হাতি", "فيل", "Say: elephant", setOf("elephant", "এলিফ্যান্ট")),
+        SignLesson("lion", "LION", "lion", "সিংহ", "أسد", "Say: lion", setOf("lion", "লায়ন")),
+        SignLesson("rabbit", "RABBIT", "rabbit", "খরগোশ", "أرنب", "Say: rabbit", setOf("rabbit", "র‍্যাবিট")),
+        SignLesson("fish", "FISH", "fish", "মাছ", "سمكة", "Say: fish", setOf("fish", "ফিশ")),
+        SignLesson("tree", "TREE", null, "গাছ", "شجرة", "Say: tree", setOf("tree", "ট্রি")),
+        SignLesson("sun", "SUN", null, "সূর্য", "شمس", "Say: sun", setOf("sun", "সান")),
+        SignLesson("moon", "MOON", null, "চাঁদ", "قمر", "Say: moon", setOf("moon", "মুন")),
+        SignLesson("car", "CAR", null, "গাড়ি", "سيارة", "Say: car", setOf("car", "কার"))
     )
 
     private var lastLevel = -1
@@ -41,11 +41,6 @@ internal class RoadsideLearningDirector {
 
     fun lessonForLevel(level: Int): SignLesson = lessons[(level - 1).mod(lessons.size)]
 
-    /**
-     * Returns a sign exactly once per level, around the middle of the journey.
-     * The threshold moves slightly between levels so the world does not feel
-     * mechanically identical.
-     */
     fun maybeStop(level: Int, progress: Float): SignLesson? {
         if (level != lastLevel) {
             lastLevel = level
