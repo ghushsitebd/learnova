@@ -61,6 +61,16 @@ class MainActivity : AppCompatActivity() {
         rootLayout.addView(report, FrameLayout.LayoutParams(-1, -1))
     }
 
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == ChildVoiceRecognizer.REQUEST_CODE &&
+            grantResults.isNotEmpty() &&
+            grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED &&
+            ::gameView.isInitialized) {
+            gameView.startPendingChildListening()
+        }
+    }
+
     private inner class LearnovaGameView : View(this@MainActivity) {
 
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -106,6 +116,10 @@ class MainActivity : AppCompatActivity() {
         private val renderQuality = LearnovaRenderQuality(this@MainActivity)
         private val masterySystem = LearnovaMasterySystem(prefs)
         private val progressionSystem = LearnovaProgressionSystem()
+        private val roadsideDirector = RoadsideLearningDirector()
+        private var currentRoadsideSign: RoadsideLearningDirector.SignLesson? = null
+        private var listeningForChild = false
+        private val childVoiceRecognizer = ChildVoiceRecognizer(this@MainActivity, { heard -> onChildVoice(heard) }, { listeningForChild = false; invalidate() })
 
         private val lessons = SmartLearningEngine.lessons.map { it.display }.toTypedArray()
 
@@ -129,6 +143,7 @@ class MainActivity : AppCompatActivity() {
             completedLessons = prefs.getInt("completed_lessons", 0).coerceAtLeast(0)
             learningPoints = prefs.getInt("learning_points", 0).coerceAtLeast(0)
             stars = prefs.getInt("stars", 0).coerceAtLeast(0)
+            roadsideDirector.resetForLevel(level)
             speakCurrentLesson()
         }
 
@@ -171,6 +186,7 @@ class MainActivity : AppCompatActivity() {
                         return true
                     }
                     if (handleQuranChoice(x, y, w, h)) return true
+                    if (currentRoadsideSign != null) { if (!listeningForChild) startChildListening(); return true }
                     // The vehicle badge opens the real 100-slot garage.
                     if (y < h * 0.22f && x > w * 0.76f) {
                         steeringTouchActive = false
@@ -183,25 +199,8 @@ class MainActivity : AppCompatActivity() {
                     if (inDriveArea) {
                         // Holding either side of the road steers. This deliberately
                         // avoids a virtual joystick: the child only needs a finger.
-                        if (running && x < w * 0.30f) {
-                            // Analog left steering: the farther the finger is from
-                            // the centre, the stronger the steering input.
-                            steeringTouchActive = true
-                            steeringInput = ((x / w) * 2f - 1f).coerceIn(-1f, -0.15f)
-                            threeDWorld.setSteeringInput(steeringInput)
-                            performClick()
-                            invalidate()
-                            return true
-                        }
-                        if (running && x > w * 0.70f) {
-                            // Analog right steering with a soft centre dead-zone.
-                            steeringTouchActive = true
-                            steeringInput = ((x / w) * 2f - 1f).coerceIn(0.15f, 1f)
-                            threeDWorld.setSteeringInput(steeringInput)
-                            performClick()
-                            invalidate()
-                            return true
-                        }
+
+
 
                         // Centre tap remains the primary child-simple drive/stop control.
                         val now = System.currentTimeMillis()
@@ -390,6 +389,21 @@ class MainActivity : AppCompatActivity() {
                 distance += speed
                 levelProgress += speed / LearnovaUnlimitedWorld.level(level).targetDistance * 0.006f
                 levelProgress = levelProgress.coerceAtMost(1f)
+
+                val roadsideSign = roadsideDirector.maybeStop(level, levelProgress)
+                if (roadsideSign != null && currentRoadsideSign == null && !levelComplete) {
+                    currentRoadsideSign = roadsideSign
+                    running = false
+                    speed = 0f
+                    threeDWorld.setDriving(false)
+                    natureAudio.stop()
+                    voice.speak(
+                        "Look! " + roadsideSign.english + ". " + roadsideSign.bangla + ". " + roadsideSign.arabic + ". " + roadsideSign.prompt + ".",
+                        java.util.Locale.US
+                    )
+                    startChildListening()
+                }
+
                 if (levelProgress >= 1f && !levelComplete) {
                     // A journey finishes by driving, not by answering a question.
                     // Pause naturally for a short celebration, then open the next
@@ -487,6 +501,7 @@ class MainActivity : AppCompatActivity() {
                 drawVehicle(canvas, w, h)
                 drawVehicleContactEffects(canvas, w, h, world)
             }
+            drawRoadsideLearningSign(canvas, w, h)
             drawTopBar(canvas, w, h, world)
             drawLearningCard(canvas, w, h, world)
             drawHint(canvas, w, h)
@@ -2463,37 +2478,62 @@ class MainActivity : AppCompatActivity() {
                 return
             }
 
-            // Small learning pill under the top bar. It replaces the large middle card.
-            val left = 16f
-            val top = 78f
-            val right = minOf(w - 16f, 270f)
-            val bottom = 128f
+            // Roadside signs are the learning surface; keep the road visually clear.
+        }
 
-            paint.color = Color.argb(178, 255, 255, 255)
-            c.drawRoundRect(RectF(left, top, right, bottom), 18f, 18f, paint)
-
-            text.textAlign = Paint.Align.LEFT
-            text.color = Color.rgb(25, 100, 68)
+        private fun drawRoadsideLearningSign(c: Canvas, w: Float, h: Float) {
+            val sign = currentRoadsideSign ?: return
+            val board = RectF(w * 0.55f, h * 0.31f, w * 0.94f, h * 0.47f)
+            paint.color = Color.rgb(93, 67, 43)
+            c.drawRoundRect(board, 12f, 12f, paint)
+            paint.color = Color.rgb(47, 116, 72)
+            c.drawRoundRect(RectF(board.left + 5f, board.top + 5f, board.right - 5f, board.bottom - 5f), 9f, 9f, paint)
+            paint.color = Color.rgb(116, 82, 48)
+            c.drawRect(board.centerX() - 5f, board.bottom, board.centerX() + 5f, board.bottom + h * 0.14f, paint)
+            text.textAlign = Paint.Align.CENTER
+            text.color = Color.WHITE
+            text.textSize = minOf(22f, w * .055f)
+            c.drawText(sign.english, board.centerX(), board.top + h * .047f, text)
+            text.textSize = minOf(15f, w * .038f)
+            c.drawText(sign.bangla, board.centerX(), board.top + h * .093f, text)
+            text.textSize = minOf(14f, w * .035f)
+            c.drawText(sign.arabic, board.centerX(), board.top + h * .135f, text)
+            paint.color = Color.argb(220, 255, 255, 255)
+            c.drawRoundRect(RectF(board.left, board.bottom + 8f, board.right, board.bottom + 38f), 14f, 14f, paint)
+            text.color = Color.rgb(35, 91, 61)
             text.textSize = 11f
-            c.drawText(lesson.domain, left + 14f, top + 17f, text)
+            c.drawText(if (listeningForChild) "Say it!" else "🎙 Say it!", board.centerX(), board.bottom + 28f, text)
+        }
 
-            text.color = Color.rgb(25, 35, 38)
-            text.textSize = if (lesson.rtl) 28f else 24f
-            c.drawText(lesson.display, left + 14f, top + 43f, text)
+        private fun startChildListening() {
+            val sign = currentRoadsideSign ?: return
+            listeningForChild = true
+            childVoiceRecognizer.start("en-US")
+            voice.speak(sign.prompt, java.util.Locale.US)
+            invalidate()
+        }
 
-            text.color = Color.rgb(65, 78, 78)
-            text.textSize = 11f
-            c.drawText(lesson.example + " • " + lesson.sound, left + 58f, top + 36f, text)
+        fun startPendingChildListening() { startChildListening() }
 
-            paint.color = Color.argb(85, 220, 232, 226)
-            c.drawRoundRect(RectF(left + 58f, top + 42f, right - 14f, top + 46f), 3f, 3f, paint)
-            paint.color = Color.rgb(32, 154, 92)
-            c.drawRoundRect(
-                RectF(left + 58f, top + 42f,
-                    left + 58f + (right - left - 72f) * levelProgress,
-                    top + 46f), 3f, 3f, paint
-            )
-
+        private fun onChildVoice(heard: String) {
+            val sign = currentRoadsideSign ?: return
+            listeningForChild = false
+            if (roadsideDirector.matches(sign, heard)) {
+                voice.speak("Great! " + sign.english + ". " + sign.bangla + ". " + sign.arabic + ". Let's go!", java.util.Locale.US)
+                currentRoadsideSign = null
+                postDelayed({
+                    if (!isFinishing && !levelComplete) {
+                        running = true
+                        threeDWorld.setDriving(true)
+                        natureAudio.start()
+                        invalidate()
+                    }
+                }, 900L)
+            } else {
+                voice.speak("Nice try. Listen again. " + sign.prompt + ".", java.util.Locale.US)
+                postDelayed({ if (!isFinishing && currentRoadsideSign != null) startChildListening() }, 700L)
+            }
+            invalidate()
         }
 
         private fun speakCurrentLesson() {
