@@ -85,7 +85,17 @@ internal class ChildVoiceRecognizer(
 
             override fun onResults(results: android.os.Bundle?) {
                 val values = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                val heard = values?.firstOrNull().orEmpty()
+                    .orEmpty()
+                    .asSequence()
+                    .map { it.trim() }
+                    .filter { it.isNotBlank() }
+                    .distinct()
+                    .take(3)
+                    .toList()
+                // Preserve the recognizer's top hypotheses so the learning director can
+                // match a correct Bangla/Arabic/English alternative even when hypothesis #1
+                // is noisy. The UI still receives one compact result string.
+                val heard = values.joinToString(" ")
                 if (heard.isBlank()) retryOrFail() else onResult(heard)
             }
         })
