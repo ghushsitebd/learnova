@@ -3050,7 +3050,7 @@ class MainActivity : AppCompatActivity() {
             text.textSize = 12f
             text.setShadowLayer(4f, 0f, 1f, Color.DKGRAY)
 
-            val hint = if (levelComplete) "NEXT  ›" else "TAP THE ROAD TO DRIVE"
+            val hint = if (levelComplete) "✓ JOURNEY COMPLETE" else "TAP THE ROAD TO DRIVE"
             c.drawText(hint, w / 2f, h * .965f, text)
             text.clearShadowLayer()
         }
