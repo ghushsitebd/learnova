@@ -230,8 +230,8 @@ jobs:
 
           echo "== AAB signature/container =="
           JARSIGNER_OUTPUT="$(jarsigner -verify "$AAB" 2>&1)" || { echo "$JARSIGNER_OUTPUT"; exit 1; }
-printf "%s\n" "$JARSIGNER_OUTPUT"
-printf "%s\n" "$JARSIGNER_OUTPUT" | grep -q "jar verified" || { echo "::error::AAB jarsigner verification did not report a verified archive"; exit 1; }
+          printf "%s\n" "$JARSIGNER_OUTPUT"
+          printf "%s\n" "$JARSIGNER_OUTPUT" | grep -q "jar verified" || { echo "::error::AAB jarsigner verification did not report a verified archive"; exit 1; }
 
           echo "Integrity validation passed."
 
