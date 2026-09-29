@@ -128,6 +128,8 @@ class MainActivity : AppCompatActivity() {
         private val roadsideDirector = RoadsideLearningDirector()
         private var currentRoadsideSign: RoadsideLearningDirector.SignLesson? = null
         private var listeningForChild = false
+        private var companionInteractionUntil = 0L
+        private var companionInteractionStart = 0L
         private val childVoiceRecognizer = ChildVoiceRecognizer(this@MainActivity, { heard -> onChildVoice(heard) }, { listeningForChild = false; invalidate() })
 
         private val lessons = SmartLearningEngine.lessons.map { it.display }.toTypedArray()
@@ -432,6 +434,8 @@ class MainActivity : AppCompatActivity() {
                 val roadsideSign = roadsideDirector.maybeStop(level, levelProgress)
                 if (roadsideSign != null && currentRoadsideSign == null && !levelComplete) {
                     currentRoadsideSign = roadsideSign
+                    companionInteractionStart = System.currentTimeMillis()
+                    companionInteractionUntil = companionInteractionStart + 4200L
                     running = false
                     speed = 0f
                     threeDWorld.setDriving(false)
@@ -2574,6 +2578,8 @@ class MainActivity : AppCompatActivity() {
                 // the matching animal appears in front of the vehicle, moves
                 // naturally for a few seconds, then disappears back into the world.
                 sign.visualKey?.let { threeDWorld.triggerLearningAnimal(it) }
+                companionInteractionStart = System.currentTimeMillis()
+                companionInteractionUntil = companionInteractionStart + 4200L
                 voice.characterPraise(currentFriendName(), sign.english)
                 postDelayed({
                     if (!isFinishing && currentRoadsideSign != null) {
@@ -3126,11 +3132,18 @@ class MainActivity : AppCompatActivity() {
             val cy = h * (0.66f + 0.22f * p) + suspensionOffset +
                 if (running) sin(frame / 4.5).toFloat() * (0.65f + 2.6f * p) else 0f
             val scale = 0.42f + 0.80f * p
-            val friend = selected.id % 4
-            val fx = cx + 58f * scale
+            val friend = vehicle.coerceAtLeast(0) % 4
             val seated = selected.kind == "air" || selected.kind == "boat" || selected.kind == "space"
-            val walk = if (!seated && running) sin(frame / 7.0).toFloat() * 3.5f else 0f
-            val fy = cy - 55f * scale + walk
+            val now = System.currentTimeMillis()
+            val interactionActive = !seated && companionInteractionUntil > now
+            val interactionProgress = if (interactionActive) {
+                ((now - companionInteractionStart).toFloat() /
+                    (companionInteractionUntil - companionInteractionStart).coerceAtLeast(1L)).coerceIn(0f, 1f)
+            } else 0f
+            val walkOut = if (interactionActive) sin(interactionProgress * Math.PI).toFloat() else 0f
+            val fx = cx + (58f + 92f * walkOut) * scale
+            val walk = if (running || interactionActive) sin(frame / 7.0).toFloat() * 3.5f else 0f
+            val fy = cy - (55f + 8f * walkOut) * scale + walk
 
             // Soft contact shadow keeps the friend grounded when briefly walking beside
             // the vehicle; in the vehicle it is hidden by the body naturally.
@@ -3140,7 +3153,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             c.save()
-            if (running && !seated) {
+            if ((running || interactionActive) && !seated) {
                 c.rotate(sin(frame / 12.0).toFloat() * 4f, fx, fy)
             }
 
@@ -3175,7 +3188,7 @@ class MainActivity : AppCompatActivity() {
 
             // Small waving hand while driving: a simple, readable gesture instead of
             // a menu or popup, reinforcing the companion's presence in the journey.
-            if (running) {
+            if (running || interactionActive) {
                 paint.strokeWidth = 3f * scale
                 paint.strokeCap = Paint.Cap.ROUND
                 c.drawLine(fx + 13f * scale, fy + 8f * scale, fx + 24f * scale, fy - 1f * scale, paint)
@@ -3183,6 +3196,11 @@ class MainActivity : AppCompatActivity() {
                 paint.strokeCap = Paint.Cap.BUTT
             }
             c.restore()
+
+            if (interactionActive) {
+                paint.color = Color.argb((70f * (1f - interactionProgress)).toInt().coerceIn(0, 70), 255, 236, 170)
+                c.drawCircle(fx, fy - 30f * scale, 8f + 5f * walkOut, paint)
+            }
         }
 
         private fun drawVehicleContactEffects(c: Canvas, w: Float, h: Float, world: SmartScene) {
