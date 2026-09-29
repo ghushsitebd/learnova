@@ -66,8 +66,8 @@ internal class RoadsideLearningDirector {
 
     fun matches(sign: SignLesson, heard: String): Boolean {
         val normalized = heard.trim().lowercase()
-            .replace(Regex("[^\p{L}\p{N} ]"), "")
-            .replace(Regex("\s+"), " ")
+            .replace(Regex("""[^\p{L}\p{N} ]"""), "")
+            .replace(Regex("""\s+"""), " ")
         return sign.accepted.any { normalized.contains(it.lowercase()) }
     }
 }
