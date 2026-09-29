@@ -249,7 +249,7 @@ class MainActivity : AppCompatActivity() {
 
                     // The learning card remains a simple three-stage touch interaction.
                     if (y >= h * 0.63f && y <= h * 0.91f && x < w * 0.76f) {
-                        if (level in 69..250) {
+                        if (isQuranLevel()) {
                             val quran = LearnovaQuranCatalog.lesson(level - 68)
                             // The first tap starts the lesson; later taps advance its guided stages.
                             lessonStage = (lessonStage + 1) % 3
