@@ -1840,7 +1840,7 @@ SPLcom/learnova/app/Learnova3DView$$ExternalSyntheticLambda4;-><init>(Lcom/learn
 SPLcom/learnova/app/Learnova3DView$$ExternalSyntheticLambda4;->run()V
 Lcom/learnova/app/Learnova3DView$$ExternalSyntheticLambda5;
 SPLcom/learnova/app/Learnova3DView$$ExternalSyntheticLambda5;-><init>(Lcom/learnova/app/Learnova3DView;)V
-HSPLcom/learnova/app/Learnova3DView$$ExternalSyntheticLambda5;->doFrame(J)V
+SPLcom/learnova/app/Learnova3DView$$ExternalSyntheticLambda5;->doFrame(J)V
 Lcom/learnova/app/Learnova3DView$Companion;
 SPLcom/learnova/app/Learnova3DView$Companion;-><init>()V
 SPLcom/learnova/app/Learnova3DView$Companion;-><init>(Lkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -1892,7 +1892,7 @@ SPLcom/learnova/app/LearnovaUnlimitedWorld;-><clinit>()V
 SPLcom/learnova/app/LearnovaUnlimitedWorld;-><init>()V
 HSPLcom/learnova/app/LearnovaUnlimitedWorld;->animal(I)Lcom/learnova/app/AnimalSpecies;
 SPLcom/learnova/app/LearnovaUnlimitedWorld;->animalSpecies_delegate$lambda$1()Ljava/util/List;
-SPLcom/learnova/app/LearnovaUnlimitedWorld;->getAnimalSpecies()Ljava/util/List;
+HSPLcom/learnova/app/LearnovaUnlimitedWorld;->getAnimalSpecies()Ljava/util/List;
 SPLcom/learnova/app/LearnovaUnlimitedWorld;->getVehicles()Ljava/util/List;
 HSPLcom/learnova/app/LearnovaUnlimitedWorld;->level(I)Lcom/learnova/app/LevelInfo;
 HSPLcom/learnova/app/LearnovaUnlimitedWorld;->scene(I)Lcom/learnova/app/SmartScene;
@@ -1969,12 +1969,12 @@ HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawTrees(Landroid/graphics
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawVehicle(Landroid/graphics/Canvas;FF)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawVehicleContactEffects(Landroid/graphics/Canvas;FFLcom/learnova/app/SmartScene;)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawWheel(Landroid/graphics/Canvas;FFF)V
-SPLcom/learnova/app/MainActivity$LearnovaGameView;->featureColor(IIIII)I
+HSPLcom/learnova/app/MainActivity$LearnovaGameView;->featureColor(IIIII)I
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->getUse3DWorld()Z
 SPLcom/learnova/app/MainActivity$LearnovaGameView;->hSafe(Landroid/graphics/Canvas;)F
 SPLcom/learnova/app/MainActivity$LearnovaGameView;->handleQuranChoice(FFFF)Z
-HSPLcom/learnova/app/MainActivity$LearnovaGameView;->isQuranLevel()Z
-SPLcom/learnova/app/MainActivity$LearnovaGameView;->onDraw$lambda$5(Lcom/learnova/app/MainActivity;Lcom/learnova/app/MainActivity$LearnovaGameView;)V
+SPLcom/learnova/app/MainActivity$LearnovaGameView;->isQuranLevel()Z
+SPLcom/learnova/app/MainActivity$LearnovaGameView;->onDraw$lambda$6(Lcom/learnova/app/MainActivity;Lcom/learnova/app/MainActivity$LearnovaGameView;)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->onDraw(Landroid/graphics/Canvas;)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->onTouchEvent(Landroid/view/MotionEvent;)Z
 SPLcom/learnova/app/MainActivity$LearnovaGameView;->performClick()Z
@@ -2334,7 +2334,7 @@ SPLkotlin/ranges/IntProgressionIterator;->hasNext()Z
 SPLkotlin/ranges/IntProgressionIterator;->nextInt()I
 Lkotlin/ranges/IntRange;
 SPLkotlin/ranges/IntRange;-><clinit>()V
-SPLkotlin/ranges/IntRange;-><init>(II)V
+HSPLkotlin/ranges/IntRange;-><init>(II)V
 Lkotlin/ranges/IntRange$Companion;
 SPLkotlin/ranges/IntRange$Companion;-><init>()V
 SPLkotlin/ranges/IntRange$Companion;-><init>(Lkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -2342,6 +2342,7 @@ Lkotlin/ranges/OpenEndRange;
 Lkotlin/ranges/RangesKt;
 Lkotlin/ranges/RangesKt__RangesKt;
 Lkotlin/ranges/RangesKt___RangesKt;
+PLkotlin/ranges/RangesKt___RangesKt;->coerceAtLeast(DD)D
 SPLkotlin/ranges/RangesKt___RangesKt;->coerceAtLeast(II)I
 SPLkotlin/ranges/RangesKt___RangesKt;->coerceAtLeast(JJ)J
 SPLkotlin/ranges/RangesKt___RangesKt;->coerceAtMost(FF)F
@@ -2371,7 +2372,7 @@ HSPLkotlin/text/StringsKt__StringsJVMKt;->regionMatches(Ljava/lang/String;ILjava
 SPLkotlin/text/StringsKt__StringsJVMKt;->replace$default(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Ljava/lang/String;
 SPLkotlin/text/StringsKt__StringsJVMKt;->replace(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Ljava/lang/String;
 Lkotlin/text/StringsKt__StringsKt;
-HSPLkotlin/text/StringsKt__StringsKt;->contains$default(Ljava/lang/CharSequence;Ljava/lang/CharSequence;ZILjava/lang/Object;)Z
+SPLkotlin/text/StringsKt__StringsKt;->contains$default(Ljava/lang/CharSequence;Ljava/lang/CharSequence;ZILjava/lang/Object;)Z
 HSPLkotlin/text/StringsKt__StringsKt;->contains(Ljava/lang/CharSequence;Ljava/lang/CharSequence;Z)Z
 HSPLkotlin/text/StringsKt__StringsKt;->indexOf$StringsKt__StringsKt$default(Ljava/lang/CharSequence;Ljava/lang/CharSequence;IIZZILjava/lang/Object;)I
 HSPLkotlin/text/StringsKt__StringsKt;->indexOf$StringsKt__StringsKt(Ljava/lang/CharSequence;Ljava/lang/CharSequence;IIZZ)I
