@@ -12,6 +12,7 @@ internal class RoadsideLearningDirector {
     data class SignLesson(
         val key: String,
         val english: String,
+        val visualKey: String?,
         val bangla: String,
         val arabic: String,
         val prompt: String,
@@ -19,20 +20,20 @@ internal class RoadsideLearningDirector {
     )
 
     private val lessons = listOf(
-        SignLesson("fox","FOX","শিয়াল","ثعلب","Say: fox",setOf("fox","ফক্স")),
-        SignLesson("bear","BEAR","ভাল্লুক","دب","Say: bear",setOf("bear","বিয়ার")),
-        SignLesson("monkey","MONKEY","বানর","قرد","Say: monkey",setOf("monkey","মাঙ্কি")),
-        SignLesson("book","BOOK","বই","كتاب","Say: book",setOf("book","বুক")),
-        SignLesson("cat","CAT","বিড়াল","قطة","Say: cat",setOf("cat","ক্যাট")),
-        SignLesson("dog","DOG","কুকুর","كلب","Say: dog",setOf("dog","ডগ")),
-        SignLesson("elephant","ELEPHANT","হাতি","فيل","Say: elephant",setOf("elephant","এলিফ্যান্ট")),
-        SignLesson("lion","LION","সিংহ","أسد","Say: lion",setOf("lion","লায়ন")),
-        SignLesson("rabbit","RABBIT","খরগোশ","أرنب","Say: rabbit",setOf("rabbit","র‍্যাবিট")),
-        SignLesson("fish","FISH","মাছ","سمكة","Say: fish",setOf("fish","ফিশ")),
-        SignLesson("tree","TREE","গাছ","شجرة","Say: tree",setOf("tree","ট্রি")),
-        SignLesson("sun","SUN","সূর্য","شمس","Say: sun",setOf("sun","সান")),
-        SignLesson("moon","MOON","চাঁদ","قمر","Say: moon",setOf("moon","মুন")),
-        SignLesson("car","CAR","গাড়ি","سيارة","Say: car",setOf("car","কার"))
+        SignLesson("fox","FOX","শিয়াল","ثعلب","Say: fox","fox".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("fox","ফক্স")),
+        SignLesson("bear","BEAR","ভাল্লুক","دب","Say: bear","bear".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("bear","বিয়ার")),
+        SignLesson("monkey","MONKEY","বানর","قرد","Say: monkey","monkey".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("monkey","মাঙ্কি")),
+        SignLesson("book","BOOK","বই","كتاب","Say: book","book".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("book","বুক")),
+        SignLesson("cat","CAT","বিড়াল","قطة","Say: cat","cat".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("cat","ক্যাট")),
+        SignLesson("dog","DOG","কুকুর","كلب","Say: dog","dog".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("dog","ডগ")),
+        SignLesson("elephant","ELEPHANT","হাতি","فيل","Say: elephant","elephant".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("elephant","এলিফ্যান্ট")),
+        SignLesson("lion","LION","সিংহ","أسد","Say: lion","lion".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("lion","লায়ন")),
+        SignLesson("rabbit","RABBIT","খরগোশ","أرنب","Say: rabbit","rabbit".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("rabbit","র‍্যাবিট")),
+        SignLesson("fish","FISH","মাছ","سمكة","Say: fish","fish".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("fish","ফিশ")),
+        SignLesson("tree","TREE","গাছ","شجرة","Say: tree","tree".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("tree","ট্রি")),
+        SignLesson("sun","SUN","সূর্য","شمس","Say: sun","sun".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("sun","সান")),
+        SignLesson("moon","MOON","চাঁদ","قمر","Say: moon","moon".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("moon","মুন")),
+        SignLesson("car","CAR","গাড়ি","سيارة","Say: car","car".takeIf { it in setOf("cat","dog","elephant","fish","lion","tiger","rabbit","fox","bear","monkey") },setOf("car","কার"))
     )
 
     private var lastLevel = -1
