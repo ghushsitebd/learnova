@@ -278,7 +278,8 @@ class MainActivity : AppCompatActivity() {
                         return true
                     }
                     if (event.actionMasked == MotionEvent.ACTION_UP && y > h * 0.91f) {
-                        if (levelComplete) nextLesson()
+                        // Bottom edge is intentionally not a NEXT control anymore.
+                        // The next journey opens automatically after completion.
                         return true
                     }
                 }
@@ -292,7 +293,8 @@ class MainActivity : AppCompatActivity() {
             return true
         }
 
-        private fun isQuranLevel(): Boolean = level in 69..250
+        private fun isQuranLevel(): Boolean =
+            level in 69 until (69 + LearnovaQuranCatalog.lessons.size)
 
         private fun quranChoiceLabels(): List<String> {
             val current = LearnovaQuranCatalog.lesson(level - 68)
@@ -388,7 +390,20 @@ class MainActivity : AppCompatActivity() {
                 distance += speed
                 levelProgress += speed / LearnovaUnlimitedWorld.level(level).targetDistance * 0.006f
                 levelProgress = levelProgress.coerceAtMost(1f)
-                if (levelProgress >= 1f) levelComplete = true
+                if (levelProgress >= 1f && !levelComplete) {
+                    // A journey finishes by driving, not by answering a question.
+                    // Pause naturally for a short celebration, then open the next
+                    // journey automatically so the child never needs a NEXT button.
+                    levelComplete = true
+                    celebrationUntil = System.currentTimeMillis() + 1400L
+                    running = false
+                    steeringTouchActive = false
+                    steeringInput = 0f
+                    threeDWorld.setSteeringInput(0f)
+                    threeDWorld.setDriving(false)
+                    natureAudio.stop()
+                    voice.speakInstruction(true)
+                }
 
                 // Lateral inertia makes the body settle into a curve instead of
                 // snapping sideways.
@@ -417,7 +432,23 @@ class MainActivity : AppCompatActivity() {
                 laneOffset += (-laneOffset) * 0.06f
                 suspensionVelocity *= 0.70f
                 suspensionOffset *= 0.78f
-                if (levelProgress >= 1f) levelComplete = true
+                if (levelProgress >= 1f && !levelComplete) {
+                    levelComplete = true
+                    celebrationUntil = System.currentTimeMillis() + 1400L
+                }
+            }
+
+            // Journey completion advances automatically after a short, non-blocking
+            // celebration. Learning remains an event inside the journey instead of
+            // being the gate that decides when driving can continue.
+            if (levelComplete && celebrationUntil > 0L) {
+                val now = System.currentTimeMillis()
+                if (now >= celebrationUntil) {
+                    celebrationUntil = 0L
+                    nextLesson()
+                } else {
+                    postInvalidateOnAnimation()
+                }
             }
 
             val world = LearnovaUnlimitedWorld.scene(worldSceneId)
