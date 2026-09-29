@@ -86,6 +86,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var worldLife: WorldLifeSimulation? = null
     private var childNPC: ChildNPCWorld? = null
     private var learningAnimalEncounter: LearningAnimalEncounter? = null
+    private var vehicleFriend: VehicleFriendWorld? = null
     private var activeVehicle: VehicleDefinition = VehicleCatalog.byId(1)
     private var targetSpeed = activeVehicle.targetSpeed
     private var wheelRadius = activeVehicle.wheelRadius
@@ -162,6 +163,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 worldLife = WorldLifeSimulation(viewer.engine, viewer.scene, asset).also { it.build() }
                 childNPC = ChildNPCWorld(viewer.engine, viewer.scene, asset).also { it.build() }
                 learningAnimalEncounter = LearningAnimalEncounter(viewer.engine, viewer.scene, asset).also { it.build() }
+                vehicleFriend = VehicleFriendWorld(viewer.engine, viewer.scene, asset).also { it.build(); it.setFriend(friendForVehicle(activeVehicle.id)) }
             }
             configureRealisticSunLight()
             updateSkybox(WorldDirector.atmosphere(0.0), force = true)
@@ -246,6 +248,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                     worldLife?.update(vehicleDistance)
                     childNPC?.update(vehicleDistance)
                     learningAnimalEncounter?.update(vehicleDistance)
+                    vehicleFriend?.setDriving(driving)
+                    vehicleFriend?.update(vehicleDistance)
                 }
                 traceSectionIfEnabled(traceThisFrame, "Learnova.vehicle") {
                     updateVehicleMechanics()
@@ -345,6 +349,17 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         if (kotlin.math.abs(vehicleDistance - renderOriginDistance) >= 180.0) {
             renderOriginDistance = vehicleDistance
         }
+    }
+
+    private fun friendForVehicle(id: Int): String = when ((id - 1) % 8) {
+        0 -> "Fox"
+        1 -> "Bear"
+        2 -> "Monkey"
+        3 -> "Rabbit"
+        4 -> "Panda"
+        5 -> "Tiger"
+        6 -> "Lion"
+        else -> "Dog"
     }
 
     private fun newAssetIoExecutor(): ExecutorService =
@@ -530,6 +545,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     }
 
     fun setDriving(value: Boolean) {
+        vehicleFriend?.setDriving(value)
         // A child cannot start moving while the avatar is in the middle of
         // entering/exiting a vehicle. The normal gameplay path still remains
         // one tap to drive / one tap to stop.
@@ -566,6 +582,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
      */
     internal fun setVehicle(definition: VehicleDefinition) {
         activeVehicle = definition
+        vehicleFriend?.setFriend(friendForVehicle(definition.id))
         renderProfile = VehicleRenderProfile.forType(definition.type)
         interactionProfile = VehicleInteractionProfiles.forVehicle(definition.type)
         vehicleInteraction.reset()
@@ -613,6 +630,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 waterSurfaceWorld?.destroy()
                 shorelineWorld?.destroy()
                 worldLife?.destroy()
+                vehicleFriend?.destroy()
+                vehicleFriend = null
                 worldLife = null
                 roadsideWorld = null
                 waterSurfaceWorld = null
