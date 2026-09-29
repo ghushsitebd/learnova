@@ -20,20 +20,20 @@ internal class RoadsideLearningDirector {
     )
 
     private val lessons = listOf(
-        SignLesson("fox", "FOX", "fox", "শিয়াল", "ثعلب", "Say: fox", setOf("fox", "ফক্স")),
-        SignLesson("bear", "BEAR", "bear", "ভাল্লুক", "دب", "Say: bear", setOf("bear", "বিয়ার")),
-        SignLesson("monkey", "MONKEY", "monkey", "বানর", "قرد", "Say: monkey", setOf("monkey", "মাঙ্কি")),
-        SignLesson("book", "BOOK", null, "বই", "كتاب", "Say: book", setOf("book", "বুক")),
-        SignLesson("cat", "CAT", "cat", "বিড়াল", "قطة", "Say: cat", setOf("cat", "ক্যাট")),
-        SignLesson("dog", "DOG", "dog", "কুকুর", "كلب", "Say: dog", setOf("dog", "ডগ")),
-        SignLesson("elephant", "ELEPHANT", "elephant", "হাতি", "فيل", "Say: elephant", setOf("elephant", "এলিফ্যান্ট")),
-        SignLesson("lion", "LION", "lion", "সিংহ", "أسد", "Say: lion", setOf("lion", "লায়ন")),
-        SignLesson("rabbit", "RABBIT", "rabbit", "খরগোশ", "أرنب", "Say: rabbit", setOf("rabbit", "র‍্যাবিট")),
-        SignLesson("fish", "FISH", "fish", "মাছ", "سمكة", "Say: fish", setOf("fish", "ফিশ")),
-        SignLesson("tree", "TREE", null, "গাছ", "شجرة", "Say: tree", setOf("tree", "ট্রি")),
-        SignLesson("sun", "SUN", null, "সূর্য", "شمس", "Say: sun", setOf("sun", "সান")),
-        SignLesson("moon", "MOON", null, "চাঁদ", "قمر", "Say: moon", setOf("moon", "মুন")),
-        SignLesson("car", "CAR", null, "গাড়ি", "سيارة", "Say: car", setOf("car", "কার"))
+        SignLesson("fox", "FOX", "fox", "শিয়াল", "ثعلب", "Say: fox", setOf("fox", "ফক্স", "ثعلب")),
+        SignLesson("bear", "BEAR", "bear", "ভাল্লুক", "دب", "Say: bear", setOf("bear", "বিয়ার", "دب")),
+        SignLesson("monkey", "MONKEY", "monkey", "বানর", "قرد", "Say: monkey", setOf("monkey", "মাঙ্কি", "قرد")),
+        SignLesson("book", "BOOK", null, "বই", "كتاب", "Say: book", setOf("book", "বুক", "كتاب")),
+        SignLesson("cat", "CAT", "cat", "বিড়াল", "قطة", "Say: cat", setOf("cat", "ক্যাট", "قطة")),
+        SignLesson("dog", "DOG", "dog", "কুকুর", "كلب", "Say: dog", setOf("dog", "ডগ", "كلب")),
+        SignLesson("elephant", "ELEPHANT", "elephant", "হাতি", "فيل", "Say: elephant", setOf("elephant", "এলিফ্যান্ট", "فيل")),
+        SignLesson("lion", "LION", "lion", "সিংহ", "أسد", "Say: lion", setOf("lion", "লায়ন", "أسد")),
+        SignLesson("rabbit", "RABBIT", "rabbit", "খরগোশ", "أرنب", "Say: rabbit", setOf("rabbit", "র‍্যাবিট", "أرنب")),
+        SignLesson("fish", "FISH", "fish", "মাছ", "سمكة", "Say: fish", setOf("fish", "ফিশ", "سمكة")),
+        SignLesson("tree", "TREE", null, "গাছ", "شجرة", "Say: tree", setOf("tree", "ট্রি", "شجرة")),
+        SignLesson("sun", "SUN", null, "সূর্য", "شمس", "Say: sun", setOf("sun", "সান", "شمس")),
+        SignLesson("moon", "MOON", null, "চাঁদ", "قمر", "Say: moon", setOf("moon", "মুন", "قمر")),
+        SignLesson("car", "CAR", null, "গাড়ি", "سيارة", "Say: car", setOf("car", "কার", "سيارة"))
     )
 
     private var lastLevel = -1
