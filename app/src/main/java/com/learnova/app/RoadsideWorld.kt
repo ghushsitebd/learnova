@@ -28,9 +28,9 @@ internal class RoadsideWorld(
 ) {
     private companion object {
         const val BEHIND = 24.0
-        const val AHEAD = 220.0
-        const val STEP = 10.0
-        const val MAX_PROPS = 150
+        const val AHEAD = 260.0
+        const val STEP = 8.0
+        const val MAX_PROPS = 180
         const val VERTEX_STRIDE = 36
     }
 
