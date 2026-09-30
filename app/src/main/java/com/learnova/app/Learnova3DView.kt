@@ -675,9 +675,11 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private fun cacheWheelEntities() {
         val asset = viewer.asset ?: return
         val names = arrayOf(
-            "Wheel_FL", "Wheel_FR", "Wheel_RL", "Wheel_RR",
-            "wheel_fl", "wheel_fr", "wheel_rl", "wheel_rr",
-            "FrontLeftWheel", "FrontRightWheel", "RearLeftWheel", "RearRightWheel"
+            "Wheel_FL", "Wheel_FR", "Wheel_ML", "Wheel_MR", "Wheel_RL", "Wheel_RR",
+            "wheel_fl", "wheel_fr", "wheel_ml", "wheel_mr", "wheel_rl", "wheel_rr",
+            "FrontLeftWheel", "FrontRightWheel",
+            "MiddleLeftWheel", "MiddleRightWheel",
+            "RearLeftWheel", "RearRightWheel"
         )
         val found = ArrayList<Int>()
         val semanticNames = HashMap<Int, String>()
@@ -714,21 +716,30 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
             val name = semanticNames[entity].orEmpty().lowercase()
             val front = frontWheelEntities.contains(entity)
+            val middle = name.contains("_ml") || name.contains("_mr") ||
+                name.contains("middleleft") || name.contains("middleright")
             val lateralFromName = when {
-                name.contains("_fl") || name.contains("frontleft") -> -1.0
-                name.contains("_fr") || name.contains("frontright") -> 1.0
-                name.contains("_rl") || name.contains("rearleft") -> -1.0
-                name.contains("_rr") || name.contains("rearright") -> 1.0
+                name.contains("_fl") || name.contains("frontleft") ||
+                    name.contains("_ml") || name.contains("middleleft") ||
+                    name.contains("_rl") || name.contains("rearleft") -> -1.0
+                name.contains("_fr") || name.contains("frontright") ||
+                    name.contains("_mr") || name.contains("middleright") ||
+                    name.contains("_rr") || name.contains("rearright") -> 1.0
                 else -> {
                     val base = wheelBaseTransforms[entity]!!
                     if (base[12] >= 0.0f) 1.0 else -1.0
                 }
             }
 
-            // The production vehicle convention is +Z forward. Semantic wheel
-            // names override the mesh's authored longitudinal position so that
-            // different GLBs share the same physical contact model.
-            wheelContactLongitudinal[entity] = if (front) 1.15 else -1.15
+            // The production vehicle convention is +Z forward. Six-wheel
+            // production GLBs may expose FL/FR, ML/MR and RL/RR nodes.
+            // Middle-axle contact is sampled at the chassis midpoint while
+            // steering remains restricted to the front axle.
+            wheelContactLongitudinal[entity] = when {
+                front -> 1.15
+                middle -> 0.0
+                else -> -1.15
+            }
             wheelContactLateral[entity] = lateralFromName * 0.78
             wheelSuspensionDisplacement[entity] = 0.0
             wheelSuspensionVelocity[entity] = 0.0
