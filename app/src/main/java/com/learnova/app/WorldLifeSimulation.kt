@@ -177,9 +177,22 @@ internal class WorldLifeSimulation(
             val walkPhase = centerDistance * (if (isWildlife) 0.11 else 0.22) + phase * 6.283
             val pedestrianSway = if (isPedestrian) sin(walkPhase) * 0.48 else 0.0
             val pedestrianDrift = if (isPedestrian && moving) sin(walkPhase * 0.5) * 0.55 else 0.0
-            val wildlifeDrift = if (isWildlife && moving) sin(walkPhase) * 1.1 else 0.0
+            val wildlifeDrift = if (isWildlife && moving) {
+                val behaviourFactor = when (creatureBehaviour) {
+                    "grazing" -> 0.65
+                    "foraging" -> 0.85
+                    "curious" -> 1.25
+                    "social" -> 1.05
+                    "resting" -> 0.30
+                    "territorial" -> 1.40
+                    else -> 1.10
+                }
+                sin(walkPhase) * 1.1 * behaviourFactor
+            } else 0.0
             val drift = when {
                 isPedestrian -> pedestrianDrift
+                isWildlife && creatureIsAquatic -> sin(walkPhase * 0.65) * 1.45
+                isWildlife && creatureIsFlying -> sin(walkPhase * 0.8) * 1.8
                 isWildlife -> wildlifeDrift
                 else -> baseDrift
             }
@@ -194,13 +207,23 @@ internal class WorldLifeSimulation(
                 WorldDirector.Biome.DESERT -> ((seed ushr 4) % 5L).toInt()
                 WorldDirector.Biome.MARKET, WorldDirector.Biome.VILLAGE -> ((seed ushr 4) % 9L).toInt()
             }
+            // Wildlife is selected from the 1,000+ creature runtime index rather
+            // than being a single repeated placeholder species. The same stable
+            // seed always resolves to the same creature, preserving continuity
+            // when the child leaves and returns to a level.
+            val creatureIndex = Math.floorMod(seed, LearnovaWorldCatalog.creatureRuntimeProfiles.size.toLong()).toInt()
+            val creatureProfile = LearnovaWorldCatalog.creatureRuntimeProfiles[creatureIndex]
+            val creatureIsAquatic = creatureProfile.movement == "swim"
+            val creatureIsFlying = creatureProfile.movement == "fly" || creatureProfile.movement == "fly_or_walk"
+            val creatureBehaviour = creatureProfile.behaviour
             // Market/village can contain narrow human-scale walkers.
             val kind = if ((biome == WorldDirector.Biome.MARKET || biome == WorldDirector.Biome.VILLAGE) && family >= 6) {
                 6 + (family - 6)
             } else {
                 family.coerceAtMost(5)
             }
-            val scale = 0.72 + ((seed ushr 21) % 52L) / 100.0
+            val speciesScale = creatureProfile.creatureId.let { 0.78 + (it % 29) / 100.0 }
+            val scale = (0.72 + ((seed ushr 21) % 52L) / 100.0) * speciesScale.coerceIn(0.78, 1.04)
 
             val height = when (kind) {
                 0, 1 -> 1.15 * scale
