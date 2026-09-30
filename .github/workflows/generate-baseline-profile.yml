@@ -69,7 +69,7 @@ jobs:
       - name: Generate Baseline Profile
         run: |
           set -euo pipefail
-          gradle :app:generateBaselineProfile             -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=BaselineProfile             --stacktrace
+          gradle :app:generateBaselineProfile -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=BaselineProfile --stacktrace
 
       - name: Capture target-app runtime diagnostics
         if: always()
@@ -132,15 +132,36 @@ jobs:
           if [ "$PROFILE" != "$TARGET" ]; then
             cp "$PROFILE" "$TARGET"
           fi
-          if git ls-files --error-unmatch "$TARGET" >/dev/null 2>&1 && git diff --quiet -- "$TARGET"; then
-            echo "Baseline Profile unchanged; nothing to commit."
-            exit 0
-          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # The generator runs from an older workflow-run SHA. Refresh main
+          # immediately before committing so newer CI commits are preserved.
+          TMP_PROFILE="$RUNNER_TEMP/learnova-baseline-prof.txt"
+          cp "$TARGET" "$TMP_PROFILE"
+          git fetch --no-tags origin main
+          git reset --hard origin/main
+          mkdir -p "$(dirname "$TARGET")"
+          cp "$TMP_PROFILE" "$TARGET"
+
+          if git diff --quiet -- "$TARGET"; then
+            echo "Baseline Profile unchanged on current main; nothing to commit."
+            exit 0
+          fi
+
           git add "$TARGET"
           git commit -m "perf: update generated Learnova Baseline Profile [baseline-profile]"
-          git push origin HEAD:main
+
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Push race detected; refreshing main before retry."
+            git fetch --no-tags origin main
+            git rebase origin/main
+          done
+          echo "::error::Unable to persist Baseline Profile after 3 push attempts."
+          exit 1
 
       - name: Stage generated profile for artifact
         run: |
