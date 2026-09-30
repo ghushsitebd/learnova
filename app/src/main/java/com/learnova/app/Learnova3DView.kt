@@ -891,17 +891,19 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         roadYawRate += (yawDelta / dt - roadYawRate) * (dt * 7.0).coerceAtMost(1.0)
         previousRoadYaw = road.yaw.toDouble()
 
-        // Four independent tyre contact patches. Each tyre samples the road at
+        // Independent tyre contact patches. Each tyre samples the road at
         // its own longitudinal/lateral position, including the road's banking.
         // This makes the body settle differently over bumps, cambers and curves.
         val contactHeights = HashMap<Int, Double>()
         val contactCompression = HashMap<Int, Double>()
         var frontSum = 0.0
         var rearSum = 0.0
+        var middleSum = 0.0
         var leftSum = 0.0
         var rightSum = 0.0
         var frontCount = 0
         var rearCount = 0
+        var middleCount = 0
         var leftCount = 0
         var rightCount = 0
 
@@ -938,13 +940,20 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             wheelSuspensionDisplacement[entity] = nextDisplacement
             contactCompression[entity] = nextDisplacement
 
-            val front = frontWheelEntities.contains(entity)
-            if (front) {
-                frontSum += contactY
-                frontCount++
-            } else {
-                rearSum += contactY
-                rearCount++
+            val longitudinal = wheelContactLongitudinal[entity] ?: 0.0
+            when {
+                frontWheelEntities.contains(entity) -> {
+                    frontSum += contactY
+                    frontCount++
+                }
+                kotlin.math.abs(longitudinal) < 0.01 -> {
+                    middleSum += contactY
+                    middleCount++
+                }
+                else -> {
+                    rearSum += contactY
+                    rearCount++
+                }
             }
             if (lateral < 0.0) {
                 leftSum += contactY
@@ -957,11 +966,15 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
         val frontHeight = if (frontCount > 0) frontSum / frontCount else roadAhead.y.toDouble()
         val rearHeight = if (rearCount > 0) rearSum / rearCount else roadBehind.y.toDouble()
+        val middleHeight = if (middleCount > 0) middleSum / middleCount else road.y.toDouble()
+        val rearAxleReference = if (rearCount > 0 && middleCount > 0) {
+            (rearHeight + middleHeight) * 0.5
+        } else if (rearCount > 0) rearHeight else middleHeight
         val leftHeight = if (leftCount > 0) leftSum / leftCount else road.y.toDouble()
         val rightHeight = if (rightCount > 0) rightSum / rightCount else road.y.toDouble()
 
         val axlePitch = Math.atan2(
-            frontHeight - rearHeight,
+            frontHeight - rearAxleReference,
             2.30
         ).coerceIn(-0.16, 0.16).toFloat()
         val contactRoll = Math.atan2(
