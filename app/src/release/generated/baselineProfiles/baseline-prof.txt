@@ -1840,7 +1840,7 @@ SPLcom/learnova/app/Learnova3DView$$ExternalSyntheticLambda4;-><init>(Lcom/learn
 SPLcom/learnova/app/Learnova3DView$$ExternalSyntheticLambda4;->run()V
 Lcom/learnova/app/Learnova3DView$$ExternalSyntheticLambda5;
 SPLcom/learnova/app/Learnova3DView$$ExternalSyntheticLambda5;-><init>(Lcom/learnova/app/Learnova3DView;)V
-HSPLcom/learnova/app/Learnova3DView$$ExternalSyntheticLambda5;->doFrame(J)V
+SPLcom/learnova/app/Learnova3DView$$ExternalSyntheticLambda5;->doFrame(J)V
 Lcom/learnova/app/Learnova3DView$Companion;
 SPLcom/learnova/app/Learnova3DView$Companion;-><init>()V
 SPLcom/learnova/app/Learnova3DView$Companion;-><init>(Lkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -1877,14 +1877,14 @@ SPLcom/learnova/app/LearnovaQuranCatalog$$ExternalSyntheticLambda0;-><init>()V
 SPLcom/learnova/app/LearnovaQuranCatalog$$ExternalSyntheticLambda0;->invoke()Ljava/lang/Object;
 Lcom/learnova/app/LearnovaRenderQuality;
 SPLcom/learnova/app/LearnovaRenderQuality;-><init>(Landroid/content/Context;)V
-HSPLcom/learnova/app/LearnovaRenderQuality;->animalCount()I
+SPLcom/learnova/app/LearnovaRenderQuality;->animalCount()I
 SPLcom/learnova/app/LearnovaRenderQuality;->beginFrame()J
 HSPLcom/learnova/app/LearnovaRenderQuality;->distantTrafficCount()I
 HSPLcom/learnova/app/LearnovaRenderQuality;->endFrame(J)V
 SPLcom/learnova/app/LearnovaRenderQuality;->level()I
 SPLcom/learnova/app/LearnovaRenderQuality;->shadowAlpha()I
 SPLcom/learnova/app/LearnovaRenderQuality;->supportsModernGraphics()Z
-HSPLcom/learnova/app/LearnovaRenderQuality;->treeDetail()F
+SPLcom/learnova/app/LearnovaRenderQuality;->treeDetail()F
 Lcom/learnova/app/LearnovaTerrainMesh;
 Lcom/learnova/app/LearnovaUnlimitedWorld;
 SPLcom/learnova/app/LearnovaUnlimitedWorld;-><clinit>()V
@@ -1900,7 +1900,7 @@ SPLcom/learnova/app/LearnovaUnlimitedWorld$$ExternalSyntheticLambda0;-><init>()V
 SPLcom/learnova/app/LearnovaUnlimitedWorld$$ExternalSyntheticLambda0;->invoke()Ljava/lang/Object;
 Lcom/learnova/app/LearnovaVoice;
 SPLcom/learnova/app/LearnovaVoice;-><init>(Landroid/content/Context;)V
-SPLcom/learnova/app/LearnovaVoice;->onInit(I)V
+PLcom/learnova/app/LearnovaVoice;->onInit(I)V
 SPLcom/learnova/app/LearnovaVoice;->playChildLesson(Lcom/learnova/app/SmartLesson;)V
 SPLcom/learnova/app/LearnovaVoice;->playChildLine(Ljava/util/List;I)V
 SPLcom/learnova/app/LearnovaVoice;->playChildSequence(Ljava/util/List;)V
@@ -1932,7 +1932,7 @@ Lcom/learnova/app/MainActivity$LearnovaGameView;
 SPLcom/learnova/app/MainActivity$LearnovaGameView;-><init>(Lcom/learnova/app/MainActivity;)V
 SPLcom/learnova/app/MainActivity$LearnovaGameView;->currentFriendName()Ljava/lang/String;
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawAnimals(Landroid/graphics/Canvas;FFLcom/learnova/app/SmartScene;)V
-HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawAnimatedAnimal$default(Lcom/learnova/app/MainActivity$LearnovaGameView;Landroid/graphics/Canvas;Ljava/lang/String;FFFZFILjava/lang/Object;)V
+SPLcom/learnova/app/MainActivity$LearnovaGameView;->drawAnimatedAnimal$default(Lcom/learnova/app/MainActivity$LearnovaGameView;Landroid/graphics/Canvas;Ljava/lang/String;FFFZFILjava/lang/Object;)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawAnimatedAnimal(Landroid/graphics/Canvas;Ljava/lang/String;FFFZF)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawAtmosphere(Landroid/graphics/Canvas;FFLcom/learnova/app/SmartScene;)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawCar(Landroid/graphics/Canvas;FFI)V
@@ -1968,7 +1968,7 @@ HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawTrees(Landroid/graphics
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawVehicle(Landroid/graphics/Canvas;FF)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawVehicleContactEffects(Landroid/graphics/Canvas;FFLcom/learnova/app/SmartScene;)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawWheel(Landroid/graphics/Canvas;FFF)V
-SPLcom/learnova/app/MainActivity$LearnovaGameView;->featureColor(IIIII)I
+HSPLcom/learnova/app/MainActivity$LearnovaGameView;->featureColor(IIIII)I
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->getUse3DWorld()Z
 SPLcom/learnova/app/MainActivity$LearnovaGameView;->hSafe(Landroid/graphics/Canvas;)F
 SPLcom/learnova/app/MainActivity$LearnovaGameView;->handleQuranChoice(FFFF)Z
@@ -2000,9 +2000,6 @@ SPLcom/learnova/app/RoadsideLearningDirector;->maybeStop(IF)Lcom/learnova/app/Ro
 SPLcom/learnova/app/RoadsideLearningDirector;->resetForLevel(I)V
 Lcom/learnova/app/RoadsideLearningDirector$SignLesson;
 SPLcom/learnova/app/RoadsideLearningDirector$SignLesson;-><init>(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;)V
-SPLcom/learnova/app/RoadsideLearningDirector$SignLesson;->getArabic()Ljava/lang/String;
-SPLcom/learnova/app/RoadsideLearningDirector$SignLesson;->getBangla()Ljava/lang/String;
-SPLcom/learnova/app/RoadsideLearningDirector$SignLesson;->getEnglish()Ljava/lang/String;
 SPLcom/learnova/app/RoadsideLearningDirector$SignLesson;->getPrompt()Ljava/lang/String;
 Lcom/learnova/app/RoadsideWorld;
 Lcom/learnova/app/ShorelineWorld;
@@ -2011,7 +2008,7 @@ SPLcom/learnova/app/SmartLearningEngine;-><clinit>()V
 SPLcom/learnova/app/SmartLearningEngine;-><init>()V
 SPLcom/learnova/app/SmartLearningEngine;->category(I)Ljava/lang/String;
 SPLcom/learnova/app/SmartLearningEngine;->getLessons()Ljava/util/List;
-SPLcom/learnova/app/SmartLearningEngine;->lesson(I)Lcom/learnova/app/SmartLesson;
+HSPLcom/learnova/app/SmartLearningEngine;->lesson(I)Lcom/learnova/app/SmartLesson;
 SPLcom/learnova/app/SmartLearningEngine;->quranLesson(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;)Lcom/learnova/app/SmartLesson;
 Lcom/learnova/app/SmartLesson;
 SPLcom/learnova/app/SmartLesson;-><init>(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
@@ -2175,7 +2172,7 @@ Lkotlin/collections/CollectionsKt;
 Lkotlin/collections/CollectionsKt__CollectionsJVMKt;
 Lkotlin/collections/CollectionsKt__CollectionsKt;
 SPLkotlin/collections/CollectionsKt__CollectionsKt;->emptyList()Ljava/util/List;
-HSPLkotlin/collections/CollectionsKt__CollectionsKt;->getLastIndex(Ljava/util/List;)I
+SPLkotlin/collections/CollectionsKt__CollectionsKt;->getLastIndex(Ljava/util/List;)I
 SPLkotlin/collections/CollectionsKt__CollectionsKt;->listOf([Ljava/lang/Object;)Ljava/util/List;
 Lkotlin/collections/CollectionsKt__IterablesKt;
 SPLkotlin/collections/CollectionsKt__IterablesKt;->collectionSizeOrDefault(Ljava/lang/Iterable;I)I
@@ -2308,7 +2305,7 @@ Lkotlin/random/RandomKt;
 SPLkotlin/random/RandomKt;->Random(I)Lkotlin/random/Random;
 HSPLkotlin/random/RandomKt;->checkRangeBounds(DD)V
 PLkotlin/random/RandomKt;->checkRangeBounds(II)V
-SPLkotlin/random/RandomKt;->takeUpperBits(II)I
+HSPLkotlin/random/RandomKt;->takeUpperBits(II)I
 Lkotlin/random/XorWowRandom;
 SPLkotlin/random/XorWowRandom;-><clinit>()V
 SPLkotlin/random/XorWowRandom;-><init>(II)V
@@ -2370,7 +2367,7 @@ Lkotlin/text/StringsKt__StringBuilderKt;
 Lkotlin/text/StringsKt__StringNumberConversionsJVMKt;
 Lkotlin/text/StringsKt__StringNumberConversionsKt;
 Lkotlin/text/StringsKt__StringsJVMKt;
-SPLkotlin/text/StringsKt__StringsJVMKt;->equals(Ljava/lang/String;Ljava/lang/String;Z)Z
+PLkotlin/text/StringsKt__StringsJVMKt;->equals(Ljava/lang/String;Ljava/lang/String;Z)Z
 HSPLkotlin/text/StringsKt__StringsJVMKt;->regionMatches(Ljava/lang/String;ILjava/lang/String;IIZ)Z
 SPLkotlin/text/StringsKt__StringsJVMKt;->replace$default(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Ljava/lang/String;
 SPLkotlin/text/StringsKt__StringsJVMKt;->replace(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Ljava/lang/String;
