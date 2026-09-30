@@ -940,7 +940,6 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             wheelSuspensionDisplacement[entity] = nextDisplacement
             contactCompression[entity] = nextDisplacement
 
-            val longitudinal = wheelContactLongitudinal[entity] ?: 0.0
             when {
                 frontWheelEntities.contains(entity) -> {
                     frontSum += contactY
