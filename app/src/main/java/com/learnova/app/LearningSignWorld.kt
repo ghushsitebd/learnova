@@ -117,8 +117,8 @@ internal class LearningSignWorld(
     }
 
     private fun writeHiddenGeometry() {
-        val v = ByteBuffer.allocate(48 * 36).order(ByteOrder.nativeOrder())
-        val i = ByteBuffer.allocate(216 * 2).order(ByteOrder.nativeOrder())
+        val v = ByteBuffer.allocate(56 * 36).order(ByteOrder.nativeOrder())
+        val i = ByteBuffer.allocate(252 * 2).order(ByteOrder.nativeOrder())
         repeat(56) {
             v.putFloat(0f); v.putFloat(-5000f); v.putFloat(0f)
             v.putFloat(0f); v.putFloat(0f); v.putFloat(0f); v.putFloat(1f); v.putFloat(0f); v.putFloat(0f)
