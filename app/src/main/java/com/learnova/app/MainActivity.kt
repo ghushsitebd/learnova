@@ -434,6 +434,7 @@ class MainActivity : AppCompatActivity() {
                 val roadsideSign = roadsideDirector.maybeStop(level, levelProgress)
                 if (roadsideSign != null && currentRoadsideSign == null && !levelComplete) {
                     currentRoadsideSign = roadsideSign
+                    threeDWorld.showLearningSign()
                     companionInteractionStart = System.currentTimeMillis()
                     companionInteractionUntil = companionInteractionStart + 4200L
 
@@ -2608,6 +2609,7 @@ class MainActivity : AppCompatActivity() {
                 }, 260L)
                 learningPoints += 1
                 saveProgress()
+                threeDWorld.hideLearningSign()
                 currentRoadsideSign = null
                 postDelayed({
                     if (!isFinishing && !levelComplete) {
