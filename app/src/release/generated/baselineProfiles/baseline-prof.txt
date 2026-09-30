@@ -1828,7 +1828,7 @@ SPLcom/learnova/app/Learnova3DView;->initializeWorldIfNeeded()V
 SPLcom/learnova/app/Learnova3DView;->isPresentationReady()Z
 SPLcom/learnova/app/Learnova3DView;->newAssetIoExecutor()Ljava/util/concurrent/ExecutorService;
 SPLcom/learnova/app/Learnova3DView;->onAttachedToWindow$lambda$12(Lcom/learnova/app/Learnova3DView;)V
-HPLcom/learnova/app/Learnova3DView;->onAttachedToWindow$lambda$18(Lcom/learnova/app/Learnova3DView;J)V
+HSPLcom/learnova/app/Learnova3DView;->onAttachedToWindow$lambda$18(Lcom/learnova/app/Learnova3DView;J)V
 SPLcom/learnova/app/Learnova3DView;->onAttachedToWindow()V
 SPLcom/learnova/app/Learnova3DView;->setDriving(Z)V
 PLcom/learnova/app/Learnova3DView;->setSteeringInput(F)V
