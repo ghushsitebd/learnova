@@ -125,10 +125,50 @@ internal class LearningAnimalEncounter(
     private fun drawAnimal(x: Double, y: Double, z: Double, yaw: Double, scale: Double) {
         val v = ByteBuffer.allocate(40 * 36).order(ByteOrder.nativeOrder())
         val i = ByteBuffer.allocate(180 * 2).order(ByteOrder.nativeOrder())
-        box(v,i,x,y+0.38*scale,z,yaw,0.30*scale,0.38*scale,0.72*scale)
-        box(v,i,x+cos(yaw)*0.62*scale,y+0.70*scale,z-sin(yaw)*0.62*scale,yaw,0.27*scale,0.28*scale,0.30*scale)
-        box(v,i,x+cos(yaw)*0.77*scale,y+0.98*scale,z-sin(yaw)*0.77*scale,yaw,0.08*scale,0.16*scale,0.09*scale)
-        box(v,i,x+cos(yaw)*0.56*scale,y+0.55*scale,z-sin(yaw)*0.56*scale,yaw+0.45,0.055*scale,0.055*scale,0.55*scale)
+        // Species-aware silhouette: keep the fixed 40-vertex budget, but vary
+        // proportions so each learning animal reads differently at a distance.
+        val aquatic = activeAnimal in setOf("fish", "whale")
+        val flying = activeAnimal in setOf("bird", "parrot", "falcon")
+        val bodyW = when (activeAnimal) {
+            "elephant", "bear", "yak" -> 0.40
+            "rabbit", "frog" -> 0.23
+            "fish", "whale" -> 0.34
+            else -> 0.30
+        } * scale
+        val bodyH = when (activeAnimal) {
+            "giraffe" -> 0.56
+            "elephant", "bear", "yak" -> 0.48
+            "fish", "whale" -> 0.24
+            else -> 0.38
+        } * scale
+        val bodyD = when (activeAnimal) {
+            "fish", "whale" -> 0.92
+            "elephant", "bear", "yak" -> 0.82
+            else -> 0.72
+        } * scale
+        box(v,i,x,y+bodyH,z,yaw,bodyW,bodyH,bodyD)
+        val headForward = if (aquatic) 0.58 else 0.62
+        val headY = if (flying) 0.74 else if (activeAnimal == "giraffe") 1.00 else 0.70
+        box(v,i,x+cos(yaw)*headForward*scale,y+headY*scale,z-sin(yaw)*headForward*scale,
+            yaw,bodyW*0.88,0.28*scale,0.30*scale)
+        // Ears/horns/crest are represented by the third volume where appropriate.
+        val headTop = when (activeAnimal) {
+            "elephant" -> 0.92
+            "giraffe" -> 1.32
+            "rabbit" -> 1.02
+            "tiger", "lion", "bear", "fox" -> 0.96
+            else -> 0.90
+        }
+        val headDetailW = when (activeAnimal) {
+            "elephant", "rabbit" -> 0.16
+            "giraffe" -> 0.10
+            else -> 0.08
+        } * scale
+        box(v,i,x+cos(yaw)*0.77*scale,y+headTop*scale,z-sin(yaw)*0.77*scale,
+            yaw,headDetailW,0.12*scale,0.10*scale)
+        val tailYaw = if (activeAnimal in setOf("fish","whale")) yaw else yaw + 0.45
+        box(v,i,x+cos(tailYaw)*-0.48*scale,y+0.55*scale,z-sin(tailYaw)*-0.48*scale,
+            tailYaw,0.055*scale,0.055*scale,0.55*scale)
         while (v.position() < 40 * 36) { v.putFloat(0f); v.putFloat(-5000f); v.putFloat(0f); repeat(6) { v.putFloat(0f) } }
         while (i.position() < 180 * 2) i.putShort(0)
         v.flip(); i.flip()
