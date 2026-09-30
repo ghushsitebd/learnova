@@ -11,7 +11,6 @@ import com.google.android.filament.gltfio.FilamentAsset
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.PI
-import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -40,12 +39,12 @@ internal class LearningSignWorld(
             material?.setParameter("roughness", 0.72f)
         } catch (_: Throwable) {}
         vb = VertexBuffer.Builder()
-            .vertexCount(24).bufferCount(1)
+            .vertexCount(56).bufferCount(1)
             .attribute(VertexBuffer.VertexAttribute.POSITION, 0, VertexBuffer.AttributeType.FLOAT3, 0, 36)
             .attribute(VertexBuffer.VertexAttribute.TANGENTS, 0, VertexBuffer.AttributeType.FLOAT4, 12, 36)
             .attribute(VertexBuffer.VertexAttribute.UV0, 0, VertexBuffer.AttributeType.FLOAT2, 28, 36)
             .build(engine)
-        ib = IndexBuffer.Builder().indexCount(108).bufferType(IndexBuffer.Builder.IndexType.USHORT).build(engine)
+        ib = IndexBuffer.Builder().indexCount(252).bufferType(IndexBuffer.Builder.IndexType.USHORT).build(engine)
         entity = EntityManager.get().create()
         RenderableManager.Builder(1).material(0, material!!)
             .geometry(0, RenderableManager.PrimitiveType.TRIANGLES, vb!!, ib!!)
@@ -83,8 +82,8 @@ internal class LearningSignWorld(
         val faceYaw = roadYaw + PI / 2.0
         animationPhase += 0.08
         val pulse = 0.035 * (0.5 + 0.5 * sin(animationPhase))
-        val v = ByteBuffer.allocate(48 * 36).order(ByteOrder.nativeOrder())
-        val i = ByteBuffer.allocate(216 * 2).order(ByteOrder.nativeOrder())
+        val v = ByteBuffer.allocate(56 * 36).order(ByteOrder.nativeOrder())
+        val i = ByteBuffer.allocate(252 * 2).order(ByteOrder.nativeOrder())
         // Deep board + raised frame: reads as a physical roadside object even before
         // the production multilingual texture is attached to the asset pipeline.
         box(v, i, x, roadY + 1.55, z, faceYaw, 1.65 + pulse, 1.05 + pulse, 0.10)
@@ -120,11 +119,11 @@ internal class LearningSignWorld(
     private fun writeHiddenGeometry() {
         val v = ByteBuffer.allocate(48 * 36).order(ByteOrder.nativeOrder())
         val i = ByteBuffer.allocate(216 * 2).order(ByteOrder.nativeOrder())
-        repeat(48) {
+        repeat(56) {
             v.putFloat(0f); v.putFloat(-5000f); v.putFloat(0f)
             v.putFloat(0f); v.putFloat(0f); v.putFloat(0f); v.putFloat(1f); v.putFloat(0f); v.putFloat(0f)
         }
-        repeat(216) { i.putShort(0) }
+        repeat(252) { i.putShort(0) }
         v.flip(); i.flip(); vb?.setBufferAt(engine, 0, v); ib?.setBuffer(engine, i)
     }
 
