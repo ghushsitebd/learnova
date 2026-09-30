@@ -1879,7 +1879,7 @@ SPLcom/learnova/app/LearnovaQuranCatalog$$ExternalSyntheticLambda0;-><init>()V
 SPLcom/learnova/app/LearnovaQuranCatalog$$ExternalSyntheticLambda0;->invoke()Ljava/lang/Object;
 Lcom/learnova/app/LearnovaRenderQuality;
 SPLcom/learnova/app/LearnovaRenderQuality;-><init>(Landroid/content/Context;)V
-SPLcom/learnova/app/LearnovaRenderQuality;->animalCount()I
+HSPLcom/learnova/app/LearnovaRenderQuality;->animalCount()I
 SPLcom/learnova/app/LearnovaRenderQuality;->beginFrame()J
 SPLcom/learnova/app/LearnovaRenderQuality;->distantTrafficCount()I
 HSPLcom/learnova/app/LearnovaRenderQuality;->endFrame(J)V
@@ -1893,7 +1893,7 @@ SPLcom/learnova/app/LearnovaUnlimitedWorld;-><clinit>()V
 SPLcom/learnova/app/LearnovaUnlimitedWorld;-><init>()V
 HSPLcom/learnova/app/LearnovaUnlimitedWorld;->animal(I)Lcom/learnova/app/AnimalSpecies;
 SPLcom/learnova/app/LearnovaUnlimitedWorld;->animalSpecies_delegate$lambda$1()Ljava/util/List;
-SPLcom/learnova/app/LearnovaUnlimitedWorld;->getAnimalSpecies()Ljava/util/List;
+HSPLcom/learnova/app/LearnovaUnlimitedWorld;->getAnimalSpecies()Ljava/util/List;
 SPLcom/learnova/app/LearnovaUnlimitedWorld;->getVehicles()Ljava/util/List;
 HSPLcom/learnova/app/LearnovaUnlimitedWorld;->level(I)Lcom/learnova/app/LevelInfo;
 HSPLcom/learnova/app/LearnovaUnlimitedWorld;->scene(I)Lcom/learnova/app/SmartScene;
@@ -1940,7 +1940,7 @@ HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawAtmosphere(Landroid/gra
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawCar(Landroid/graphics/Canvas;FFI)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawCinematicLighting(Landroid/graphics/Canvas;FFLcom/learnova/app/SmartScene;)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawCloud(Landroid/graphics/Canvas;FFF)V
-HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawClouds(Landroid/graphics/Canvas;FF)V
+SPLcom/learnova/app/MainActivity$LearnovaGameView;->drawClouds(Landroid/graphics/Canvas;FF)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawCompanion(Landroid/graphics/Canvas;FFLcom/learnova/app/SmartScene;)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawDeer(Landroid/graphics/Canvas;FF)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawDistantWorld(Landroid/graphics/Canvas;FFLcom/learnova/app/SmartScene;)V
@@ -1950,7 +1950,7 @@ HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawGardenWorld(Landroid/gr
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawGround(Landroid/graphics/Canvas;FF)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawHabitatDetails(Landroid/graphics/Canvas;FFLcom/learnova/app/SmartScene;)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawHint(Landroid/graphics/Canvas;FF)V
-SPLcom/learnova/app/MainActivity$LearnovaGameView;->drawLearningCard(Landroid/graphics/Canvas;FFLcom/learnova/app/SmartScene;)V
+HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawLearningCard(Landroid/graphics/Canvas;FFLcom/learnova/app/SmartScene;)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawMountains(Landroid/graphics/Canvas;FF)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawRiver(Landroid/graphics/Canvas;FF)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawRoad$roadCenter(FFLcom/learnova/app/MainActivity$LearnovaGameView;F)F
@@ -1974,7 +1974,7 @@ HSPLcom/learnova/app/MainActivity$LearnovaGameView;->featureColor(IIIII)I
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->getUse3DWorld()Z
 SPLcom/learnova/app/MainActivity$LearnovaGameView;->hSafe(Landroid/graphics/Canvas;)F
 SPLcom/learnova/app/MainActivity$LearnovaGameView;->handleQuranChoice(FFFF)Z
-SPLcom/learnova/app/MainActivity$LearnovaGameView;->isQuranLevel()Z
+HSPLcom/learnova/app/MainActivity$LearnovaGameView;->isQuranLevel()Z
 PLcom/learnova/app/MainActivity$LearnovaGameView;->onDraw$lambda$6(Lcom/learnova/app/MainActivity;Lcom/learnova/app/MainActivity$LearnovaGameView;)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->onDraw(Landroid/graphics/Canvas;)V
 HPLcom/learnova/app/MainActivity$LearnovaGameView;->onTouchEvent(Landroid/view/MotionEvent;)Z
@@ -1997,7 +1997,8 @@ Lcom/learnova/app/QuranSurahLesson;
 SPLcom/learnova/app/QuranSurahLesson;-><init>(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 Lcom/learnova/app/RoadsideLearningDirector;
 SPLcom/learnova/app/RoadsideLearningDirector;-><init>()V
-HPLcom/learnova/app/RoadsideLearningDirector;->maybeStop(IF)Lcom/learnova/app/RoadsideLearningDirector$SignLesson;
+PLcom/learnova/app/RoadsideLearningDirector;->lessonForLevel(I)Lcom/learnova/app/RoadsideLearningDirector$SignLesson;
+SPLcom/learnova/app/RoadsideLearningDirector;->maybeStop(IF)Lcom/learnova/app/RoadsideLearningDirector$SignLesson;
 SPLcom/learnova/app/RoadsideLearningDirector;->resetForLevel(I)V
 Lcom/learnova/app/RoadsideLearningDirector$SignLesson;
 SPLcom/learnova/app/RoadsideLearningDirector$SignLesson;-><init>(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;)V
@@ -2028,7 +2029,7 @@ SPLcom/learnova/app/SmartScene;->getEnvironment()Ljava/lang/String;
 SPLcom/learnova/app/SmartScene;->getId()I
 SPLcom/learnova/app/SmartScene;->getRegion()Ljava/lang/String;
 SPLcom/learnova/app/SmartScene;->getTime()Ljava/lang/String;
-HSPLcom/learnova/app/SmartScene;->getWeather()Ljava/lang/String;
+SPLcom/learnova/app/SmartScene;->getWeather()Ljava/lang/String;
 Lcom/learnova/app/VehicleAssetResolver;
 SPLcom/learnova/app/VehicleAssetResolver;-><init>(Landroid/content/Context;)V
 Lcom/learnova/app/VehicleCatalog;
@@ -2347,6 +2348,7 @@ Lkotlin/ranges/OpenEndRange;
 Lkotlin/ranges/RangesKt;
 Lkotlin/ranges/RangesKt__RangesKt;
 Lkotlin/ranges/RangesKt___RangesKt;
+PLkotlin/ranges/RangesKt___RangesKt;->coerceAtLeast(DD)D
 SPLkotlin/ranges/RangesKt___RangesKt;->coerceAtLeast(II)I
 SPLkotlin/ranges/RangesKt___RangesKt;->coerceAtLeast(JJ)J
 SPLkotlin/ranges/RangesKt___RangesKt;->coerceAtMost(FF)F
