@@ -86,6 +86,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var worldLife: WorldLifeSimulation? = null
     private var childNPC: ChildNPCWorld? = null
     private var learningAnimalEncounter: LearningAnimalEncounter? = null
+    private var learningSignWorld: LearningSignWorld? = null
     private var vehicleFriend: VehicleFriendWorld? = null
     private var activeVehicle: VehicleDefinition = VehicleCatalog.byId(1)
     private var targetSpeed = activeVehicle.targetSpeed
@@ -163,6 +164,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 worldLife = WorldLifeSimulation(viewer.engine, viewer.scene, asset).also { it.build() }
                 childNPC = ChildNPCWorld(viewer.engine, viewer.scene, asset).also { it.build() }
                 learningAnimalEncounter = LearningAnimalEncounter(viewer.engine, viewer.scene, asset).also { it.build() }
+                learningSignWorld = LearningSignWorld(viewer.engine, viewer.scene, asset).also { it.build() }
                 vehicleFriend = VehicleFriendWorld(viewer.engine, viewer.scene, asset).also { it.build(); it.setFriend(friendForVehicle(activeVehicle.id)) }
             }
             configureRealisticSunLight()
@@ -195,6 +197,16 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     fun triggerLearningAnimal(animal: String) {
         if (!rendererReady) return
         learningAnimalEncounter?.trigger(animal, vehicleDistance + 12.0)
+    }
+
+    /** Shows a physical roadside learning marker ahead of the vehicle. */
+    fun showLearningSign() {
+        if (!rendererReady) return
+        learningSignWorld?.show(vehicleDistance)
+    }
+
+    fun hideLearningSign() {
+        learningSignWorld?.hide()
     }
 
     override fun onAttachedToWindow() {
@@ -248,6 +260,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                     worldLife?.update(vehicleDistance)
                     childNPC?.update(vehicleDistance)
                     learningAnimalEncounter?.update(vehicleDistance)
+                    learningSignWorld?.update(vehicleDistance)
                     vehicleFriend?.setDriving(driving)
                     vehicleFriend?.update(vehicleDistance)
                 }
@@ -1317,6 +1330,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         childNPC = null
         learningAnimalEncounter?.destroy()
         learningAnimalEncounter = null
+        learningSignWorld?.destroy()
+        learningSignWorld = null
         roadsideWorld = null
         waterSurfaceWorld = null
         if (rendererReady && sunEntity != 0) {
