@@ -1,43 +1,77 @@
 package com.learnova.app
 
+import android.content.Context
+import java.io.FileNotFoundException
+import java.util.zip.GZIPInputStream
+
 /**
- * Runtime contract for authored creature assets.
+ * Resolves authored near-field creature assets.
  *
- * The catalog can contain 1,000+ creature records while only the near-field
- * species that are actually encountered need authored GLB assets. Keeping the
- * mapping in one resolver lets the renderer switch from the current distant
- * fallback geometry to real PBR/animated assets without changing world logic.
+ * The world may contain 1,000+ catalog records, but only species that are
+ * close enough to the vehicle need a real PBR/animated GLB. Missing assets
+ * intentionally return null so the existing distant population renderer stays
+ * safe and performant.
  *
- * Asset files are intentionally optional at this stage: a missing authored
- * asset falls back to the existing lightweight population renderer.
+ * Supported representations:
+ *   assets/creatures/<species>.glb
+ *   assets/creatures/<species>.glb.gz
  */
-internal object CreatureAssetResolver {
-    private const val ROOT = "creatures"
+internal class CreatureAssetResolver(private val context: Context) {
 
-    private val authoredSpecies = setOf(
-        "lion",
-        "tiger",
-        "elephant",
-        "leopard",
-        "bear",
-        "fox",
-        "monkey",
-        "deer",
-        "horse",
-        "camel",
-        "wolf",
-        "zebra",
-        "giraffe",
-        "penguin",
-        "dolphin"
-    )
+    companion object {
+        private const val ROOT = "creatures"
 
-    fun assetPath(species: String): String? {
+        private val authoredSpecies = setOf(
+            "lion",
+            "tiger",
+            "elephant",
+            "leopard",
+            "bear",
+            "fox",
+            "monkey",
+            "deer",
+            "horse",
+            "camel",
+            "wolf",
+            "zebra",
+            "giraffe",
+            "penguin",
+            "dolphin"
+        )
+
+        fun assetPath(species: String): String? {
+            val key = species.trim().lowercase()
+                .replace(Regex("[^a-z0-9]+"), "_")
+                .trim('_')
+            return if (key in authoredSpecies) "$ROOT/$key.glb" else null
+        }
+
+        fun hasAuthoredContract(species: String): Boolean = assetPath(species) != null
+    }
+
+    fun load(species: String): ByteArray? {
         val key = species.trim().lowercase()
             .replace(Regex("[^a-z0-9]+"), "_")
             .trim('_')
-        return if (key in authoredSpecies) "$ROOT/$key.glb" else null
-    }
+        if (key !in authoredSpecies) return null
 
-    fun hasAuthoredAsset(species: String): Boolean = assetPath(species) != null
+        val candidates = listOf(
+            "$ROOT/$key.glb",
+            "$ROOT/$key.glb.gz"
+        )
+        for (path in candidates) {
+            try {
+                context.assets.open(path).use { input ->
+                    return if (path.endsWith(".gz")) {
+                        GZIPInputStream(input).use { it.readBytes() }
+                    } else {
+                        input.readBytes()
+                    }
+                }
+            } catch (_: FileNotFoundException) {
+                // The authored asset is not bundled yet; keep the distant fallback.
+            }
+        }
+        return null
+    }
 }
