@@ -99,7 +99,11 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     // progressively instead of snapping to the spline tangent.
     private var cameraBank = 0.0
     private var cameraYaw = 0.0
+    // Steering is fully automatic: the road spline is the authoritative path.
+    // Touch input may still call setSteeringInput() for API compatibility, but it
+    // no longer overrides the autonomous steering controller.
     private var steeringInput = 0.0
+    private var autoSteeringInput = 0.0
     private var lateralOffset = 0.0
     private var lateralVelocity = 0.0
     // Filtered tyre-side slip estimate: used only for subtle grip/body cues,
@@ -338,9 +342,21 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         vehicleDistance += vehicleSpeed * dt
 
         val speedRatio = (vehicleSpeed / targetSpeed.coerceAtLeast(0.1)).coerceIn(0.0, 1.0)
+        // Autonomous steering reads the road ahead and anticipates curvature.
+        // The child only controls start/stop; the vehicle follows the road itself.
+        val autoRoad = RoadSpline.sampleRelative(vehicleDistance + 8.0, renderOriginDistance)
+        val currentRoad = RoadSpline.sampleRelative(vehicleDistance, renderOriginDistance)
+        val curvatureError = kotlin.math.atan2(
+            kotlin.math.sin(autoRoad.yaw - currentRoad.yaw),
+            kotlin.math.cos(autoRoad.yaw - currentRoad.yaw)
+        )
+        val desiredAutoSteer = (curvatureError / 0.34).coerceIn(-1.0, 1.0)
+        val autoSteerResponse = (dt * (5.5 + 2.0 * speedRatio)).coerceAtMost(1.0)
+        autoSteeringInput += (desiredAutoSteer - autoSteeringInput) * autoSteerResponse
+        if (!driving) autoSteeringInput *= (1.0 - (dt * 6.0).coerceAtMost(1.0))
         val steeringAuthority = (1.12 - 0.48 * speedRatio).coerceIn(0.64, 1.12)
         val maxLateralVelocity = (0.92 - 0.16 * speedRatio).coerceIn(0.62, 0.92)
-        val desiredLateralVelocity = if (driving) steeringInput * maxLateralVelocity * steeringAuthority else 0.0
+        val desiredLateralVelocity = 0.0
         val gripResponse = (dt * (6.8 - 1.4 * speedRatio)).coerceAtMost(1.0)
         val lateralError = desiredLateralVelocity - lateralVelocity
         lateralVelocity += lateralError * gripResponse
@@ -356,7 +372,10 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             lateralVelocity *= (1.0 - edgeBrake * dt * 7.5).coerceAtLeast(0.20)
             lateralOffset *= (1.0 - edgeBrake * dt * 1.8).coerceAtLeast(0.70)
         }
-        if (!driving) lateralOffset *= (1.0 - (dt * 2.8).coerceAtMost(0.9))
+        // Autonomous path following keeps the vehicle centred on the authoritative
+        // road spline; no manual lateral drift is introduced by steering controls.
+        lateralVelocity *= (1.0 - (dt * 8.0).coerceAtMost(0.95))
+        lateralOffset *= (1.0 - (dt * 8.0).coerceAtMost(0.95))
         lateralOffset = lateralOffset.coerceIn(-laneLimit, laneLimit)
 
         if (kotlin.math.abs(vehicleDistance - renderOriginDistance) >= 180.0) {
@@ -1076,12 +1095,13 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                         "offroad", "safari" -> 0.32
                         else -> 0.34
                     }
-                    val playerSteer = if (driving) steeringInput * steeringGain else 0.0
+                    // Front wheels are driven by autonomous road curvature.
+                    val autoSteer = if (driving) autoSteeringInput * steeringGain else 0.0
                     val steerTarget = if (isFrontWheel) {
                         // Ackermann-inspired geometry: the inside front wheel
                         // turns slightly more than the outside wheel.
                         val side = wheelContactLateral[entity] ?: 0.0
-                        val baseSteer = steeringTarget + playerSteer
+                        val baseSteer = steeringTarget + autoSteer
                         val ackermannGain = 0.055 * kotlin.math.abs(baseSteer)
                         val adjusted = when {
                             baseSteer > 0.0 && side < 0.0 -> baseSteer + ackermannGain
@@ -1171,7 +1191,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private fun steeringLoadForDynamics(): Double {
         if (!driving) return 0.0
         val speedNorm = (vehicleSpeed / targetSpeed.coerceAtLeast(0.1)).coerceIn(0.0, 1.0)
-        return (steeringInput * (0.35 + 0.65 * speedNorm)).coerceIn(-1.0, 1.0)
+        return (autoSteeringInput * (0.35 + 0.65 * speedNorm)).coerceIn(-1.0, 1.0)
     }
 
     private fun updateDrivingInertia(dt: Double) {
@@ -1187,7 +1207,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             .coerceIn(-0.095, 0.095)
         // Road yaw rate is already measured from the authoritative spline. Blend a
         // small steering contribution into the visual chassis pitch/roll envelope.
-        val steeringLoad = steeringInput * (vehicleSpeed / targetSpeed.coerceAtLeast(0.1))
+        val steeringLoad = autoSteeringInput * (vehicleSpeed / targetSpeed.coerceAtLeast(0.1))
             .coerceIn(-1.0, 1.0)
 
         // Weight transfer: braking/acceleration changes the chassis pitch while
@@ -1297,6 +1317,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         cameraBank = 0.0
         cameraYaw = 0.0
         steeringInput = 0.0
+        autoSteeringInput = 0.0
         lateralOffset = 0.0
         lateralVelocity = 0.0
         lateralSlip = 0.0
