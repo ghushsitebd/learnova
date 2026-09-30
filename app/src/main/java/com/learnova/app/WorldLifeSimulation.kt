@@ -177,6 +177,11 @@ internal class WorldLifeSimulation(
             val walkPhase = centerDistance * (if (isWildlife) 0.11 else 0.22) + phase * 6.283
             val pedestrianSway = if (isPedestrian) sin(walkPhase) * 0.48 else 0.0
             val pedestrianDrift = if (isPedestrian && moving) sin(walkPhase * 0.5) * 0.55 else 0.0
+            val creatureIndex = Math.floorMod(seed, LearnovaWorldCatalog.creatureRuntimeProfiles.size.toLong()).toInt()
+            val creatureProfile = LearnovaWorldCatalog.creatureRuntimeProfiles[creatureIndex]
+            val creatureIsAquatic = creatureProfile.movement == "swim"
+            val creatureIsFlying = creatureProfile.movement == "fly" || creatureProfile.movement == "fly_or_walk"
+            val creatureBehaviour = creatureProfile.behaviour
             val wildlifeDrift = if (isWildlife && moving) {
                 val behaviourFactor = when (creatureBehaviour) {
                     "grazing" -> 0.65
@@ -211,11 +216,6 @@ internal class WorldLifeSimulation(
             // than being a single repeated placeholder species. The same stable
             // seed always resolves to the same creature, preserving continuity
             // when the child leaves and returns to a level.
-            val creatureIndex = Math.floorMod(seed, LearnovaWorldCatalog.creatureRuntimeProfiles.size.toLong()).toInt()
-            val creatureProfile = LearnovaWorldCatalog.creatureRuntimeProfiles[creatureIndex]
-            val creatureIsAquatic = creatureProfile.movement == "swim"
-            val creatureIsFlying = creatureProfile.movement == "fly" || creatureProfile.movement == "fly_or_walk"
-            val creatureBehaviour = creatureProfile.behaviour
             // Market/village can contain narrow human-scale walkers.
             val kind = if ((biome == WorldDirector.Biome.MARKET || biome == WorldDirector.Biome.VILLAGE) && family >= 6) {
                 6 + (family - 6)
