@@ -2,6 +2,7 @@ package com.learnova.app
 
 import com.google.android.filament.*
 import com.google.android.filament.gltfio.FilamentAsset
+import android.content.Context
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.cos
@@ -9,10 +10,13 @@ import kotlin.math.sin
 
 /** A focused learning encounter: the named animal appears in the lesson world. */
 internal class LearningAnimalEncounter(
+    private val context: Context,
     private val engine: Engine,
     private val scene: Scene,
     private val asset: FilamentAsset
 ) {
+    private val authoredGlb = CreatureGlbController(context, engine, scene)
+    private var authoredVisible = false
     private var entity = 0
     private var vb: VertexBuffer? = null
     private var ib: IndexBuffer? = null
@@ -117,9 +121,16 @@ internal class LearningAnimalEncounter(
             }
         }
 
-        // drawAnimal() uploads the populated geometry buffer. Replacing it with
-        // an empty buffer here made the encounter disappear on every update frame.
-        drawAnimal(x, y, z, yaw, animalScale(activeAnimal) + 0.04 * sin(t * Math.PI * 4))
+        // Prefer a bundled authored GLB for the near-field encounter. If the
+        // binary asset is not present, retain the verified lightweight fallback.
+        if (!authoredVisible) {
+            authoredVisible = authoredGlb.show(
+                activeAnimal, x, y, z, yaw, animalScale(activeAnimal)
+            )
+        }
+        if (!authoredVisible) {
+            drawAnimal(x, y, z, yaw, animalScale(activeAnimal) + 0.04 * sin(t * Math.PI * 4))
+        }
     }
 
     private fun drawAnimal(x: Double, y: Double, z: Double, yaw: Double, scale: Double) {
@@ -228,6 +239,7 @@ internal class LearningAnimalEncounter(
         return null
     }
     fun destroy() {
+        authoredGlb.destroy()
         if(entity!=0){scene.removeEntity(entity);engine.renderableManager.destroy(entity);EntityManager.get().destroy(entity);entity=0}
         vb?.let(engine::destroyVertexBuffer);ib?.let(engine::destroyIndexBuffer);material?.let(engine::destroyMaterialInstance)
         vb=null;ib=null;material=null
