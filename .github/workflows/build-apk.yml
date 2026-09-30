@@ -130,6 +130,16 @@ jobs:
           set -euo pipefail
           python3 tools/validate_vehicle_assets.py
 
+      - name: Fetch CC0 real-animal GLB assets
+        run: |
+          set -euo pipefail
+          python3 tools/fetch_creature_assets.py
+          test -s app/src/main/assets/creatures/lion.glb
+          test -s app/src/main/assets/creatures/tiger.glb
+          test -s app/src/main/assets/creatures/elephant.glb
+          test -s app/src/main/assets/creatures/deer.glb
+          du -h app/src/main/assets/creatures/*.glb
+
       - name: Build Release APK and AAB
         run: |
           set -euo pipefail
