@@ -68,13 +68,17 @@ internal class LearningSignWorld(
         if (!lastDistance.isNaN() && kotlin.math.abs(vehicleDistance - lastDistance) < 0.5) return
         val road = RoadSpline.sampleRelative(targetDistance, vehicleDistance)
         val side = 5.6
-        val x = road.x + cos(road.yaw) * side
-        val z = road.z - sin(road.yaw) * side
+        val roadX = road.x.toDouble()
+        val roadY = road.y.toDouble()
+        val roadZ = road.z.toDouble()
+        val roadYaw = road.yaw.toDouble()
+        val x = roadX + cos(roadYaw) * side
+        val z = roadZ - sin(roadYaw) * side
         val v = ByteBuffer.allocate(24 * 36).order(ByteOrder.nativeOrder())
         val i = ByteBuffer.allocate(108 * 2).order(ByteOrder.nativeOrder())
-        box(v, i, x, road.y + 1.55, z, road.yaw, 1.65, 1.05, 0.10)
-        box(v, i, x - 0.85 * cos(road.yaw), road.y + 0.775, z + 0.85 * sin(road.yaw), road.yaw, 0.08, 1.55, 0.08)
-        box(v, i, x + 0.85 * cos(road.yaw), road.y + 0.775, z - 0.85 * sin(road.yaw), road.yaw, 0.08, 1.55, 0.08)
+        box(v, i, x, roadY + 1.55, z, roadYaw, 1.65, 1.05, 0.10)
+        box(v, i, x - 0.85 * cos(roadYaw), roadY + 0.775, z + 0.85 * sin(roadYaw), roadYaw, 0.08, 1.55, 0.08)
+        box(v, i, x + 0.85 * cos(roadYaw), roadY + 0.775, z - 0.85 * sin(roadYaw), roadYaw, 0.08, 1.55, 0.08)
         v.flip(); i.flip()
         vb!!.setBufferAt(engine, 0, v); ib!!.setBuffer(engine, i)
         lastDistance = vehicleDistance
