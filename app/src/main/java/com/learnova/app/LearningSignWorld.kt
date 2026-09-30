@@ -10,6 +10,8 @@ import com.google.android.filament.VertexBuffer
 import com.google.android.filament.gltfio.FilamentAsset
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -26,6 +28,7 @@ internal class LearningSignWorld(
     private var visible = false
     private var targetDistance = 0.0
     private var lastDistance = Double.NaN
+    private var animationPhase = 0.0
 
     fun build(): Boolean {
         if (entity != 0) return true
@@ -56,6 +59,7 @@ internal class LearningSignWorld(
         targetDistance = worldDistance + 12.0
         visible = true
         lastDistance = Double.NaN
+        animationPhase = 0.0
     }
 
     fun hide() {
@@ -74,9 +78,20 @@ internal class LearningSignWorld(
         val roadYaw = road.yaw.toDouble()
         val x = roadX + cos(roadYaw) * side
         val z = roadZ - sin(roadYaw) * side
-        val v = ByteBuffer.allocate(24 * 36).order(ByteOrder.nativeOrder())
-        val i = ByteBuffer.allocate(108 * 2).order(ByteOrder.nativeOrder())
-        box(v, i, x, roadY + 1.55, z, roadYaw, 1.65, 1.05, 0.10)
+        // The face is perpendicular to traffic, so the child sees the marker naturally
+        // while approaching instead of reading a board mounted parallel to the road.
+        val faceYaw = roadYaw + PI / 2.0
+        animationPhase += 0.08
+        val pulse = 0.035 * (0.5 + 0.5 * sin(animationPhase))
+        val v = ByteBuffer.allocate(48 * 36).order(ByteOrder.nativeOrder())
+        val i = ByteBuffer.allocate(216 * 2).order(ByteOrder.nativeOrder())
+        // Deep board + raised frame: reads as a physical roadside object even before
+        // the production multilingual texture is attached to the asset pipeline.
+        box(v, i, x, roadY + 1.55, z, faceYaw, 1.65 + pulse, 1.05 + pulse, 0.10)
+        box(v, i, x, roadY + 2.02, z - 0.11, faceYaw, 1.72, 0.06, 0.035)
+        box(v, i, x, roadY + 1.08, z - 0.11, faceYaw, 1.72, 0.06, 0.035)
+        box(v, i, x - 1.58, roadY + 1.55, z - 0.11, faceYaw, 0.06, 1.02, 0.035)
+        box(v, i, x + 1.58, roadY + 1.55, z - 0.11, faceYaw, 0.06, 1.02, 0.035)
         box(v, i, x - 0.85 * cos(roadYaw), roadY + 0.775, z + 0.85 * sin(roadYaw), roadYaw, 0.08, 1.55, 0.08)
         box(v, i, x + 0.85 * cos(roadYaw), roadY + 0.775, z - 0.85 * sin(roadYaw), roadYaw, 0.08, 1.55, 0.08)
         v.flip(); i.flip()
@@ -103,13 +118,13 @@ internal class LearningSignWorld(
     }
 
     private fun writeHiddenGeometry() {
-        val v = ByteBuffer.allocate(24 * 36).order(ByteOrder.nativeOrder())
-        val i = ByteBuffer.allocate(108 * 2).order(ByteOrder.nativeOrder())
-        repeat(24) {
+        val v = ByteBuffer.allocate(48 * 36).order(ByteOrder.nativeOrder())
+        val i = ByteBuffer.allocate(216 * 2).order(ByteOrder.nativeOrder())
+        repeat(48) {
             v.putFloat(0f); v.putFloat(-5000f); v.putFloat(0f)
             v.putFloat(0f); v.putFloat(0f); v.putFloat(0f); v.putFloat(1f); v.putFloat(0f); v.putFloat(0f)
         }
-        repeat(108) { i.putShort(0) }
+        repeat(216) { i.putShort(0) }
         v.flip(); i.flip(); vb?.setBufferAt(engine, 0, v); ib?.setBuffer(engine, i)
     }
 
