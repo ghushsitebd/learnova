@@ -100,9 +100,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var cameraBank = 0.0
     private var cameraYaw = 0.0
     // Steering is fully automatic: the road spline is the authoritative path.
-    // Touch input may still call setSteeringInput() for API compatibility, but it
-    // no longer overrides the autonomous steering controller.
-    private var steeringInput = 0.0
+    // There is deliberately no manual left/right steering state or control surface.
     private var autoSteeringInput = 0.0
     private var lateralOffset = 0.0
     private var lateralVelocity = 0.0
@@ -584,13 +582,9 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         if (value && vehicleInteraction.state != VehicleInteractionController.State.OUTSIDE) return
         driving = value
         if (!value && vehicleSpeed < 0.02) vehicleSpeed = 0.0
-        if (!value) steeringInput = 0.0
     }
 
-    /** One-touch steering: -1 left, +1 right, 0 recentres naturally. */
-    fun setSteeringInput(value: Float) {
-        steeringInput = value.coerceIn(-1.0f, 1.0f).toDouble()
-    }
+    /** Steering is intentionally not user-controlled; road curvature drives it. */
 
     /**
      * Physical vehicle entry/exit hook for the interaction layer.
@@ -1043,7 +1037,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                     "offroad", "safari" -> 0.090
                     else -> 0.095
                 }
-                val steeringYaw = (steeringInput * steeringClassGain *
+                val steeringYaw = (autoSteeringInput * steeringClassGain *
                     (vehicleSpeed / targetSpeed.coerceAtLeast(0.1)).coerceIn(0.0, 1.0))
                     .coerceIn(-steeringClassGain, steeringClassGain)
                 val chassisYaw = road.yaw + steeringYaw
@@ -1184,7 +1178,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     /**
      * Shared lateral dynamics cues for believable driving.
      *
-     * The game remains touch-simple: the child only steers left/right. The renderer
+     * The child only starts/stops the journey. The renderer
      * derives a small, filtered roll/yaw response from lateral acceleration so the
      * vehicle and camera visually carry momentum through a turn.
      */
@@ -1197,7 +1191,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private fun updateDrivingInertia(dt: Double) {
         val safeDt = dt.coerceIn(1.0 / 240.0, 0.05)
         // Approximate lateral load from the current velocity vector and steering.
-        // The child still gives only a simple left/right input; the dynamics layer
+        // Road curvature is converted into a smooth, speed-aware body response.
         // turns that input into a smooth, speed-aware body response.
         val lateralAcceleration = ((lateralVelocity * vehicleSpeed) * 0.58 +
             steeringLoadForDynamics() * vehicleSpeed * vehicleSpeed * 0.018)
@@ -1316,7 +1310,6 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         roadYawRate = 0.0
         cameraBank = 0.0
         cameraYaw = 0.0
-        steeringInput = 0.0
         autoSteeringInput = 0.0
         lateralOffset = 0.0
         lateralVelocity = 0.0
