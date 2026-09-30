@@ -165,7 +165,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 shorelineWorld = ShorelineWorld(viewer.engine, viewer.scene, asset).also { it.build() }
                 worldLife = WorldLifeSimulation(viewer.engine, viewer.scene, asset).also { it.build() }
                 childNPC = ChildNPCWorld(viewer.engine, viewer.scene, asset).also { it.build() }
-                learningAnimalEncounter = LearningAnimalEncounter(viewer.engine, viewer.scene, asset).also { it.build() }
+                learningAnimalEncounter = LearningAnimalEncounter(context, viewer.engine, viewer.scene, asset).also { it.build() }
                 learningSignWorld = LearningSignWorld(viewer.engine, viewer.scene, asset).also { it.build() }
                 vehicleFriend = VehicleFriendWorld(viewer.engine, viewer.scene, asset).also { it.build(); it.setFriend(friendForVehicle(activeVehicle.id)) }
             }
