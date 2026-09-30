@@ -140,7 +140,17 @@ internal class ProceduralRoadMesh(
             val bankLift = sin(bank) * half
 
             val centerY = sample.y
-            val edgeY = centerY
+            // Real asphalt is crowned: the lane centre sits slightly higher than
+            // both edges so rain sheds away from the driving line instead of forming
+            // a perfectly flat mathematical strip. Keep the crown subtle enough for
+            // child-friendly driving while preserving the authored road material.
+            val crownDrop = when (WorldDirector.profile(distance).biome) {
+                WorldDirector.Biome.MARKET, WorldDirector.Biome.VILLAGE -> 0.030
+                WorldDirector.Biome.MOUNTAIN -> 0.042
+                WorldDirector.Biome.RIVER, WorldDirector.Biome.COAST -> 0.050
+                else -> 0.040
+            }
+            val edgeY = centerY - crownDrop
             putVertex(data, leftX.toFloat(), (edgeY + bankLift).toFloat(), leftZ.toFloat(), yaw, bank, 0.0f, distance.toFloat() / 8.0f)
             putVertex(data, rightX.toFloat(), (edgeY - bankLift).toFloat(), rightZ.toFloat(), yaw, bank, 1.0f, distance.toFloat() / 8.0f)
         }
