@@ -125,6 +125,7 @@ internal class RoadsideWorld(
                     0 -> 0.65 * scale
                     1, 2 -> 1.05 * scale
                     3 -> 1.35 * scale
+                    5 -> 1.55 * scale
                     else -> 1.6 * scale
                 }
                     val groundY = roadsideGroundHeight(
@@ -209,10 +210,10 @@ internal class RoadsideWorld(
         width: Double, height: Double, type: Int, bank: Double
     ) {
         val base = currentVertex(vertices)
-        val depth = width * when (type) { 3 -> 1.8; 4,5 -> 1.5; else -> 0.9 }
+        val depth = width * when (type) { 3 -> 1.8; 5 -> 0.12; 4 -> 1.5; else -> 0.9 }
         val halfW = width
         val halfD = depth
-        val ground = y + when (type) { 3 -> 0.02; else -> 0.0 }
+        val ground = y + when (type) { 3 -> 0.02; 5 -> -0.18; else -> 0.0 }
         val cx = cos(yaw); val cz = -sin(yaw)
         val sx = sin(yaw); val sz = cos(yaw)
         // Props follow the local verge slope instead of standing perfectly
@@ -229,12 +230,14 @@ internal class RoadsideWorld(
             1 -> 0.62
             2 -> 0.78
             3 -> 0.88
+            5 -> 0.98
             else -> 0.96
         }
         val topDepthScale = when (type) {
             0 -> 0.50
             1 -> 0.68
             2 -> 0.82
+            5 -> 0.90
             else -> 0.94
         }
         val corners = arrayOf(
