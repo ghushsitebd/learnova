@@ -3,6 +3,9 @@ name: Build Learnova Release APK
 # CI trigger checkpoint: release validation runs before performance stages.
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
