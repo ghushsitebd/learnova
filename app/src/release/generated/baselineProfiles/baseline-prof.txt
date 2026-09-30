@@ -1974,7 +1974,7 @@ HSPLcom/learnova/app/MainActivity$LearnovaGameView;->featureColor(IIIII)I
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->getUse3DWorld()Z
 SPLcom/learnova/app/MainActivity$LearnovaGameView;->hSafe(Landroid/graphics/Canvas;)F
 SPLcom/learnova/app/MainActivity$LearnovaGameView;->handleQuranChoice(FFFF)Z
-HSPLcom/learnova/app/MainActivity$LearnovaGameView;->isQuranLevel()Z
+SPLcom/learnova/app/MainActivity$LearnovaGameView;->isQuranLevel()Z
 PLcom/learnova/app/MainActivity$LearnovaGameView;->onDraw$lambda$6(Lcom/learnova/app/MainActivity;Lcom/learnova/app/MainActivity$LearnovaGameView;)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->onDraw(Landroid/graphics/Canvas;)V
 HPLcom/learnova/app/MainActivity$LearnovaGameView;->onTouchEvent(Landroid/view/MotionEvent;)Z
@@ -2029,7 +2029,7 @@ SPLcom/learnova/app/SmartScene;->getEnvironment()Ljava/lang/String;
 SPLcom/learnova/app/SmartScene;->getId()I
 SPLcom/learnova/app/SmartScene;->getRegion()Ljava/lang/String;
 SPLcom/learnova/app/SmartScene;->getTime()Ljava/lang/String;
-SPLcom/learnova/app/SmartScene;->getWeather()Ljava/lang/String;
+HSPLcom/learnova/app/SmartScene;->getWeather()Ljava/lang/String;
 Lcom/learnova/app/VehicleAssetResolver;
 SPLcom/learnova/app/VehicleAssetResolver;-><init>(Landroid/content/Context;)V
 Lcom/learnova/app/VehicleCatalog;
@@ -2310,7 +2310,7 @@ Lkotlin/random/RandomKt;
 SPLkotlin/random/RandomKt;->Random(I)Lkotlin/random/Random;
 HPLkotlin/random/RandomKt;->checkRangeBounds(DD)V
 PLkotlin/random/RandomKt;->checkRangeBounds(II)V
-HPLkotlin/random/RandomKt;->takeUpperBits(II)I
+PLkotlin/random/RandomKt;->takeUpperBits(II)I
 Lkotlin/random/XorWowRandom;
 SPLkotlin/random/XorWowRandom;-><clinit>()V
 SPLkotlin/random/XorWowRandom;-><init>(II)V
@@ -2326,7 +2326,7 @@ Lkotlin/ranges/ClosedRange;
 Lkotlin/ranges/IntProgression;
 SPLkotlin/ranges/IntProgression;-><clinit>()V
 HSPLkotlin/ranges/IntProgression;-><init>(III)V
-SPLkotlin/ranges/IntProgression;->getFirst()I
+HSPLkotlin/ranges/IntProgression;->getFirst()I
 SPLkotlin/ranges/IntProgression;->getLast()I
 SPLkotlin/ranges/IntProgression;->getStep()I
 SPLkotlin/ranges/IntProgression;->iterator()Ljava/util/Iterator;
