@@ -35,7 +35,7 @@ internal class ChildNPCWorld(
         skin=dup(src,"LearnovaChildSkin") ?: return false
         clothes=dup(src,"LearnovaChildClothes") ?: return false
         hair=dup(src,"LearnovaChildHair") ?: return false
-        paint(skin,0.78f,0.48f,0.32f,1f); paint(clothes,0.12f,0.46f,0.92f,1f); paint(hair,0.045f,0.025f,0.015f,1f)
+        paint(skin,0.78f,0.48f,0.32f,1f); paint(clothes,0.93f,0.93f,0.90f,1f); paint(hair,0.97f,0.97f,0.94f,1f)
         skinVB=vb(PARTS*8); skinIB=ib(PARTS*36); clothesVB=vb(PARTS*8); clothesIB=ib(PARTS*36); hairVB=vb(PARTS*8); hairIB=ib(PARTS*36)
         skinEntity=entity(skinVB!!,skinIB!!,skin!!); clothesEntity=entity(clothesVB!!,clothesIB!!,clothes!!); hairEntity=entity(hairVB!!,hairIB!!,hair!!)
         update(0.0); return true
@@ -57,9 +57,11 @@ internal class ChildNPCWorld(
                 box(sv,si,x-sin(s.yaw.toDouble())*.28*q,y+.73*q,z-cos(s.yaw.toDouble())*.28*q,s.yaw.toDouble(),.085*q,.20*q,.11*q+maxOf(0.0,walk)*.025*q)
                 box(sv,si,x+sin(s.yaw.toDouble())*.28*q,y+.73*q,z+cos(s.yaw.toDouble())*.28*q,s.yaw.toDouble(),.085*q,.20*q,.11*q)
                 box(cv,ci,x,y+.80*q,z,s.yaw.toDouble(),.23*q,.34*q,.14*q)
+                box(cv,ci,x,y+.80*q,z,s.yaw.toDouble(),.27*q,.045*q,.17*q)
                 box(cv,ci,x-.075*q,y+.38*q,z+walk*.045*q,s.yaw.toDouble(),.07*q,.34*q,.095*q)
                 box(cv,ci,x+.075*q,y+.38*q,z-walk*.045*q,s.yaw.toDouble(),.07*q,.34*q,.095*q)
-                box(hv,hi,x,y+1.49*q,z,s.yaw.toDouble(),.29*q,.09*q,.29*q)
+                box(hv,hi,x,y+1.49*q,z,s.yaw.toDouble(),.29*q,.07*q,.29*q)
+                box(hv,hi,x,y+1.57*q,z,s.yaw.toDouble(),.22*q,.045*q,.22*q)
                 n++
             }
             d+=STEP
