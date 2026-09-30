@@ -38,9 +38,7 @@ internal class CreatureGlbController(
         runCatching {
             resourceLoader?.destroy()
             resourceLoader = ResourceLoader(engine)
-            if (!resourceLoader!!.loadResources(asset)) {
-                throw IllegalStateException("Filament could not load creature resources")
-            }
+            resourceLoader!!.loadResources(asset)
             scene.addEntities(asset.entities)
             position(asset, x, y, z, yaw, scale)
             activeAsset = asset
@@ -91,6 +89,7 @@ internal class CreatureGlbController(
         activeAsset = null
         runCatching { resourceLoader?.destroy() }
         resourceLoader = null
-        runCatching { materialProvider.destroyMaterials() }\n        runCatching { materialProvider.destroy() }
+        runCatching { materialProvider.destroyMaterials() }
+        runCatching { materialProvider.destroy() }
     }
 }
