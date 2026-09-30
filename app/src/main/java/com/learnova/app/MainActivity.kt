@@ -204,9 +204,7 @@ class MainActivity : AppCompatActivity() {
                     if (currentRoadsideSign != null) { if (!listeningForChild) startChildListening(); return true }
                     // The vehicle badge opens the real 100-slot garage.
                     if (y < h * 0.22f && x > w * 0.76f) {
-                        steeringTouchActive = false
                         steeringInput = 0f
-                        threeDWorld.setSteeringInput(0f)
                         openGarage()
                         return true
                     }
@@ -219,9 +217,7 @@ class MainActivity : AppCompatActivity() {
                         if (now - lastTap > 220L) {
                             lastTap = now
                             running = !running
-                            steeringTouchActive = false
                             steeringInput = 0f
-                            threeDWorld.setSteeringInput(0f)
                             threeDWorld.setDriving(running)
                             if (running) {
                                 natureAudio.start()
@@ -432,9 +428,7 @@ class MainActivity : AppCompatActivity() {
                     levelComplete = true
                     celebrationUntil = System.currentTimeMillis() + 1400L
                     running = false
-                    steeringTouchActive = false
                     steeringInput = 0f
-                    threeDWorld.setSteeringInput(0f)
                     threeDWorld.setDriving(false)
                     natureAudio.stop()
                     saveProgress()
