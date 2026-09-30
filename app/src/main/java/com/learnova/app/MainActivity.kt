@@ -98,7 +98,6 @@ class MainActivity : AppCompatActivity() {
         private var lateralVelocity = 0f
         // A side touch is a hold-to-steer gesture. Releasing the finger recentres
         // the wheel smoothly instead of leaving steering latched on.
-        private var steeringTouchActive = false
         private var suspensionOffset = 0f
         private var suspensionVelocity = 0f
         private var level = 1
@@ -213,16 +212,9 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     if (inDriveArea) {
-                        // One-finger side hold steers while the vehicle is moving.
-                        if (running && (x < w * 0.30f || x > w * 0.70f)) {
-                            steeringTouchActive = true
-                            steeringInput = (((x / w) * 2f) - 1f).coerceIn(-1f, 1f)
-                            threeDWorld.setSteeringInput(steeringInput)
-                            invalidate()
-                            return true
-                        }
-
-                        // Centre tap remains the primary child-simple drive/stop control.
+                        // Steering is fully automatic. The child has no left/right
+                        // steering controls or steering gestures; one tap only
+                        // starts/stops the journey.
                         val now = System.currentTimeMillis()
                         if (now - lastTap > 220L) {
                             lastTap = now
@@ -269,33 +261,11 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 MotionEvent.ACTION_MOVE -> {
-                    if (steeringTouchActive && running) {
-                        // Follow the finger continuously while it stays in the drive area.
-                        // A vertical move outside the play corridor does not create a
-                        // surprise steering jump; the current direction is simply held.
-                        // Preserve continuous steering strength while dragging.
-                        // The child still uses only one finger; no virtual joystick.
-                        val normalized = ((x / w) * 2f - 1f).coerceIn(-1f, 1f)
-                        val side = when {
-                            normalized <= -0.15f -> normalized
-                            normalized >= 0.15f -> normalized
-                            else -> 0f
-                        }
-                        steeringInput = side
-                        threeDWorld.setSteeringInput(side)
-                        invalidate()
-                        return true
-                    }
+                    // No manual steering gesture: the vehicle follows the road
+                    // autonomously at all times.
                 }
 
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    if (steeringTouchActive) {
-                        steeringTouchActive = false
-                        steeringInput = 0f
-                        threeDWorld.setSteeringInput(0f)
-                        invalidate()
-                        return true
-                    }
                     if (event.actionMasked == MotionEvent.ACTION_UP && y > h * 0.91f) {
                         // Bottom edge is intentionally not a NEXT control anymore.
                         // The next journey opens automatically after completion.
@@ -419,7 +389,9 @@ class MainActivity : AppCompatActivity() {
                 val farSlope = (roadFar - roadAhead) / w
                 val curvatureSteer = (nearSlope * 2.8f + farSlope * 1.6f).coerceIn(-0.12f, 0.12f)
                 val laneCorrection = (-laneOffset * 0.24f).coerceIn(-0.055f, 0.055f)
-                val targetSteer = (curvatureSteer + laneCorrection + steeringInput * 0.055f).coerceIn(-0.14f, 0.14f)
+                // The fallback renderer follows the same automatic road-centering
+                // logic as the production 3D renderer. No manual steering input.
+                val targetSteer = (curvatureSteer + laneCorrection).coerceIn(-0.14f, 0.14f)
 
                 steering += (targetSteer - steering) * 0.085f
                 vehicleHeading += (steering * 7.0f - vehicleHeading) * 0.11f
