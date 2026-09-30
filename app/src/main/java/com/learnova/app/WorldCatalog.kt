@@ -68,6 +68,56 @@ object LearnovaWorldCatalog {
         result
     }
 
+    /**
+     * Creature runtime index: each catalog record gets a stable behaviour family,
+     * movement style and voice eligibility. The renderer can stream authored GLBs
+     * later without changing lesson IDs or save-state references.
+     */
+    data class CreatureRuntimeProfile(
+        val creatureId: Int,
+        val species: String,
+        val habitat: String,
+        val behaviour: String,
+        val movement: String,
+        val speaks: Boolean
+    )
+
+    val creatureRuntimeProfiles: List<CreatureRuntimeProfile> by lazy {
+        animals.map { entry ->
+            val behaviour = when (entry.group) {
+                "Prehistoric" -> when (entry.id % 4) {
+                    0 -> "territorial"
+                    1 -> "herding"
+                    2 -> "curious"
+                    else -> "roaming"
+                }
+                else -> when (entry.id % 6) {
+                    0 -> "grazing"
+                    1 -> "foraging"
+                    2 -> "curious"
+                    3 -> "social"
+                    4 -> "resting"
+                    else -> "roaming"
+                }
+            }
+            val movement = when {
+                entry.habitat == "Ocean" || entry.habitat == "River" -> "swim"
+                entry.habitat == "Arctic" -> "walk_or_swim"
+                entry.name in setOf("Eagle", "Falcon", "Owl", "Parrot", "Swan", "Flamingo", "Ostrich", "Sparrow", "Pigeon") -> "fly_or_walk"
+                entry.name in setOf("Butterfly", "Bee", "Dragonfly") -> "fly"
+                else -> "walk_run"
+            }
+            CreatureRuntimeProfile(
+                creatureId = entry.id,
+                species = entry.name,
+                habitat = entry.habitat,
+                behaviour = behaviour,
+                movement = movement,
+                speaks = entry.id <= 250
+            )
+        }
+    }
+
     val scenes = listOf(
         WorldScene(1,"Green Forest","calm","plants and animals"),
         WorldScene(2,"Great River","bright","water and nature"),
