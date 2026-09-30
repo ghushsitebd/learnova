@@ -34,7 +34,7 @@ internal class LearningSignWorld(
         val source = findMaterial() ?: return false
         material = try { MaterialInstance.duplicate(source, "LearnovaLearningSign") } catch (_: Throwable) { return false }
         try {
-            material?.setParameter("baseColor", 0.08f, 0.30f, 0.18f, 1f)
+            material?.setParameter("baseColor", 0.10f, 0.36f, 0.20f, 1f)
             material?.setParameter("metallic", 0f)
             material?.setParameter("roughness", 0.72f)
         } catch (_: Throwable) {}
@@ -55,7 +55,7 @@ internal class LearningSignWorld(
     }
 
     fun show(worldDistance: Double) {
-        targetDistance = worldDistance + 12.0
+        targetDistance = worldDistance + 8.5
         visible = true
         lastDistance = Double.NaN
         animationPhase = 0.0
