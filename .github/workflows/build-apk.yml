@@ -279,6 +279,44 @@ jobs:
 
           echo "Integrity validation passed."
 
+      - name: Install and update safety smoke test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
+          disable-animations: true
+          script: |
+            set -euo pipefail
+            AAPT2="$ANDROID_HOME/build-tools/36.0.0/aapt2"
+            PACKAGE="com.learnova.app"
+
+            BADGING="$($AAPT2 dump badging Learnova.apk)"
+            echo "$BADGING" | grep -F "package: name='$PACKAGE'" >/dev/null
+            VERSION_CODE="$(printf '%s\\n' "$BADGING" | sed -n "s/.*versionCode='\\([^']*\\)'.*/\\1/p" | head -n1)"
+            VERSION_NAME="$(printf '%s\\n' "$BADGING" | sed -n "s/.*versionName='\\([^']*\\)'.*/\\1/p" | head -n1)"
+            test -n "$VERSION_CODE"
+            test -n "$VERSION_NAME"
+            echo "Current release: $PACKAGE versionCode=$VERSION_CODE versionName=$VERSION_NAME"
+
+            adb install -r Learnova.apk
+            adb shell pm path "$PACKAGE" | grep -F "$PACKAGE" >/dev/null
+            adb shell am force-stop "$PACKAGE"
+            adb shell monkey -p "$PACKAGE" 1 >/tmp/learnova-launch.txt
+            sleep 5
+            adb shell pidof "$PACKAGE" >/dev/null
+            echo "Fresh install + launch smoke test passed."
+
+            adb install -r Learnova.apk
+            adb shell pm path "$PACKAGE" | grep -F "$PACKAGE" >/dev/null
+            adb shell pidof "$PACKAGE" >/dev/null
+            echo "Signed update/replace smoke test passed."
+
+            rm -f /tmp/learnova-launch.txt
+            echo "Install/update safety gate passed."
+      
       - name: Generate SHA-256
         run: |
           sha256sum Learnova.apk | tee Learnova.apk.sha256
