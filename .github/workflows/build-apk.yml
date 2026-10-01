@@ -308,27 +308,27 @@ jobs:
               exit 1
             fi
 
-            adb install --no-streaming Learnova.apk
+            timeout 60s adb install --no-streaming Learnova.apk
             adb shell pm path "$PACKAGE" | grep -F "$PACKAGE" >/dev/null
             adb shell dumpsys package "$PACKAGE" | grep -F "versionCode=$VERSION_CODE" >/dev/null
             adb shell am force-stop "$PACKAGE"
-            adb shell monkey -p "$PACKAGE" 1 >/tmp/learnova-launch-install.txt
-            sleep 5
-            adb shell pidof "$PACKAGE" >/dev/null
-            echo "Clean install + launch smoke test passed."
+            timeout 30s adb shell am start -W -n "$PACKAGE/.MainActivity" | tee /tmp/learnova-launch-install.txt
+            grep -F "Status: ok" /tmp/learnova-launch-install.txt >/dev/null
+            adb shell dumpsys activity activities | grep -F "$PACKAGE/.MainActivity" >/dev/null
+            echo "Clean install + explicit launcher activity smoke test passed."
 
             echo "== Signed in-place update/replace =="
-            adb install --no-streaming -r Learnova.apk
+            timeout 60s adb install --no-streaming -r Learnova.apk
             adb shell pm path "$PACKAGE" | grep -F "$PACKAGE" >/dev/null
             adb shell dumpsys package "$PACKAGE" | grep -F "versionCode=$VERSION_CODE" >/dev/null
 
-            # Package replacement may stop the process; always relaunch before
-            # asserting runtime health. This avoids a false failure from pidof.
+            # Package replacement can stop the process. Relaunch the exact exported
+            # launcher activity and assert ActivityManager reports a successful start.
             adb shell am force-stop "$PACKAGE"
-            adb shell monkey -p "$PACKAGE" 1 >/tmp/learnova-launch-update.txt
-            sleep 5
-            adb shell pidof "$PACKAGE" >/dev/null
-            echo "Signed update/replace + relaunch smoke test passed."
+            timeout 30s adb shell am start -W -n "$PACKAGE/.MainActivity" | tee /tmp/learnova-launch-update.txt
+            grep -F "Status: ok" /tmp/learnova-launch-update.txt >/dev/null
+            adb shell dumpsys activity activities | grep -F "$PACKAGE/.MainActivity" >/dev/null
+            echo "Signed update/replace + explicit launcher activity smoke test passed."
 
             rm -f /tmp/learnova-launch-install.txt /tmp/learnova-launch-update.txt
             echo "Install/update safety gate passed."
