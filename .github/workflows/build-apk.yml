@@ -289,7 +289,9 @@ jobs:
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
           disable-animations: true
           script: |
-            set -euo pipefail
+            # android-emulator-runner executes this input with /bin/sh on the hosted runner.
+            # Keep the smoke test POSIX-shell compatible; pipefail is a Bash-only option.
+            set -eu
             AAPT2="$ANDROID_HOME/build-tools/36.0.0/aapt2"
             PACKAGE="com.learnova.app"
 
