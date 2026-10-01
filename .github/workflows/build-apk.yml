@@ -289,19 +289,34 @@ jobs:
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
           disable-animations: true
           script: |
-            # android-emulator-runner executes this input with /bin/sh on the hosted runner.
-            # Keep the smoke test POSIX-shell compatible; pipefail is a Bash-only option.
+            # android-emulator-runner invokes this script through /bin/sh.
+            # Keep the entire smoke test POSIX-shell compatible.
             set -eu
             AAPT2="$ANDROID_HOME/build-tools/36.0.0/aapt2"
             PACKAGE="com.learnova.app"
+            APK="Learnova.apk"
 
-            BADGING="$($AAPT2 dump badging Learnova.apk)"
-            echo "$BADGING" | grep -F "package: name='$PACKAGE'" >/dev/null
-            VERSION_CODE="$(printf '%s\\n' "$BADGING" | sed -n "s/.*versionCode='\\([^']*\\)'.*/\\1/p" | head -n1)"
-            VERSION_NAME="$(printf '%s\\n' "$BADGING" | sed -n "s/.*versionName='\\([^']*\\)'.*/\\1/p" | head -n1)"
+            test -r "$APK"
+            test -x "$AAPT2"
+
+            BADGING="$("$AAPT2" dump badging "$APK")"
+            printf '%s\\n' "$BADGING" | grep -F "package: name='$PACKAGE'" >/dev/null
+            VERSION_CODE="$(printf '%s\\n' "$BADGING" | sed -n "s/.*versionCode='\\([^']*\\)'.*/\\1/p" | head -n 1)"
+            VERSION_NAME="$(printf '%s\\n' "$BADGING" | sed -n "s/.*versionName='\\([^']*\\)'.*/\\1/p" | head -n 1)"
             test -n "$VERSION_CODE"
             test -n "$VERSION_NAME"
             echo "Current release: $PACKAGE versionCode=$VERSION_CODE versionName=$VERSION_NAME"
+
+            adb wait-for-device
+            BOOT_COMPLETED=""
+            i=0
+            while [ "$i" -lt 60 ]; do
+              BOOT_COMPLETED="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\\r' || true)"
+              [ "$BOOT_COMPLETED" = "1" ] && break
+              i=$((i + 1))
+              sleep 1
+            done
+            test "$BOOT_COMPLETED" = "1"
 
             echo "== Clean install =="
             adb uninstall "$PACKAGE" >/dev/null 2>&1 || true
@@ -310,31 +325,29 @@ jobs:
               exit 1
             fi
 
-            timeout 60s adb install --no-streaming Learnova.apk
+            adb install --no-streaming "$APK"
             adb shell pm path "$PACKAGE" | grep -F "$PACKAGE" >/dev/null
             adb shell dumpsys package "$PACKAGE" | grep -F "versionCode=$VERSION_CODE" >/dev/null
             adb shell am force-stop "$PACKAGE"
-            timeout 30s adb shell am start -W -n "$PACKAGE/.MainActivity" | tee /tmp/learnova-launch-install.txt
+            adb shell am start -W -n "$PACKAGE/.MainActivity" > /tmp/learnova-launch-install.txt
             grep -F "Status: ok" /tmp/learnova-launch-install.txt >/dev/null
-            adb shell dumpsys activity activities | grep -F "$PACKAGE/.MainActivity" >/dev/null
+            adb shell dumpsys activity top | grep -F "$PACKAGE/.MainActivity" >/dev/null
             echo "Clean install + explicit launcher activity smoke test passed."
 
             echo "== Signed in-place update/replace =="
-            timeout 60s adb install --no-streaming -r Learnova.apk
+            adb install --no-streaming -r "$APK"
             adb shell pm path "$PACKAGE" | grep -F "$PACKAGE" >/dev/null
             adb shell dumpsys package "$PACKAGE" | grep -F "versionCode=$VERSION_CODE" >/dev/null
 
-            # Package replacement can stop the process. Relaunch the exact exported
-            # launcher activity and assert ActivityManager reports a successful start.
             adb shell am force-stop "$PACKAGE"
-            timeout 30s adb shell am start -W -n "$PACKAGE/.MainActivity" | tee /tmp/learnova-launch-update.txt
+            adb shell am start -W -n "$PACKAGE/.MainActivity" > /tmp/learnova-launch-update.txt
             grep -F "Status: ok" /tmp/learnova-launch-update.txt >/dev/null
-            adb shell dumpsys activity activities | grep -F "$PACKAGE/.MainActivity" >/dev/null
+            adb shell dumpsys activity top | grep -F "$PACKAGE/.MainActivity" >/dev/null
             echo "Signed update/replace + explicit launcher activity smoke test passed."
 
             rm -f /tmp/learnova-launch-install.txt /tmp/learnova-launch-update.txt
             echo "Install/update safety gate passed."
-      
+
       - name: Generate SHA-256
         run: |
           sha256sum Learnova.apk | tee Learnova.apk.sha256
