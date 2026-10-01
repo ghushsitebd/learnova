@@ -301,20 +301,36 @@ jobs:
             test -n "$VERSION_NAME"
             echo "Current release: $PACKAGE versionCode=$VERSION_CODE versionName=$VERSION_NAME"
 
-            adb install -r Learnova.apk
+            echo "== Clean install =="
+            adb uninstall "$PACKAGE" >/dev/null 2>&1 || true
+            if adb shell pm path "$PACKAGE" >/dev/null 2>&1; then
+              echo "::error::Package still exists after uninstall: $PACKAGE"
+              exit 1
+            fi
+
+            adb install --no-streaming Learnova.apk
             adb shell pm path "$PACKAGE" | grep -F "$PACKAGE" >/dev/null
+            adb shell dumpsys package "$PACKAGE" | grep -F "versionCode=$VERSION_CODE" >/dev/null
             adb shell am force-stop "$PACKAGE"
-            adb shell monkey -p "$PACKAGE" 1 >/tmp/learnova-launch.txt
+            adb shell monkey -p "$PACKAGE" 1 >/tmp/learnova-launch-install.txt
             sleep 5
             adb shell pidof "$PACKAGE" >/dev/null
-            echo "Fresh install + launch smoke test passed."
+            echo "Clean install + launch smoke test passed."
 
-            adb install -r Learnova.apk
+            echo "== Signed in-place update/replace =="
+            adb install --no-streaming -r Learnova.apk
             adb shell pm path "$PACKAGE" | grep -F "$PACKAGE" >/dev/null
-            adb shell pidof "$PACKAGE" >/dev/null
-            echo "Signed update/replace smoke test passed."
+            adb shell dumpsys package "$PACKAGE" | grep -F "versionCode=$VERSION_CODE" >/dev/null
 
-            rm -f /tmp/learnova-launch.txt
+            # Package replacement may stop the process; always relaunch before
+            # asserting runtime health. This avoids a false failure from pidof.
+            adb shell am force-stop "$PACKAGE"
+            adb shell monkey -p "$PACKAGE" 1 >/tmp/learnova-launch-update.txt
+            sleep 5
+            adb shell pidof "$PACKAGE" >/dev/null
+            echo "Signed update/replace + relaunch smoke test passed."
+
+            rm -f /tmp/learnova-launch-install.txt /tmp/learnova-launch-update.txt
             echo "Install/update safety gate passed."
       
       - name: Generate SHA-256
