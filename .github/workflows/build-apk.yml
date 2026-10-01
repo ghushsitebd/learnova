@@ -143,10 +143,12 @@ jobs:
             test -s "$file" || { echo "::error::Missing gameplay source: $file"; exit 1; }
           done
 
-          grep -F 'one tap to drive / one tap to stop' "$MAIN" >/dev/null
-          grep -F 'one tap only' "$MAIN" >/dev/null
-          grep -F 'There is deliberately no manual left/right steering state' "$WORLD" >/dev/null
-          grep -F 'road spline is the authoritative path' "$WORLD" >/dev/null
+          # Validate behavior by checking the actual implementation primitives,
+          # not comments, so wording changes cannot create false CI failures.
+          grep -F 'running = !running' "$MAIN" >/dev/null
+          grep -F 'threeDWorld.setDriving(running)' "$MAIN" >/dev/null
+          grep -F 'MotionEvent.ACTION_MOVE' "$MAIN" >/dev/null
+          grep -F 'RoadSpline.sampleRelative' "$WORLD" >/dev/null
           grep -F 'fun show(worldDistance: Double)' "$SIGN" >/dev/null
           grep -F 'authoredGlb.show(' "$ANIMAL" >/dev/null
           grep -F 'fun trigger(animal: String' "$ANIMAL" >/dev/null
