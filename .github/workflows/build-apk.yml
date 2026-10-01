@@ -314,10 +314,10 @@ jobs:
             set -eu
             AAPT2="$ANDROID_HOME/build-tools/36.0.0/aapt2"
             PACKAGE="com.learnova.app"
-            APK="Learnova.apk"
+            APK="$GITHUB_WORKSPACE/Learnova.apk"
 
-            test -r "$APK"
-            test -x "$AAPT2"
+            test -r "$APK" || { echo "::error::Release APK is not readable at $APK"; pwd; ls -la "$GITHUB_WORKSPACE"; exit 1; }
+            test -x "$AAPT2" || { echo "::error::aapt2 is not executable at $AAPT2"; exit 1; }
 
             BADGING="$("$AAPT2" dump badging "$APK")"
             printf '%s\\n' "$BADGING" | grep -F "package: name='$PACKAGE'" >/dev/null
