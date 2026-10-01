@@ -63,6 +63,10 @@ internal class LearningAnimalEncounter(
             "gazelle", "falcon"
         )
         if (key !in supported) return
+        // Every encounter gets a fresh authored-GLB lifecycle so a completed
+        // animal cannot block the next real asset from appearing.
+        authoredGlb.hide()
+        authoredVisible = false
         activeAnimal = key
         applyAnimalStyle(key)
         center = worldDistance
@@ -77,7 +81,13 @@ internal class LearningAnimalEncounter(
         if (lastNow != 0L && now - lastNow < 1.0 / 45.0) return
         lastNow = (now * 1e9).toLong()
         val t = ((now - start) / 3.8).coerceIn(0.0, 1.0)
-        if (t >= 1.0) { active = false; hide(); return }
+        if (t >= 1.0) {
+            active = false
+            authoredGlb.hide()
+            authoredVisible = false
+            hide()
+            return
+        }
 
         val road = RoadSpline.sampleRelative(center, worldDistance)
         val isFlying = activeAnimal in setOf("bird", "parrot", "falcon")
