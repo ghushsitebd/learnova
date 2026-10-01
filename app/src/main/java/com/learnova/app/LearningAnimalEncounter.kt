@@ -92,7 +92,16 @@ internal class LearningAnimalEncounter(
         val road = RoadSpline.sampleRelative(center, worldDistance)
         val isFlying = activeAnimal in setOf("bird", "parrot", "falcon")
         val isAquatic = activeAnimal in setOf("fish", "whale")
+        // Three-part encounter: approach from the roadside, pause briefly for
+        // recognition, then return. The pause gives the child a readable learning moment
+        // without freezing the whole driving world.
         val phase = smooth(t)
+        val walkPhase = when {
+            t < 0.30 -> smooth(t / 0.30)
+            t < 0.62 -> 1.0
+            else -> smooth((1.0 - t) / 0.38)
+        }
+        val pause = t in 0.30..0.62
         val wave = sin(t * Math.PI * 2.0)
 
         // Keep the encounter lightweight but make movement match the animal's habitat:
@@ -120,8 +129,8 @@ internal class LearningAnimalEncounter(
                 )
             }
             else -> {
-                val across = -1.0 + 2.0 * phase
-                val side = 6.2
+                val across = -1.0 + 2.0 * walkPhase
+                val side = if (pause) 5.3 else 6.2
                 Quad(
                     road.x + cos(road.yaw) * across * side,
                     road.y + 0.03,
