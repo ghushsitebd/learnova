@@ -55,6 +55,11 @@ internal class CreatureGlbController(
         activeAsset = null
     }
 
+    fun move(x: Double, y: Double, z: Double, yaw: Double, scale: Double) {
+        val asset = activeAsset ?: return
+        position(asset, x, y, z, yaw, scale)
+    }
+
     private fun position(
         asset: FilamentAsset,
         x: Double,
