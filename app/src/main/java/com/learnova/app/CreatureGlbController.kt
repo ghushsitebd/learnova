@@ -6,6 +6,7 @@ import com.google.android.filament.EntityManager
 import com.google.android.filament.Scene
 import com.google.android.filament.gltfio.AssetLoader
 import com.google.android.filament.gltfio.FilamentAsset
+import com.google.android.filament.gltfio.Animator
 import com.google.android.filament.gltfio.ResourceLoader
 import com.google.android.filament.gltfio.UbershaderProvider
 import java.nio.ByteBuffer
@@ -28,6 +29,8 @@ internal class CreatureGlbController(
     private val assetLoader = AssetLoader(engine, materialProvider, EntityManager.get())
     private var resourceLoader: ResourceLoader? = null
     private var activeAsset: FilamentAsset? = null
+    private var activeAnimator: Animator? = null
+    private var animationStartSeconds = 0.0
 
     fun show(species: String, x: Double, y: Double, z: Double, yaw: Double, scale: Double): Boolean {
         val bytes = resolver.load(species) ?: return false
@@ -42,6 +45,8 @@ internal class CreatureGlbController(
             scene.addEntities(asset.entities)
             position(asset, x, y, z, yaw, scale)
             activeAsset = asset
+            activeAnimator = asset.instance?.animator?.takeIf { it.animationCount > 0 }
+            animationStartSeconds = System.nanoTime() * 1e-9
             true
         }.getOrElse {
             destroyAsset(asset)
@@ -53,11 +58,18 @@ internal class CreatureGlbController(
     fun hide() {
         activeAsset?.let(::destroyAsset)
         activeAsset = null
+        activeAnimator = null
+        activeAnimator = null
     }
 
     fun move(x: Double, y: Double, z: Double, yaw: Double, scale: Double) {
         val asset = activeAsset ?: return
         position(asset, x, y, z, yaw, scale)
+        val animator = activeAnimator ?: return
+        val elapsed = (System.nanoTime() * 1e-9 - animationStartSeconds).coerceAtLeast(0.0)
+        val duration = animator.getAnimationDuration(0).toDouble()
+        if (duration > 0.0) animator.applyAnimation(0, elapsed % duration)
+        animator.updateBoneMatrices()
     }
 
     private fun position(
