@@ -68,7 +68,7 @@ internal class CreatureGlbController(
         val animator = activeAnimator ?: return
         val elapsed = (System.nanoTime() * 1e-9 - animationStartSeconds).coerceAtLeast(0.0)
         val duration = animator.getAnimationDuration(0).toDouble()
-        if (duration > 0.0) animator.applyAnimation(0, elapsed % duration)
+        if (duration > 0.0) animator.applyAnimation(0, (elapsed % duration).toFloat())
         animator.updateBoneMatrices()
     }
 
