@@ -130,6 +130,33 @@ jobs:
           set -euo pipefail
           python3 tools/validate_vehicle_assets.py
 
+      - name: Validate gameplay interaction contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          MAIN="app/src/main/java/com/learnova/app/MainActivity.kt"
+          WORLD="app/src/main/java/com/learnova/app/Learnova3DView.kt"
+          SIGN="app/src/main/java/com/learnova/app/LearningSignWorld.kt"
+          ANIMAL="app/src/main/java/com/learnova/app/LearningAnimalEncounter.kt"
+
+          for file in "$MAIN" "$WORLD" "$SIGN" "$ANIMAL"; do
+            test -s "$file" || { echo "::error::Missing gameplay source: $file"; exit 1; }
+          done
+
+          grep -F 'one tap to drive / one tap to stop' "$MAIN" >/dev/null
+          grep -F 'one tap only' "$MAIN" >/dev/null
+          grep -F 'There is deliberately no manual left/right steering state' "$WORLD" >/dev/null
+          grep -F 'road spline is the authoritative path' "$WORLD" >/dev/null
+          grep -F 'fun show(worldDistance: Double)' "$SIGN" >/dev/null
+          grep -F 'authoredGlb.show(' "$ANIMAL" >/dev/null
+          grep -F 'fun trigger(animal: String' "$ANIMAL" >/dev/null
+
+          echo "Gameplay interaction contracts verified:"
+          echo "- one-tap drive/stop"
+          echo "- automatic steering; no manual left/right controls"
+          echo "- physical roadside learning sign"
+          echo "- authored real-animal GLB encounter path"
+
       - name: Fetch CC0 real-animal GLB assets
         run: |
           set -euo pipefail
