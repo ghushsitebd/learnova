@@ -137,6 +137,10 @@ internal class LearningAnimalEncounter(
             authoredVisible = authoredGlb.show(
                 activeAnimal, x, y, z, yaw, animalScale(activeAnimal)
             )
+        } else {
+            // Keep the real GLB on the same animated path as the encounter,
+            // rather than leaving it frozen at its initial spawn position.
+            authoredGlb.move(x, y, z, yaw, animalScale(activeAnimal))
         }
         if (!authoredVisible) {
             drawAnimal(x, y, z, yaw, animalScale(activeAnimal) + 0.04 * sin(t * Math.PI * 4))
