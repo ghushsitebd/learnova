@@ -279,14 +279,34 @@ jobs:
 
           echo "Integrity validation passed."
 
+      - name: Enable KVM for deterministic emulator boot
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-learnova-kvm.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          test -e /dev/kvm
+          test -r /dev/kvm
+          test -w /dev/kvm
+          echo "KVM is available for the emulator."
+
       - name: Install and update safety smoke test
         uses: reactivecircus/android-emulator-runner@v2
+        timeout-minutes: 20
         with:
           api-level: 35
           target: google_apis
           arch: x86_64
-          profile: pixel_2
-          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
+          profile: pixel_7
+          cores: 2
+          ram-size: 2048M
+          heap-size: 512M
+          disk-size: 4096M
+          force-avd-creation: true
+          emulator-boot-timeout: 900
+          disable-linux-hw-accel: false
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
             # android-emulator-runner invokes this script through /bin/sh.
