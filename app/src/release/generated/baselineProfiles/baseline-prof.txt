@@ -1877,7 +1877,7 @@ SPLcom/learnova/app/LearnovaQuranCatalog$$ExternalSyntheticLambda0;-><init>()V
 SPLcom/learnova/app/LearnovaQuranCatalog$$ExternalSyntheticLambda0;->invoke()Ljava/lang/Object;
 Lcom/learnova/app/LearnovaRenderQuality;
 SPLcom/learnova/app/LearnovaRenderQuality;-><init>(Landroid/content/Context;)V
-HSPLcom/learnova/app/LearnovaRenderQuality;->animalCount()I
+SPLcom/learnova/app/LearnovaRenderQuality;->animalCount()I
 SPLcom/learnova/app/LearnovaRenderQuality;->beginFrame()J
 HSPLcom/learnova/app/LearnovaRenderQuality;->distantTrafficCount()I
 HSPLcom/learnova/app/LearnovaRenderQuality;->endFrame(J)V
@@ -1919,7 +1919,7 @@ PLcom/learnova/app/LevelInfo;->getTargetDistance()F
 Lcom/learnova/app/MainActivity;
 SPLcom/learnova/app/MainActivity;-><init>()V
 PLcom/learnova/app/MainActivity;->access$getNatureAudio$p(Lcom/learnova/app/MainActivity;)Lcom/learnova/app/LearnovaNatureAudio;
-PLcom/learnova/app/MainActivity;->access$getThreeDWorld$p(Lcom/learnova/app/MainActivity;)Lcom/learnova/app/Learnova3DView;
+HSPLcom/learnova/app/MainActivity;->access$getThreeDWorld$p(Lcom/learnova/app/MainActivity;)Lcom/learnova/app/Learnova3DView;
 SPLcom/learnova/app/MainActivity;->access$getVoice$p(Lcom/learnova/app/MainActivity;)Lcom/learnova/app/LearnovaVoice;
 SPLcom/learnova/app/MainActivity;->onCreate(Landroid/os/Bundle;)V
 SPLcom/learnova/app/MainActivity;->onPause()V
@@ -1969,7 +1969,7 @@ HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawVehicle(Landroid/graphi
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawVehicleContactEffects(Landroid/graphics/Canvas;FFLcom/learnova/app/SmartScene;)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawWheel(Landroid/graphics/Canvas;FFF)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->featureColor(IIIII)I
-HSPLcom/learnova/app/MainActivity$LearnovaGameView;->getUse3DWorld()Z
+SPLcom/learnova/app/MainActivity$LearnovaGameView;->getUse3DWorld()Z
 SPLcom/learnova/app/MainActivity$LearnovaGameView;->hSafe(Landroid/graphics/Canvas;)F
 SPLcom/learnova/app/MainActivity$LearnovaGameView;->handleQuranChoice(FFFF)Z
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->isQuranLevel()Z
@@ -2007,7 +2007,7 @@ SPLcom/learnova/app/SmartLearningEngine;-><clinit>()V
 SPLcom/learnova/app/SmartLearningEngine;-><init>()V
 SPLcom/learnova/app/SmartLearningEngine;->category(I)Ljava/lang/String;
 SPLcom/learnova/app/SmartLearningEngine;->getLessons()Ljava/util/List;
-HSPLcom/learnova/app/SmartLearningEngine;->lesson(I)Lcom/learnova/app/SmartLesson;
+SPLcom/learnova/app/SmartLearningEngine;->lesson(I)Lcom/learnova/app/SmartLesson;
 SPLcom/learnova/app/SmartLearningEngine;->quranLesson(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;)Lcom/learnova/app/SmartLesson;
 Lcom/learnova/app/SmartLesson;
 SPLcom/learnova/app/SmartLesson;-><init>(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
@@ -2023,7 +2023,7 @@ SPLcom/learnova/app/SmartScene;->getEnvironment()Ljava/lang/String;
 SPLcom/learnova/app/SmartScene;->getId()I
 SPLcom/learnova/app/SmartScene;->getRegion()Ljava/lang/String;
 SPLcom/learnova/app/SmartScene;->getTime()Ljava/lang/String;
-SPLcom/learnova/app/SmartScene;->getWeather()Ljava/lang/String;
+HSPLcom/learnova/app/SmartScene;->getWeather()Ljava/lang/String;
 Lcom/learnova/app/VehicleAssetResolver;
 SPLcom/learnova/app/VehicleAssetResolver;-><init>(Landroid/content/Context;)V
 Lcom/learnova/app/VehicleCatalog;
@@ -2320,7 +2320,7 @@ Lkotlin/ranges/ClosedRange;
 Lkotlin/ranges/IntProgression;
 SPLkotlin/ranges/IntProgression;-><clinit>()V
 HSPLkotlin/ranges/IntProgression;-><init>(III)V
-SPLkotlin/ranges/IntProgression;->getFirst()I
+HSPLkotlin/ranges/IntProgression;->getFirst()I
 SPLkotlin/ranges/IntProgression;->getLast()I
 SPLkotlin/ranges/IntProgression;->getStep()I
 SPLkotlin/ranges/IntProgression;->iterator()Ljava/util/Iterator;
@@ -2342,7 +2342,6 @@ Lkotlin/ranges/OpenEndRange;
 Lkotlin/ranges/RangesKt;
 Lkotlin/ranges/RangesKt__RangesKt;
 Lkotlin/ranges/RangesKt___RangesKt;
-PLkotlin/ranges/RangesKt___RangesKt;->coerceAtLeast(DD)D
 SPLkotlin/ranges/RangesKt___RangesKt;->coerceAtLeast(II)I
 SPLkotlin/ranges/RangesKt___RangesKt;->coerceAtLeast(JJ)J
 SPLkotlin/ranges/RangesKt___RangesKt;->coerceAtMost(FF)F
