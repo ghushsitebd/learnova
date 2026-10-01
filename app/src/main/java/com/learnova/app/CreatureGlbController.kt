@@ -104,6 +104,7 @@ internal class CreatureGlbController(
     fun destroy() {
         activeAsset?.let(::destroyAsset)
         activeAsset = null
+        activeAnimator = null
         runCatching { resourceLoader?.destroy() }
         resourceLoader = null
         runCatching { materialProvider.destroyMaterials() }
