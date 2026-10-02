@@ -24,14 +24,26 @@ internal class VehicleAssetResolver(private val context: Context) {
         for (path in candidates) {
             try {
                 context.assets.open(path).use { input ->
-                    return if (path.endsWith(".gz")) {
+                    val bytes = if (path.endsWith(".gz")) {
                         GZIPInputStream(input).use { it.readBytes() }
                     } else {
                         input.readBytes()
                     }
+                    // A GLB must begin with the binary glTF magic "glTF".
+                    // Reject corrupt/placeholder payloads before they reach Filament.
+                    if (bytes.size < 20 ||
+                        bytes[0] != 0x67.toByte() ||
+                        bytes[1] != 0x6C.toByte() ||
+                        bytes[2] != 0x54.toByte() ||
+                        bytes[3] != 0x46.toByte()) {
+                        continue
+                    }
+                    return bytes
                 }
             } catch (_: FileNotFoundException) {
                 // Try the next representation.
+            } catch (_: java.io.IOException) {
+                // Treat a damaged compressed asset as unavailable; never crash world startup.
             }
         }
         return null
