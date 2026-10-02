@@ -323,12 +323,7 @@ jobs:
             # do not assume GITHUB_WORKSPACE is exported there. Resolve the APK
             # from the current checkout/workspace deterministically.
             APK="$(find . -maxdepth 2 -type f -name 'Learnova.apk' -print -quit)"
-            if [ -z "$APK" ]; then
-              echo "::error::Release APK was not found from the smoke-test working directory."
-              echo "PWD=$(pwd)"
-              find . -maxdepth 3 -type f -name '*.apk' -print
-              exit 1
-            fi
+            if [ -z "$APK" ]; then echo "::error::Release APK was not found from the smoke-test working directory."; echo "PWD=$(pwd)"; find . -maxdepth 3 -type f -name '*.apk' -print; exit 1; fi
 
             test -r "$APK" || { echo "::error::Release APK is not readable at $APK"; pwd; ls -la; exit 1; }
             test -x "$AAPT2" || { echo "::error::aapt2 is not executable at $AAPT2"; exit 1; }
