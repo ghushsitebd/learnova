@@ -82,5 +82,13 @@ adb shell dumpsys activity top | grep -F "$PACKAGE/.MainActivity" >/dev/null
 
 echo "Signed update/replace + explicit launcher activity smoke test passed."
 
+echo "== Runtime Macrobenchmark performance validation =="
+# The release APK is already installed on the live API-35 emulator. Run the
+# production-like benchmark APK against that exact installed build so startup,
+# frame timing, and Learnova trace sections are measured on a real device.
+gradle --no-daemon :macrobenchmark:connectedBenchmarkAndroidTest --stacktrace
+
+echo "Runtime Macrobenchmark performance validation passed."
+
 rm -f /tmp/learnova-launch-install.txt /tmp/learnova-launch-update.txt
-echo "Install/update safety gate passed."
+echo "Install/update safety + runtime performance gates passed."
