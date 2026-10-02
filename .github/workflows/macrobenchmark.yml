@@ -65,6 +65,71 @@ jobs:
         with:
           gradle-version: '9.3.1'
 
+      - name: Restore release signing identity for benchmark target
+        env:
+          LEARNOVA_KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          LEARNOVA_STORE_PASSWORD_INPUT: ${{ secrets.KEYSTORE_PASSWORD }}
+          LEARNOVA_KEY_PASSWORD_INPUT: ${{ secrets.KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${LEARNOVA_KEYSTORE_BASE64:-}" || { echo "::error::KEYSTORE_BASE64 secret is missing."; exit 1; }
+          test -n "${LEARNOVA_STORE_PASSWORD_INPUT:-}" || { echo "::error::KEYSTORE_PASSWORD secret is missing."; exit 1; }
+          test -n "${LEARNOVA_KEY_PASSWORD_INPUT:-}" || { echo "::error::KEY_PASSWORD secret is missing."; exit 1; }
+
+          CLEAN_BASE64=$(printf '%s' "$LEARNOVA_KEYSTORE_BASE64" | tr -d '[:space:]' | tr '_-' '/+' | tr -cd 'A-Za-z0-9+/=')
+          case $((${#CLEAN_BASE64} % 4)) in
+            2) CLEAN_BASE64="$CLEAN_BASE64==" ;;
+            3) CLEAN_BASE64="$CLEAN_BASE64=" ;;
+            1) echo "::error::Keystore Base64 has an invalid length."; exit 1 ;;
+          esac
+          printf '%s' "$CLEAN_BASE64" | base64 --decode --ignore-garbage > learnova-release.keystore
+          chmod 600 learnova-release.keystore
+          test -s learnova-release.keystore
+
+          STORE_PASSWORD=$(printf '%s' "$LEARNOVA_STORE_PASSWORD_INPUT" | tr -d '\r\n')
+          KEY_PASSWORD=$(printf '%s' "$LEARNOVA_KEY_PASSWORD_INPUT" | tr -d '\r\n')
+
+          keytool -list -v -keystore learnova-release.keystore -storepass "$STORE_PASSWORD" >/tmp/learnova-keytool.txt 2>/tmp/learnova-keytool.err || {
+            echo "::error::KEYSTORE_PASSWORD does not unlock the restored keystore."
+            cat /tmp/learnova-keytool.err
+            exit 1
+          }
+
+          KEY_ALIAS=$(awk -F': ' '/^Alias name: / {print $2; exit}' /tmp/learnova-keytool.txt)
+          test -n "${KEY_ALIAS:-}" || { echo "::error::No signing alias found."; exit 1; }
+
+          keytool -certreq -keystore learnova-release.keystore \
+            -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" -keypass "$KEY_PASSWORD" \
+            -file /tmp/learnova-test.csr -dname "CN=Learnova CI Test" >/dev/null
+          rm -f /tmp/learnova-test.csr
+
+          NORMALIZED_STORE_PASSWORD=$(openssl rand -hex 32)
+          NORMALIZED_KEY_PASSWORD=$(openssl rand -hex 32)
+          echo "::add-mask::$NORMALIZED_STORE_PASSWORD"
+          echo "::add-mask::$NORMALIZED_KEY_PASSWORD"
+
+          keytool -importkeystore -noprompt \
+            -srckeystore learnova-release.keystore \
+            -srcstorepass "$STORE_PASSWORD" \
+            -srcalias "$KEY_ALIAS" \
+            -srckeypass "$KEY_PASSWORD" \
+            -destkeystore learnova-release-normalized.jks \
+            -deststoretype JKS \
+            -deststorepass "$NORMALIZED_STORE_PASSWORD" \
+            -destkeypass "$NORMALIZED_KEY_PASSWORD" \
+            -destalias "$KEY_ALIAS"
+
+          mv learnova-release-normalized.jks learnova-release.keystore
+          chmod 600 learnova-release.keystore
+          echo "LEARNOVA_KEYSTORE_PATH=$GITHUB_WORKSPACE/learnova-release.keystore" >> "$GITHUB_ENV"
+          echo "LEARNOVA_STORE_PASSWORD=$NORMALIZED_STORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "LEARNOVA_KEY_PASSWORD=$NORMALIZED_KEY_PASSWORD" >> "$GITHUB_ENV"
+          echo "LEARNOVA_KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+
+          keytool -list -keystore learnova-release.keystore -storepass "$NORMALIZED_STORE_PASSWORD" >/dev/null
+          echo "Release signing identity restored and normalized for benchmark packaging."
+
       - name: Run Macrobenchmarks on Gradle Managed Device
         shell: bash
         run: |
