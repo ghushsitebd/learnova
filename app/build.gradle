@@ -65,7 +65,9 @@ android {
             // Macrobenchmark requires the tested APK to remain unobfuscated.
             minifyEnabled false
             shrinkResources false
-            signingConfig signingConfigs.debug
+            // Keep the production-like benchmark APK on the same certificate
+            // as the live release APK so Macrobenchmark can update it safely.
+            signingConfig signingConfigs.release
             matchingFallbacks = ['release']
             buildConfigField 'boolean', 'PERF_TRACE_ENABLED', 'true'
         }
