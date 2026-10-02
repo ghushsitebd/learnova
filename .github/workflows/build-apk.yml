@@ -1,6 +1,7 @@
 name: Build Learnova Release APK
 # CI checkpoint: verify permanent signing pipeline.
 # CI trigger checkpoint: release validation runs before performance stages.
+# Build trigger: compile gate follows source fixes.
 
 on:
   pull_request:
