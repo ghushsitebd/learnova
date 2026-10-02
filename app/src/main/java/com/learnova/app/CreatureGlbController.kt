@@ -31,6 +31,8 @@ internal class CreatureGlbController(
     private var activeAsset: FilamentAsset? = null
     private var activeAnimator: Animator? = null
     private var animationStartSeconds = 0.0
+    private var activeAnimationIndex = 0
+    private var activeAnimationDuration = 0f
 
     fun show(species: String, x: Double, y: Double, z: Double, yaw: Double, scale: Double): Boolean {
         val bytes = resolver.load(species) ?: return false
@@ -46,6 +48,8 @@ internal class CreatureGlbController(
             position(asset, x, y, z, yaw, scale)
             activeAsset = asset
             activeAnimator = asset.instance?.animator?.takeIf { it.animationCount > 0 }
+            activeAnimationIndex = 0
+            activeAnimationDuration = activeAnimator?.getAnimationDuration(0) ?: 0f
             animationStartSeconds = System.nanoTime() * 1e-9
             true
         }.getOrElse {
@@ -59,7 +63,8 @@ internal class CreatureGlbController(
         activeAsset?.let(::destroyAsset)
         activeAsset = null
         activeAnimator = null
-        activeAnimator = null
+        activeAnimationIndex = 0
+        activeAnimationDuration = 0f
     }
 
     fun move(x: Double, y: Double, z: Double, yaw: Double, scale: Double) {
@@ -67,8 +72,8 @@ internal class CreatureGlbController(
         position(asset, x, y, z, yaw, scale)
         val animator = activeAnimator ?: return
         val elapsed = (System.nanoTime() * 1e-9 - animationStartSeconds).coerceAtLeast(0.0)
-        val duration = animator.getAnimationDuration(0).toDouble()
-        if (duration > 0.0) animator.applyAnimation(0, (elapsed % duration).toFloat())
+        val duration = activeAnimationDuration.toDouble()
+        if (duration > 0.0) animator.applyAnimation(activeAnimationIndex, (elapsed % duration).toFloat())
         animator.updateBoneMatrices()
     }
 
