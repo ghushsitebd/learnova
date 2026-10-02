@@ -118,7 +118,7 @@ internal class NearFieldCreatureWorld(
     }
 
     private fun stableSeed(value: Long): Long {
-        var x = value + 0x9E3779B97F4A7C15L
+        var x = value + -7046029254386353131L
         x = (x xor (x ushr 30)) * -4658895280553007687L
         x = (x xor (x ushr 27)) * -7723592293110705685L
         return x xor (x ushr 31)
