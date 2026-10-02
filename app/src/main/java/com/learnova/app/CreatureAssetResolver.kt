@@ -26,27 +26,9 @@ internal class CreatureAssetResolver(private val context: Context) {
     companion object {
         private const val ROOT = "creatures"
 
-        private val authoredSpecies = setOf(
-            "lion",
-            "tiger",
-            "elephant",
-            "leopard",
-            "bear",
-            "fox",
-            "monkey",
-            "deer",
-            "horse",
-            "camel",
-            "wolf",
-            "zebra",
-            "giraffe",
-            "penguin",
-            "dolphin"
-        )
-
         fun assetPath(species: String): String? {
             val key = normalize(species)
-            return if (key in authoredSpecies) "$ROOT/$key.glb" else null
+            return "$ROOT/$key.glb"
         }
 
         fun hasAuthoredContract(species: String): Boolean = assetPath(species) != null
@@ -58,7 +40,7 @@ internal class CreatureAssetResolver(private val context: Context) {
 
     fun load(species: String): ByteArray? {
         val key = normalize(species)
-        if (key !in authoredSpecies) return null
+        if (key.isBlank()) return null
 
         // Prefer binary assets, then compressed binary, then repository-safe
         // base64 assets. This makes the runtime compatible with both the current
