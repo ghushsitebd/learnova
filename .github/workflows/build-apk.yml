@@ -296,7 +296,7 @@ jobs:
           test -w /dev/kvm
           echo "KVM is available for the emulator."
 
-      - name: Install and update safety smoke test
+      - name: Install/update safety + runtime performance validation
         uses: reactivecircus/android-emulator-runner@v2
         timeout-minutes: 20
         with:
