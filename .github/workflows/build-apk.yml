@@ -244,7 +244,7 @@ jobs:
             echo "::error::Creature asset directory is missing."
             exit 1
           fi
-          count=$(find "$ROOT" -maxdepth 1 -type f \\( -name '*.glb' -o -name '*.glb.gz' -o -name '*.glb.b64' \\) | sed -E 's/\\.(glb|glb\\.gz|glb\\.b64)$//' | sort -u | wc -l)
+          count=$(find "$ROOT" -maxdepth 1 -type f \( -name '*.glb' -o -name '*.glb.gz' -o -name '*.glb.b64' \) | sed -E 's/\.(glb|glb\.gz|glb\.b64)$//' | sort -u | wc -l)
           echo "Packaged unique real-creature asset keys: $count"
           test "$count" -ge 1
           if ! find "$ROOT" -maxdepth 1 -type f -name 'lion.glb.b64' -print -quit | grep -q .; then
