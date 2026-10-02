@@ -72,7 +72,7 @@ internal class CreatureAssetResolver(private val context: Context) {
         for (path in candidates) {
             try {
                 context.assets.open(path).use { input ->
-                    return when {
+                    val bytes = when {
                         path.endsWith(".gz") -> {
                             GZIPInputStream(input).use { it.readBytes() }
                         }
@@ -82,6 +82,15 @@ internal class CreatureAssetResolver(private val context: Context) {
                         }
                         else -> input.readBytes()
                     }
+                    // Fail closed: only pass genuine GLB containers to Filament.
+                    if (bytes.size < 20 ||
+                        bytes[0] != 0x67.toByte() ||
+                        bytes[1] != 0x6C.toByte() ||
+                        bytes[2] != 0x54.toByte() ||
+                        bytes[3] != 0x46.toByte()) {
+                        continue
+                    }
+                    return bytes
                 }
             } catch (_: FileNotFoundException) {
                 // Try the next representation; missing authored assets must not
