@@ -8,7 +8,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "app/src/main/assets/creatures"
-SPECIES = ("lion", "tiger", "elephant", "deer")
+SPECIES = ("deer", "fox", "horse", "wolf")
 
 
 def read_glb_json(path: Path):
@@ -40,8 +40,7 @@ def read_glb_json(path: Path):
 
 def validate(path: Path):
     doc = read_glb_json(path)
-    asset = doc.get("asset", {})
-    if asset.get("version") != "2.0":
+    if doc.get("asset", {}).get("version") != "2.0":
         raise ValueError("glTF asset.version must be 2.0")
 
     nodes = doc.get("nodes", [])
@@ -57,11 +56,14 @@ def validate(path: Path):
 
     animated_nodes = set()
     max_time = 0.0
+    accessors = doc.get("accessors", [])
+
     for animation in animations:
         channels = animation.get("channels", [])
         samplers = animation.get("samplers", [])
         if not channels or not samplers:
             raise ValueError("animation has no channels/samplers")
+
         for channel in channels:
             target = channel.get("target", {})
             node = target.get("node")
@@ -70,17 +72,19 @@ def validate(path: Path):
                 raise ValueError("animation targets invalid node")
             if path_name not in {"translation", "rotation", "scale", "weights"}:
                 raise ValueError(f"unsupported animation target path: {path_name}")
+
             animated_nodes.add(node)
             sampler_index = channel.get("sampler")
             if not isinstance(sampler_index, int) or not 0 <= sampler_index < len(samplers):
                 raise ValueError("animation references invalid sampler")
+
             accessor = samplers[sampler_index].get("input")
-            if not isinstance(accessor, int):
-                raise ValueError("animation sampler has no input accessor")
-            accessors = doc.get("accessors", [])
-            if not 0 <= accessor < len(accessors):
+            if not isinstance(accessor, int) or not 0 <= accessor < len(accessors):
                 raise ValueError("animation input accessor is invalid")
-            max_time = max(max_time, float(accessors[accessor].get("max", [0.0])[-1]))
+
+            maximum = accessors[accessor].get("max", [0.0])
+            if maximum:
+                max_time = max(max_time, float(maximum[-1]))
 
     if not animated_nodes:
         raise ValueError("animation contains no targeted nodes")
@@ -93,6 +97,7 @@ def validate(path: Path):
         if not joints:
             raise ValueError("skin has no joints")
         skin_joints.update(joints)
+
     if not (skin_joints & animated_nodes):
         raise ValueError("no animated node belongs to a skin joint set")
 
@@ -102,15 +107,20 @@ def validate(path: Path):
 def main():
     failures = []
     checked = 0
+
     for species in SPECIES:
         path = ASSETS / f"{species}.glb"
         if not path.is_file():
             failures.append(f"{species}: missing downloaded GLB")
             continue
+
         try:
             animations, nodes, joints, duration = validate(path)
             checked += 1
-            print(f"OK creature {species}: animations={animations}, animated_nodes={nodes}, joints={joints}, duration={duration:.3f}s")
+            print(
+                f"OK creature {species}: animations={animations}, "
+                f"animated_nodes={nodes}, joints={joints}, duration={duration:.3f}s"
+            )
         except (OSError, ValueError, json.JSONDecodeError, struct.error) as exc:
             failures.append(f"{species}: {exc}")
 
@@ -118,6 +128,7 @@ def main():
         for failure in failures:
             print(f"::error::{failure}")
         sys.exit(1)
+
     print(f"Validated {checked}/{len(SPECIES)} real animated creature GLBs.")
 
 
