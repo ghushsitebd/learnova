@@ -28,7 +28,10 @@ internal class NearFieldCreatureWorld(
         const val MIN_DISTANCE = 22.0
         const val MAX_DISTANCE = 58.0
         const val UPDATE_NANOS = 100_000_000L
-        val SUPPORTED = setOf("deer", "fox", "horse", "wolf")
+        // Only authored binaries are promoted into the near-field presentation.
+        // The current production bundle contains a real lion GLB; other catalog
+        // species remain on the distant-life path until their binaries land.
+        val SUPPORTED = setOf("lion")
     }
 
     fun build(): Boolean = true
@@ -80,15 +83,10 @@ internal class NearFieldCreatureWorld(
         val seed = stableSeed(distanceBand)
         val biome = WorldDirector.profile(centerDistance + 30.0).biome
 
+        // Promote only a verified authored species to the real near-field layer.
+        // Forest is the first production habitat for the bundled lion GLB.
         val species = when (biome) {
-            WorldDirector.Biome.FOREST -> when ((seed ushr 4) % 3L) {
-                0L -> "deer"
-                1L -> "fox"
-                else -> "wolf"
-            }
-            WorldDirector.Biome.MOUNTAIN -> if ((seed and 1L) == 0L) "wolf" else "fox"
-            WorldDirector.Biome.VILLAGE, WorldDirector.Biome.MARKET -> "horse"
-            WorldDirector.Biome.PLATEAU -> if ((seed and 1L) == 0L) "horse" else "deer"
+            WorldDirector.Biome.FOREST -> if ((seed and 3L) != 0L) "lion" else null
             else -> null
         } ?: return null
 
@@ -98,9 +96,7 @@ internal class NearFieldCreatureWorld(
         val side = if ((seed and 1L) == 0L) 1.0 else -1.0
         val sample = RoadSpline.sampleRelative(centerDistance + spawnDistance, centerDistance)
         val lateral = when (species) {
-            "horse" -> 7.0
-            "deer" -> 10.0
-            "fox" -> 12.0
+            "lion" -> 11.0
             else -> 14.0
         } * side
 
@@ -108,9 +104,7 @@ internal class NearFieldCreatureWorld(
         val z = sample.z + cos(sample.yaw) * lateral
         val facing = sample.yaw + if (side > 0.0) -1.5708 else 1.5708
         val scale = when (species) {
-            "horse" -> 1.10
-            "deer" -> 1.00
-            "wolf" -> 0.92
+            "lion" -> 1.18
             else -> 0.86
         }
 
