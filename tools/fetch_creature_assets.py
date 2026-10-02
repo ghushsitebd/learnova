@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fetch verified animated CC0 quadruped GLBs from Quaternius."""
+"""Fetch verified animated CC0 animal sources and normalize them to GLB."""
 
 from pathlib import Path
 import subprocess
@@ -8,77 +8,65 @@ import tempfile
 
 ROOT = Path("app/src/main/assets/creatures")
 FOLDER_URL = "https://drive.google.com/drive/folders/1uJ3N5HfB7jKTseJUNQr3N4YaN0UuEtHk?usp=sharing"
-SPECIES = {
-    "deer": "Deer",
-    "fox": "Fox",
-    "horse": "Horse",
-    "wolf": "Wolf",
-}
+SPECIES = {"deer": "Deer", "fox": "Fox", "horse": "Horse", "wolf": "Wolf"}
 
 
-def install_gdown() -> None:
+def install_tools() -> None:
     subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "pip",
-            "install",
-            "--disable-pip-version-check",
-            "--no-input",
-            "gdown==5.2.0",
-        ],
+        [sys.executable, "-m", "pip", "install", "--disable-pip-version-check",
+         "--no-input", "gdown==5.2.0"],
+        check=True,
+    )
+    subprocess.run(
+        ["npm", "install", "--global", "@gltf-transform/cli@4.2.0"],
         check=True,
     )
 
 
 def main() -> None:
-    install_gdown()
+    install_tools()
     ROOT.mkdir(parents=True, exist_ok=True)
 
     with tempfile.TemporaryDirectory(prefix="learnova-quaternius-") as tmp:
         download_root = Path(tmp) / "pack"
         subprocess.run(
-            [
-                sys.executable,
-                "-m",
-                "gdown",
-                "--folder",
-                FOLDER_URL,
-                "-O",
-                str(download_root),
-            ],
+            [sys.executable, "-m", "gdown", "--folder", FOLDER_URL, "-O", str(download_root)],
             check=True,
         )
 
-        candidates = [
-            p for p in download_root.rglob("*")
-            if p.is_file() and p.suffix.lower() == ".glb"
-        ]
-
+        sources = list(download_root.rglob("*"))
         for key, display_name in SPECIES.items():
             matches = [
-                p for p in candidates
-                if p.stem.lower() == display_name.lower()
+                p for p in sources
+                if p.is_file()
+                and p.suffix.lower() in {".gltf", ".glb"}
+                and p.stem.lower() == display_name.lower()
             ]
             if not matches:
-                raise RuntimeError(
-                    f"{display_name}: animated GLB was not found in the CC0 pack"
-                )
+                raise RuntimeError(f"{display_name}: animated glTF/GLB source was not found")
 
             source = matches[0]
-            data = source.read_bytes()
-            if len(data) < 32 or data[:4] != b"glTF":
-                raise RuntimeError(
-                    f"{display_name}: downloaded file is not a valid GLB"
-                )
-
             target = ROOT / f"{key}.glb"
-            target.write_bytes(data)
-            print(f"Fetched animated {display_name}: {len(data)} bytes")
 
-    print(
-        f"Fetched {len(SPECIES)} verified animated CC0 creature GLBs into {ROOT}"
-    )
+            if source.suffix.lower() == ".glb":
+                data = source.read_bytes()
+                if len(data) < 32 or data[:4] != b"glTF":
+                    raise RuntimeError(f"{display_name}: invalid GLB")
+                target.write_bytes(data)
+            else:
+                subprocess.run(
+                    ["gltf-transform", "copy", str(source), str(target)],
+                    check=True,
+                )
+                data = target.read_bytes()
+                if len(data) < 32 or data[:4] != b"glTF":
+                    raise RuntimeError(
+                        f"{display_name}: glTF conversion did not produce a valid GLB"
+                    )
+
+            print(f"Normalized animated {display_name}: {len(data)} bytes")
+
+    print(f"Fetched and normalized {len(SPECIES)} animated CC0 creature GLBs.")
 
 
 if __name__ == "__main__":
