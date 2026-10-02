@@ -21,6 +21,9 @@ internal class RoadsideLearningDirector {
 
     private val lessons = listOf(
         SignLesson("fox", "FOX", "fox", "শিয়াল", "ثعلب", "Say: fox", setOf("fox", "ফক্স", "শিয়াল", "ثعلب")),
+        SignLesson("deer", "DEER", "deer", "হরিণ", "غزال", "Say: deer", setOf("deer", "ডিয়ার", "হরিণ", "غزال")),
+        SignLesson("horse", "HORSE", "horse", "ঘোড়া", "حصان", "Say: horse", setOf("horse", "হর্স", "ঘোড়া", "حصان")),
+        SignLesson("wolf", "WOLF", "wolf", "নেকড়ে", "ذئب", "Say: wolf", setOf("wolf", "উলফ", "নেকড়ে", "ذئب")),
         SignLesson("bear", "BEAR", "bear", "ভাল্লুক", "دب", "Say: bear", setOf("bear", "বিয়ার", "ভাল্লুক", "دب")),
         SignLesson("monkey", "MONKEY", "monkey", "বানর", "قرد", "Say: monkey", setOf("monkey", "মাঙ্কি", "বানর", "قرد")),
         SignLesson("tiger", "TIGER", "tiger", "বাঘ", "نمر", "Say: tiger", setOf("tiger", "টাইগার", "বাঘ", "نمر")),
