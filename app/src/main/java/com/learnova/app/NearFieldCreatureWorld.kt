@@ -28,10 +28,11 @@ internal class NearFieldCreatureWorld(
         const val MIN_DISTANCE = 22.0
         const val MAX_DISTANCE = 58.0
         const val UPDATE_NANOS = 100_000_000L
+
         // Only authored binaries are promoted into the near-field presentation.
-        // The current production bundle contains a real lion GLB; other catalog
-        // species remain on the distant-life path until their binaries land.
-        val SUPPORTED = setOf("lion")
+        // These species are backed by the production asset manifest; unsupported
+        // catalog entries remain on the lightweight distant-life path.
+        val SUPPORTED = setOf("lion", "tiger", "elephant", "deer")
     }
 
     fun build(): Boolean = true
@@ -83,10 +84,15 @@ internal class NearFieldCreatureWorld(
         val seed = stableSeed(distanceBand)
         val biome = WorldDirector.profile(centerDistance + 30.0).biome
 
-        // Promote only a verified authored species to the real near-field layer.
-        // Forest is the first production habitat for the bundled lion GLB.
+        // Select only a verified authored species for the active habitat.
         val species = when (biome) {
-            WorldDirector.Biome.FOREST -> if ((seed and 3L) != 0L) "lion" else null
+            WorldDirector.Biome.FOREST -> when ((seed ushr 2) and 3L) {
+                0L -> "tiger"
+                1L -> "lion"
+                2L -> "deer"
+                else -> null
+            }
+            WorldDirector.Biome.PLAINS -> if ((seed and 1L) == 0L) "elephant" else "deer"
             else -> null
         } ?: return null
 
@@ -96,6 +102,8 @@ internal class NearFieldCreatureWorld(
         val side = if ((seed and 1L) == 0L) 1.0 else -1.0
         val sample = RoadSpline.sampleRelative(centerDistance + spawnDistance, centerDistance)
         val lateral = when (species) {
+            "elephant" -> 13.0
+            "tiger" -> 12.0
             "lion" -> 11.0
             else -> 14.0
         } * side
@@ -104,7 +112,9 @@ internal class NearFieldCreatureWorld(
         val z = sample.z + cos(sample.yaw) * lateral
         val facing = sample.yaw + if (side > 0.0) -1.5708 else 1.5708
         val scale = when (species) {
-            "lion" -> 1.18
+            "elephant" -> 1.34
+            "tiger", "lion" -> 1.18
+            "deer" -> 1.05
             else -> 0.86
         }
 
