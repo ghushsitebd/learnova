@@ -17,8 +17,10 @@ def install_tools() -> None:
          "--no-input", "gdown==5.2.0"],
         check=True,
     )
+    # Use npx instead of a global npm install so CI does not depend on the runner's
+    # global npm prefix or filesystem permissions. The exact CLI version remains pinned.
     subprocess.run(
-        ["npm", "install", "--global", "@gltf-transform/cli@4.2.0"],
+        ["npx", "--yes", "@gltf-transform/cli@4.2.0", "--version"],
         check=True,
     )
 
@@ -55,7 +57,7 @@ def main() -> None:
                 target.write_bytes(data)
             else:
                 subprocess.run(
-                    ["gltf-transform", "copy", str(source), str(target)],
+                    ["npx", "--yes", "@gltf-transform/cli@4.2.0", "copy", str(source), str(target)],
                     check=True,
                 )
                 data = target.read_bytes()
