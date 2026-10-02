@@ -235,6 +235,24 @@ jobs:
           cp "${{ steps.find_outputs.outputs.apk_path }}" Learnova.apk
           cp "${{ steps.find_outputs.outputs.aab_path }}" Learnova.aab
 
+      - name: Audit packaged real creature assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="app/src/main/assets/creatures"
+          if [ ! -d "$ROOT" ]; then
+            echo "::error::Creature asset directory is missing."
+            exit 1
+          fi
+          count=$(find "$ROOT" -maxdepth 1 -type f \\( -name '*.glb' -o -name '*.glb.gz' -o -name '*.glb.b64' \\) | sed -E 's/\\.(glb|glb\\.gz|glb\\.b64)$//' | sort -u | wc -l)
+          echo "Packaged unique real-creature asset keys: $count"
+          test "$count" -ge 1
+          if ! find "$ROOT" -maxdepth 1 -type f -name 'lion.glb.b64' -print -quit | grep -q .; then
+            echo "::error::Production near-field lion asset is missing."
+            exit 1
+          fi
+          echo "Real-asset gate passed: at least one packaged GLB representation exists and lion is present."
+
       - name: Verify Baseline Profile packaging
         shell: bash
         run: |
