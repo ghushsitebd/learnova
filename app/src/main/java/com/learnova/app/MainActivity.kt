@@ -2601,7 +2601,7 @@ class MainActivity : AppCompatActivity() {
                 "cat", "dog", "elephant", "fish", "lion", "tiger",
                 "rabbit", "parrot", "whale", "yak", "zebra",
                 "fox", "camel", "bear", "giraffe", "frog", "bird",
-                "gazelle", "falcon" -> threeDWorld.triggerLearningAnimal(lesson.visualKey)
+                "gazelle", "falcon", "deer", "horse", "wolf" -> threeDWorld.triggerLearningAnimal(lesson.visualKey)
             }
             voice.speakSmartLesson(lesson)
         }
