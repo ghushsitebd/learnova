@@ -21,7 +21,7 @@ internal class RoadsideLearningDirector {
 
     private val lessons = listOf(
         SignLesson("fox", "FOX", "fox", "শিয়াল", "ثعلب", "Say: fox", setOf("fox", "ফক্স", "শিয়াল", "ثعلب")),
-        SignLesson("deer", "DEER", "deer", "হরিণ", "غزال", "Say: deer", setOf("deer", "ডিয়ার", "হরিণ", "غزال")),
+        SignLesson("deer", "DEER", "deer", "হরিণ", "أيل", "Say: deer", setOf("deer", "ডিয়ার", "হরিণ", "أيل")),
         SignLesson("horse", "HORSE", "horse", "ঘোড়া", "حصان", "Say: horse", setOf("horse", "হর্স", "ঘোড়া", "حصان")),
         SignLesson("wolf", "WOLF", "wolf", "নেকড়ে", "ذئب", "Say: wolf", setOf("wolf", "উলফ", "নেকড়ে", "ذئب")),
         SignLesson("bear", "BEAR", "bear", "ভাল্লুক", "دب", "Say: bear", setOf("bear", "বিয়ার", "ভাল্লুক", "دب")),
@@ -31,7 +31,7 @@ internal class RoadsideLearningDirector {
         SignLesson("camel", "CAMEL", "camel", "উট", "جمل", "Say: camel", setOf("camel", "ক্যামেল", "উট", "جمل")),
         SignLesson("giraffe", "GIRAFFE", "giraffe", "জিরাফ", "زرافة", "Say: giraffe", setOf("giraffe", "জিরাফ", "زرافة")),
         SignLesson("zebra", "ZEBRA", "zebra", "জেব্রা", "حمار وحشي", "Say: zebra", setOf("zebra", "জেব্রা", "حمار وحشي")),
-        SignLesson("gazelle", "GAZELLE", "gazelle", "হরিণ", "غزال", "Say: gazelle", setOf("gazelle", "গ্যাজেল", "হরিণ", "غزال")),
+        SignLesson("gazelle", "GAZELLE", "gazelle", "গ্যাজেল", "غزال", "Say: gazelle", setOf("gazelle", "গ্যাজেল", "غزال")),
         SignLesson("falcon", "FALCON", "falcon", "বাজ", "صقر", "Say: falcon", setOf("falcon", "ফ্যালকন", "বাজ", "صقر")),
         SignLesson("book", "BOOK", null, "বই", "كتاب", "Say: book", setOf("book", "বুক", "বই", "كتاب")),
         SignLesson("cat", "CAT", "cat", "বিড়াল", "قطة", "Say: cat", setOf("cat", "ক্যাট", "বিড়াল", "قطة")),
