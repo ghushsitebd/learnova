@@ -59,7 +59,7 @@ internal class LearningAnimalEncounter(
         val supported = setOf(
             "cat", "dog", "elephant", "fish", "lion", "tiger",
             "rabbit", "parrot", "whale", "yak", "zebra",
-            "fox", "camel", "bear", "giraffe", "frog", "bird",
+            "fox", "deer", "horse", "wolf", "camel", "bear", "giraffe", "frog", "bird",
             "gazelle", "falcon"
         )
         if (key !in supported) return
