@@ -84,6 +84,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var waterSurfaceWorld: WaterSurfaceWorld? = null
     private var shorelineWorld: ShorelineWorld? = null
     private var worldLife: WorldLifeSimulation? = null
+    private var nearFieldCreatureWorld: NearFieldCreatureWorld? = null
     private var childNPC: ChildNPCWorld? = null
     private var learningAnimalEncounter: LearningAnimalEncounter? = null
     private var learningSignWorld: LearningSignWorld? = null
@@ -164,6 +165,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 waterSurfaceWorld = WaterSurfaceWorld(viewer.engine, viewer.scene, asset).also { it.build() }
                 shorelineWorld = ShorelineWorld(viewer.engine, viewer.scene, asset).also { it.build() }
                 worldLife = WorldLifeSimulation(viewer.engine, viewer.scene, asset).also { it.build() }
+                nearFieldCreatureWorld = NearFieldCreatureWorld(context, viewer.engine, viewer.scene,).also { it.build() }
                 childNPC = ChildNPCWorld(viewer.engine, viewer.scene, asset).also { it.build() }
                 learningAnimalEncounter = LearningAnimalEncounter(context, viewer.engine, viewer.scene, asset).also { it.build() }
                 learningSignWorld = LearningSignWorld(viewer.engine, viewer.scene, asset).also { it.build() }
@@ -260,6 +262,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                     waterSurfaceWorld?.update(vehicleDistance)
                     shorelineWorld?.update(vehicleDistance)
                     worldLife?.update(vehicleDistance)
+                    nearFieldCreatureWorld?.update(vehicleDistance)
                     childNPC?.update(vehicleDistance)
                     learningAnimalEncounter?.update(vehicleDistance)
                     learningSignWorld?.update(vehicleDistance)
@@ -656,9 +659,11 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 waterSurfaceWorld?.destroy()
                 shorelineWorld?.destroy()
                 worldLife?.destroy()
+                nearFieldCreatureWorld?.destroy()
                 vehicleFriend?.destroy()
                 vehicleFriend = null
                 worldLife = null
+                nearFieldCreatureWorld = null
                 roadsideWorld = null
                 waterSurfaceWorld = null
                 shorelineWorld = null
@@ -676,6 +681,9 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 }
                 worldLife = viewer.asset?.let {
                     WorldLifeSimulation(viewer.engine, viewer.scene, it).also { world -> world.build() }
+                }
+                nearFieldCreatureWorld = viewer.asset?.let {
+                    NearFieldCreatureWorld(context, viewer.engine, viewer.scene).also { world -> world.build() }
                 }
                 roadsideWorld = viewer.asset?.let {
                     RoadsideWorld(viewer.engine, viewer.scene, it).also { world -> world.build() }
@@ -1339,7 +1347,9 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         waterSurfaceWorld?.destroy()
         shorelineWorld?.destroy()
         worldLife?.destroy()
+        nearFieldCreatureWorld?.destroy()
         worldLife = null
+        nearFieldCreatureWorld = null
         childNPC?.destroy()
         childNPC = null
         learningAnimalEncounter?.destroy()
