@@ -9,10 +9,8 @@ import kotlin.math.sin
 /**
  * Near-field wildlife layer.
  *
- * Distant life remains the low-cost population mesh. When a supported authored
- * animal enters the readable roadside range, this layer swaps in one real
- * animated GLB and moves it with the same road coordinate system. This keeps
- * the world visually credible without attempting to keep hundreds of GLBs resident.
+ * Only verified packaged creature keys are eligible for real GLB presentation.
+ * The logical 1,000+ catalog remains independent from the authored binary pack.
  */
 internal class NearFieldCreatureWorld(
     context: Context,
@@ -20,6 +18,7 @@ internal class NearFieldCreatureWorld(
     scene: Scene
 ) {
     private val creature = CreatureGlbController(context, engine, scene)
+    private val packagedSpecies = CreatureAssetCoverage.packagedSpecies(context)
     private var activeSpecies: String? = null
     private var lastUpdateNanos = 0L
     private var lastCenter = Double.NaN
@@ -28,10 +27,11 @@ internal class NearFieldCreatureWorld(
         const val MIN_DISTANCE = 22.0
         const val MAX_DISTANCE = 58.0
         const val UPDATE_NANOS = 100_000_000L
-        // Only authored binaries are promoted into the near-field presentation.
-        // The current production bundle contains a real lion GLB; other catalog
-        // species remain on the distant-life path until their binaries land.
-        val SUPPORTED = setOf("lion")
+
+        // These are the real animated GLBs currently supplied by the production
+        // asset pipeline. A species is promoted only when its packaged binary is
+        // actually present in the release bundle.
+        val PROMOTABLE = setOf("lion", "deer", "fox", "horse", "wolf")
     }
 
     fun build(): Boolean = true
@@ -83,21 +83,29 @@ internal class NearFieldCreatureWorld(
         val seed = stableSeed(distanceBand)
         val biome = WorldDirector.profile(centerDistance + 30.0).biome
 
-        // Promote only a verified authored species to the real near-field layer.
-        // Forest is the first production habitat for the bundled lion GLB.
-        val species = when (biome) {
-            WorldDirector.Biome.FOREST -> if ((seed and 3L) != 0L) "lion" else null
-            else -> null
-        } ?: return null
+        val habitat = when (biome) {
+            WorldDirector.Biome.FOREST -> listOf("lion", "deer", "fox", "wolf")
+            WorldDirector.Biome.VILLAGE,
+            WorldDirector.Biome.MARKET -> listOf("horse")
+            else -> emptyList()
+        }
 
-        if (species !in SUPPORTED) return null
+        // Never substitute a placeholder: only an actually packaged binary can
+        // become a readable near-field creature.
+        val available = habitat.filter { it in PROMOTABLE && it in packagedSpecies }
+        if (available.isEmpty()) return null
 
+        val species = available[(seed ushr 8).mod(available.size.toLong()).toInt()]
         val spawnDistance = MIN_DISTANCE + ((seed ushr 12) % 37L).toDouble()
         val side = if ((seed and 1L) == 0L) 1.0 else -1.0
         val sample = RoadSpline.sampleRelative(centerDistance + spawnDistance, centerDistance)
         val lateral = when (species) {
             "lion" -> 11.0
-            else -> 14.0
+            "deer" -> 12.0
+            "fox" -> 10.0
+            "wolf" -> 11.0
+            "horse" -> 12.5
+            else -> 11.0
         } * side
 
         val x = sample.x + sin(sample.yaw) * lateral
@@ -105,14 +113,17 @@ internal class NearFieldCreatureWorld(
         val facing = sample.yaw + if (side > 0.0) -1.5708 else 1.5708
         val scale = when (species) {
             "lion" -> 1.18
-            else -> 0.86
+            "deer" -> 1.05
+            "fox" -> 0.78
+            "wolf" -> 0.95
+            "horse" -> 1.10
+            else -> 1.0
         }
 
         return Candidate(species, x, sample.y, z, facing, scale)
     }
 
     private fun stableSeed(value: Long): Long {
-        // Keep the seed arithmetic inside Kotlin Long's literal range on every compiler.
         var x = value * 31L + 17L
         x = x xor (x / 3L)
         x = x * 1103515245L + 12345L
