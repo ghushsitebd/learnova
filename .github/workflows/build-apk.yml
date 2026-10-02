@@ -319,9 +319,18 @@ jobs:
             set -eu
             AAPT2="$ANDROID_HOME/build-tools/36.0.0/aapt2"
             PACKAGE="com.learnova.app"
-            APK="$GITHUB_WORKSPACE/Learnova.apk"
+            # The emulator runner executes the script in its own shell context;
+            # do not assume GITHUB_WORKSPACE is exported there. Resolve the APK
+            # from the current checkout/workspace deterministically.
+            APK="$(find . -maxdepth 2 -type f -name 'Learnova.apk' -print -quit)"
+            if [ -z "$APK" ]; then
+              echo "::error::Release APK was not found from the smoke-test working directory."
+              echo "PWD=$(pwd)"
+              find . -maxdepth 3 -type f -name '*.apk' -print
+              exit 1
+            fi
 
-            test -r "$APK" || { echo "::error::Release APK is not readable at $APK"; pwd; ls -la "$GITHUB_WORKSPACE"; exit 1; }
+            test -r "$APK" || { echo "::error::Release APK is not readable at $APK"; pwd; ls -la; exit 1; }
             test -x "$AAPT2" || { echo "::error::aapt2 is not executable at $AAPT2"; exit 1; }
 
             BADGING="$("$AAPT2" dump badging "$APK")"
