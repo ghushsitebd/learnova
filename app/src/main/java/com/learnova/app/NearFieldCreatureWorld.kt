@@ -92,7 +92,9 @@ internal class NearFieldCreatureWorld(
                 2L -> "deer"
                 else -> null
             }
-            WorldDirector.Biome.PLAINS -> if ((seed and 1L) == 0L) "elephant" else "deer"
+            // Plateau is the closest authored open-land habitat in the current
+            // world director; keep the elephant/deer promotion deterministic.
+            WorldDirector.Biome.PLATEAU -> if ((seed and 1L) == 0L) "elephant" else "deer"
             else -> null
         } ?: return null
 
