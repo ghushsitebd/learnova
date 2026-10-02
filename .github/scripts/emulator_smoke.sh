@@ -8,7 +8,7 @@ PACKAGE="com.learnova.app"
 # Resolve the release APK from the checkout explicitly instead of relying on
 # GITHUB_WORKSPACE or per-line shell state.
 APK=""
-for candidate in "$GITHUB_WORKSPACE/Learnova.apk" "./Learnova.apk" "$(pwd)/Learnova.apk"; do
+for candidate in "./Learnova.apk" "$(pwd)/Learnova.apk" "${GITHUB_WORKSPACE:-}/Learnova.apk"; do
   if [ -f "$candidate" ]; then
     APK="$candidate"
     break
