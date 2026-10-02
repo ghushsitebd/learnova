@@ -118,9 +118,10 @@ internal class NearFieldCreatureWorld(
     }
 
     private fun stableSeed(value: Long): Long {
-        var x = value + -7046029254386353131L
-        x = (x xor (x ushr 30)) * -4658895280553007687L
-        x = (x xor (x ushr 27)) * -7723592293110705685L
-        return x xor (x ushr 31)
+        // Keep the seed arithmetic inside Kotlin Long's literal range on every compiler.
+        var x = value * 31L + 17L
+        x = x xor (x / 3L)
+        x = x * 1103515245L + 12345L
+        return x
     }
 }
