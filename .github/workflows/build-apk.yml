@@ -163,10 +163,10 @@ jobs:
         run: |
           set -euo pipefail
           python3 tools/fetch_creature_assets.py
-          test -s app/src/main/assets/creatures/lion.glb
-          test -s app/src/main/assets/creatures/tiger.glb
-          test -s app/src/main/assets/creatures/elephant.glb
           test -s app/src/main/assets/creatures/deer.glb
+          test -s app/src/main/assets/creatures/fox.glb
+          test -s app/src/main/assets/creatures/horse.glb
+          test -s app/src/main/assets/creatures/wolf.glb
           du -h app/src/main/assets/creatures/*.glb
 
       - name: Validate real creature animation assets
