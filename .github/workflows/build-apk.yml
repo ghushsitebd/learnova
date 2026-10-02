@@ -169,6 +169,11 @@ jobs:
           test -s app/src/main/assets/creatures/deer.glb
           du -h app/src/main/assets/creatures/*.glb
 
+      - name: Validate real creature animation assets
+        run: |
+          set -euo pipefail
+          python3 tools/validate_creature_assets.py
+
       - name: Build Release APK and AAB
         run: |
           set -euo pipefail
