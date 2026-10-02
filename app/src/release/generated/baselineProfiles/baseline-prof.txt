@@ -2320,9 +2320,9 @@ Lkotlin/ranges/ClosedRange;
 Lkotlin/ranges/IntProgression;
 SPLkotlin/ranges/IntProgression;-><clinit>()V
 HSPLkotlin/ranges/IntProgression;-><init>(III)V
-SPLkotlin/ranges/IntProgression;->getFirst()I
-SPLkotlin/ranges/IntProgression;->getLast()I
-SPLkotlin/ranges/IntProgression;->getStep()I
+HSPLkotlin/ranges/IntProgression;->getFirst()I
+HSPLkotlin/ranges/IntProgression;->getLast()I
+HSPLkotlin/ranges/IntProgression;->getStep()I
 SPLkotlin/ranges/IntProgression;->iterator()Ljava/util/Iterator;
 SPLkotlin/ranges/IntProgression;->iterator()Lkotlin/collections/IntIterator;
 Lkotlin/ranges/IntProgression$Companion;
