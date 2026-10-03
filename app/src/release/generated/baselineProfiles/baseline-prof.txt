@@ -1070,13 +1070,13 @@ SPLandroidx/lifecycle/ProcessLifecycleOwner;->activityPaused$lifecycle_process_r
 SPLandroidx/lifecycle/ProcessLifecycleOwner;->activityResumed$lifecycle_process_release()V
 SPLandroidx/lifecycle/ProcessLifecycleOwner;->activityStarted$lifecycle_process_release()V
 SPLandroidx/lifecycle/ProcessLifecycleOwner;->attach$lifecycle_process_release(Landroid/content/Context;)V
-PLandroidx/lifecycle/ProcessLifecycleOwner;->delayedPauseRunnable$lambda$0(Landroidx/lifecycle/ProcessLifecycleOwner;)V
-PLandroidx/lifecycle/ProcessLifecycleOwner;->dispatchPauseIfNeeded$lifecycle_process_release()V
-PLandroidx/lifecycle/ProcessLifecycleOwner;->dispatchStopIfNeeded$lifecycle_process_release()V
+SPLandroidx/lifecycle/ProcessLifecycleOwner;->delayedPauseRunnable$lambda$0(Landroidx/lifecycle/ProcessLifecycleOwner;)V
+SPLandroidx/lifecycle/ProcessLifecycleOwner;->dispatchPauseIfNeeded$lifecycle_process_release()V
+SPLandroidx/lifecycle/ProcessLifecycleOwner;->dispatchStopIfNeeded$lifecycle_process_release()V
 SPLandroidx/lifecycle/ProcessLifecycleOwner;->getLifecycle()Landroidx/lifecycle/Lifecycle;
 Landroidx/lifecycle/ProcessLifecycleOwner$$ExternalSyntheticLambda0;
 SPLandroidx/lifecycle/ProcessLifecycleOwner$$ExternalSyntheticLambda0;-><init>(Landroidx/lifecycle/ProcessLifecycleOwner;)V
-PLandroidx/lifecycle/ProcessLifecycleOwner$$ExternalSyntheticLambda0;->run()V
+SPLandroidx/lifecycle/ProcessLifecycleOwner$$ExternalSyntheticLambda0;->run()V
 Landroidx/lifecycle/ProcessLifecycleOwner$Api29Impl;
 SPLandroidx/lifecycle/ProcessLifecycleOwner$Api29Impl;-><clinit>()V
 SPLandroidx/lifecycle/ProcessLifecycleOwner$Api29Impl;-><init>()V
@@ -1861,7 +1861,7 @@ Lcom/learnova/app/LearnovaNatureAudio;
 SPLcom/learnova/app/LearnovaNatureAudio;-><init>()V
 HPLcom/learnova/app/LearnovaNatureAudio;->setEnvironment(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 SPLcom/learnova/app/LearnovaNatureAudio;->start()V
-PLcom/learnova/app/LearnovaNatureAudio;->stop()V
+SPLcom/learnova/app/LearnovaNatureAudio;->stop()V
 Lcom/learnova/app/LearnovaNatureAudio$$ExternalSyntheticLambda0;
 SPLcom/learnova/app/LearnovaNatureAudio$$ExternalSyntheticLambda0;-><init>(Lcom/learnova/app/LearnovaNatureAudio;Landroid/media/AudioTrack;)V
 SPLcom/learnova/app/LearnovaNatureAudio$$ExternalSyntheticLambda0;->run()V
@@ -1906,7 +1906,7 @@ SPLcom/learnova/app/LearnovaVoice;->playChildLine(Ljava/util/List;I)V
 SPLcom/learnova/app/LearnovaVoice;->playChildSequence(Ljava/util/List;)V
 PLcom/learnova/app/LearnovaVoice;->playSalamExchange()V
 HSPLcom/learnova/app/LearnovaVoice;->selectCharacterVoice(Lcom/learnova/app/CharacterVoiceProfile;)V
-PLcom/learnova/app/LearnovaVoice;->speak(Ljava/lang/String;Ljava/util/Locale;)V
+SPLcom/learnova/app/LearnovaVoice;->speak(Ljava/lang/String;Ljava/util/Locale;)V
 SPLcom/learnova/app/LearnovaVoice;->speakCharacter(Ljava/lang/String;Ljava/lang/String;)V
 HSPLcom/learnova/app/LearnovaVoice;->speakChildFallback(Ljava/lang/String;Ljava/lang/String;)V
 PLcom/learnova/app/LearnovaVoice;->speakInstruction(Z)V
@@ -2304,7 +2304,7 @@ Lkotlin/random/RandomKt;
 SPLkotlin/random/RandomKt;->Random(I)Lkotlin/random/Random;
 HPLkotlin/random/RandomKt;->checkRangeBounds(DD)V
 PLkotlin/random/RandomKt;->checkRangeBounds(II)V
-HPLkotlin/random/RandomKt;->takeUpperBits(II)I
+PLkotlin/random/RandomKt;->takeUpperBits(II)I
 Lkotlin/random/XorWowRandom;
 SPLkotlin/random/XorWowRandom;-><clinit>()V
 SPLkotlin/random/XorWowRandom;-><init>(II)V
@@ -2322,7 +2322,7 @@ SPLkotlin/ranges/IntProgression;-><clinit>()V
 HSPLkotlin/ranges/IntProgression;-><init>(III)V
 SPLkotlin/ranges/IntProgression;->getFirst()I
 SPLkotlin/ranges/IntProgression;->getLast()I
-SPLkotlin/ranges/IntProgression;->getStep()I
+HSPLkotlin/ranges/IntProgression;->getStep()I
 SPLkotlin/ranges/IntProgression;->iterator()Ljava/util/Iterator;
 SPLkotlin/ranges/IntProgression;->iterator()Lkotlin/collections/IntIterator;
 Lkotlin/ranges/IntProgression$Companion;
