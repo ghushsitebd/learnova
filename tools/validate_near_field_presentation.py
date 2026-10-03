@@ -13,9 +13,9 @@ def require(text, pattern, label):
         raise SystemExit(f"near-field contract failed: {label}")
 
 require(world, r"const val MIN_DISTANCE\s*=\s*22\.0", "near-field minimum distance")
-require(world, r"const val MAX_DISTANCE\s*=\s*68\.0", "near-field maximum distance"
+require(world, r"const val MAX_DISTANCE\s*=\s*68\.0", "near-field maximum distance")
 require(world, r"private val creatures = Array\(5\) \{ CreatureGlbController\(context, engine, scene\) \}", "five concurrent near-field slots")
-require(world, r"private val activeSpecies = arrayOfNulls<String>\(5\)", "five-slot active state"))
+require(world, r"private val activeSpecies = arrayOfNulls<String>\(5\)", "five-slot active state")
 require(world, r"creatures\[index\]\.hide\(\)", "out-of-range hide")
 require(world, r"activeSpecies\[index\]\s*=\s*null", "slot state cleanup")
 require(world, r"creatures\[index\]\.show\(\s*species,\s*candidate\.x,\s*candidate\.y,\s*candidate\.z,\s*candidate\.yaw,\s*candidate\.scale\s*\)", "near-field presentation")
