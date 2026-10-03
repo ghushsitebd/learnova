@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic source-level contract checks for the near-field creature presentation layer."""
+"""Deterministic source-level contract checks for near-field creature presentation."""
 from pathlib import Path
 import re
 
@@ -14,10 +14,12 @@ def require(text, pattern, label):
 
 require(world, r"const val MIN_DISTANCE\s*=\s*22\.0", "near-field minimum distance")
 require(world, r"const val MAX_DISTANCE\s*=\s*58\.0", "near-field maximum distance")
-require(world, r"creatures\[index\]\.hide\(\).*?activeSpecies\[index\]\s*=\s*null", "out-of-range hide")
-require(world, r"creatures\[index\]\.show\(species, candidate\.x, candidate\.y, candidate\.z, candidate\.yaw, candidate\.scale\)", "near-field presentation")
-require(world, r"creatures\[index\]\.move\(candidate\.x, candidate\.y, candidate\.z, candidate\.yaw, candidate\.scale\)", "continuous presentation movement")
-require(world, r"val candidatesPerBiome|private fun speciesPool", "deterministic habitat species selection")
+require(world, r"creatures\[index\]\.hide\(\)", "out-of-range hide")
+require(world, r"activeSpecies\[index\]\s*=\s*null", "slot state cleanup")
+require(world, r"creatures\[index\]\.show\(\s*species,\s*candidate\.x,\s*candidate\.y,\s*candidate\.z,\s*candidate\.yaw,\s*candidate\.scale\s*\)", "near-field presentation")
+require(world, r"creatures\[index\]\.move\(\s*candidate\.x,\s*candidate\.y,\s*candidate\.z,\s*candidate\.yaw,\s*candidate\.scale\s*\)", "continuous presentation movement")
+require(world, r"val pool\s*=\s*speciesPool\(biome\)", "deterministic habitat species selection")
+require(world, r"private fun speciesPool", "habitat species pool")
 require(controller, r"assetLoader\.createAsset\(ByteBuffer\.wrap\(bytes\)\)", "authored GLB loading")
 require(controller, r"resourceLoader!!\.loadResources\(asset\)", "GLB resource upload")
 require(controller, r"activeAnimator\s*=\s*asset\.instance\?\.animator\?\.takeIf", "animation binding")
