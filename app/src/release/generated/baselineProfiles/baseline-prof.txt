@@ -1870,7 +1870,7 @@ SPLcom/learnova/app/LearnovaProgressionSystem;-><init>()V
 Lcom/learnova/app/LearnovaQuranCatalog;
 SPLcom/learnova/app/LearnovaQuranCatalog;-><clinit>()V
 SPLcom/learnova/app/LearnovaQuranCatalog;-><init>()V
-HSPLcom/learnova/app/LearnovaQuranCatalog;->getLessons()Ljava/util/List;
+SPLcom/learnova/app/LearnovaQuranCatalog;->getLessons()Ljava/util/List;
 SPLcom/learnova/app/LearnovaQuranCatalog;->lessons_delegate$lambda$1()Ljava/util/List;
 Lcom/learnova/app/LearnovaQuranCatalog$$ExternalSyntheticLambda0;
 SPLcom/learnova/app/LearnovaQuranCatalog$$ExternalSyntheticLambda0;-><init>()V
@@ -1995,8 +1995,7 @@ Lcom/learnova/app/QuranSurahLesson;
 SPLcom/learnova/app/QuranSurahLesson;-><init>(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 Lcom/learnova/app/RoadsideLearningDirector;
 SPLcom/learnova/app/RoadsideLearningDirector;-><init>()V
-SPLcom/learnova/app/RoadsideLearningDirector;->lessonForLevel(I)Lcom/learnova/app/RoadsideLearningDirector$SignLesson;
-SPLcom/learnova/app/RoadsideLearningDirector;->maybeStop(IF)Lcom/learnova/app/RoadsideLearningDirector$SignLesson;
+HPLcom/learnova/app/RoadsideLearningDirector;->maybeStop(IF)Lcom/learnova/app/RoadsideLearningDirector$SignLesson;
 SPLcom/learnova/app/RoadsideLearningDirector;->resetForLevel(I)V
 Lcom/learnova/app/RoadsideLearningDirector$SignLesson;
 SPLcom/learnova/app/RoadsideLearningDirector$SignLesson;-><init>(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;)V
@@ -2024,7 +2023,7 @@ SPLcom/learnova/app/SmartScene;->getEnvironment()Ljava/lang/String;
 SPLcom/learnova/app/SmartScene;->getId()I
 SPLcom/learnova/app/SmartScene;->getRegion()Ljava/lang/String;
 SPLcom/learnova/app/SmartScene;->getTime()Ljava/lang/String;
-SPLcom/learnova/app/SmartScene;->getWeather()Ljava/lang/String;
+HSPLcom/learnova/app/SmartScene;->getWeather()Ljava/lang/String;
 Lcom/learnova/app/VehicleAssetResolver;
 SPLcom/learnova/app/VehicleAssetResolver;-><init>(Landroid/content/Context;)V
 Lcom/learnova/app/VehicleCatalog;
@@ -2172,7 +2171,7 @@ Lkotlin/collections/CollectionsKt;
 Lkotlin/collections/CollectionsKt__CollectionsJVMKt;
 Lkotlin/collections/CollectionsKt__CollectionsKt;
 SPLkotlin/collections/CollectionsKt__CollectionsKt;->emptyList()Ljava/util/List;
-HSPLkotlin/collections/CollectionsKt__CollectionsKt;->getLastIndex(Ljava/util/List;)I
+SPLkotlin/collections/CollectionsKt__CollectionsKt;->getLastIndex(Ljava/util/List;)I
 SPLkotlin/collections/CollectionsKt__CollectionsKt;->listOf([Ljava/lang/Object;)Ljava/util/List;
 Lkotlin/collections/CollectionsKt__IterablesKt;
 SPLkotlin/collections/CollectionsKt__IterablesKt;->collectionSizeOrDefault(Ljava/lang/Iterable;I)I
@@ -2372,7 +2371,7 @@ HSPLkotlin/text/StringsKt__StringsJVMKt;->regionMatches(Ljava/lang/String;ILjava
 SPLkotlin/text/StringsKt__StringsJVMKt;->replace$default(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Ljava/lang/String;
 SPLkotlin/text/StringsKt__StringsJVMKt;->replace(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Ljava/lang/String;
 Lkotlin/text/StringsKt__StringsKt;
-SPLkotlin/text/StringsKt__StringsKt;->contains$default(Ljava/lang/CharSequence;Ljava/lang/CharSequence;ZILjava/lang/Object;)Z
+HSPLkotlin/text/StringsKt__StringsKt;->contains$default(Ljava/lang/CharSequence;Ljava/lang/CharSequence;ZILjava/lang/Object;)Z
 HSPLkotlin/text/StringsKt__StringsKt;->contains(Ljava/lang/CharSequence;Ljava/lang/CharSequence;Z)Z
 HSPLkotlin/text/StringsKt__StringsKt;->indexOf$StringsKt__StringsKt$default(Ljava/lang/CharSequence;Ljava/lang/CharSequence;IIZZILjava/lang/Object;)I
 HSPLkotlin/text/StringsKt__StringsKt;->indexOf$StringsKt__StringsKt(Ljava/lang/CharSequence;Ljava/lang/CharSequence;IIZZ)I
