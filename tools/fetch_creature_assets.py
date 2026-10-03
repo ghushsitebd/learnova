@@ -17,22 +17,22 @@ SOURCES = {
     "deer": (
         "Deer",
         "https://media.githubusercontent.com/media/StateDev08/War-of-the-Kindom-Mobile/"
-        "9b5a2827ed8f2b7adf657ddf7e47cb026bab0b39/client/assets/models/quaternius/animals/deer.glb",
+        "main/client/assets/models/quaternius/animals/deer.glb",
     ),
     "fox": (
         "Fox",
         "https://media.githubusercontent.com/media/StateDev08/War-of-the-Kindom-Mobile/"
-        "9b5a2827ed8f2b7adf657ddf7e47cb026bab0b39/client/assets/models/quaternius/animals/fox.glb",
+        "main/client/assets/models/quaternius/animals/fox.glb",
     ),
     "horse": (
         "Horse",
         "https://media.githubusercontent.com/media/fayipon/racehorse/"
-        "4a741208154f49b252a5f6d9be6d4ea5dc322f43/godot/assets/quaternius/horse.glb",
+        "6dff4c0b42d232c0fc7c817cad992dcaff0b0553/godot/assets/quaternius/horse.glb",
     ),
     "wolf": (
         "Wolf",
         "https://media.githubusercontent.com/media/StateDev08/War-of-the-Kindom-Mobile/"
-        "9b5a2827ed8f2b7adf657ddf7e47cb026bab0b39/client/assets/models/quaternius/animals/wolf.glb",
+        "main/client/assets/models/quaternius/animals/wolf.glb",
     ),
 }
 
