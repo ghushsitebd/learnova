@@ -32,7 +32,8 @@ internal class CreatureGlbController(
     private var activeAnimator: Animator? = null
     private var animationStartSeconds = 0.0
     private var activeAnimationIndex = 0
-    private var activeAnimationDuration = 0f
+    private var animationDurations = FloatArray(0)
+    private var animationCycleDuration = 0.0
 
     fun show(species: String, x: Double, y: Double, z: Double, yaw: Double, scale: Double): Boolean {
         val bytes = resolver.load(species) ?: return false
@@ -49,7 +50,12 @@ internal class CreatureGlbController(
             activeAsset = asset
             activeAnimator = asset.instance?.animator?.takeIf { it.animationCount > 0 }
             activeAnimationIndex = 0
-            activeAnimationDuration = activeAnimator?.getAnimationDuration(0) ?: 0f
+            animationDurations = activeAnimator?.let { animator ->
+                FloatArray(animator.animationCount) { index ->
+                    animator.getAnimationDuration(index).coerceAtLeast(0f)
+                }
+            } ?: FloatArray(0)
+            animationCycleDuration = animationDurations.sumOf { it.toDouble() }
             animationStartSeconds = System.nanoTime() * 1e-9
             true
         }.getOrElse {
@@ -64,7 +70,8 @@ internal class CreatureGlbController(
         activeAsset = null
         activeAnimator = null
         activeAnimationIndex = 0
-        activeAnimationDuration = 0f
+        animationDurations = FloatArray(0)
+        animationCycleDuration = 0.0
     }
 
     fun move(x: Double, y: Double, z: Double, yaw: Double, scale: Double) {
@@ -72,8 +79,24 @@ internal class CreatureGlbController(
         position(asset, x, y, z, yaw, scale)
         val animator = activeAnimator ?: return
         val elapsed = (System.nanoTime() * 1e-9 - animationStartSeconds).coerceAtLeast(0.0)
-        val duration = activeAnimationDuration.toDouble()
-        if (duration > 0.0) animator.applyAnimation(activeAnimationIndex, (elapsed % duration).toFloat())
+        val cycle = animationCycleDuration
+        if (cycle > 0.0) {
+            var cursor = elapsed % cycle
+            var selected = 0
+            for (index in animationDurations.indices) {
+                val duration = animationDurations[index].toDouble()
+                if (cursor < duration || index == animationDurations.lastIndex) {
+                    selected = index
+                    break
+                }
+                cursor -= duration
+            }
+            activeAnimationIndex = selected
+            val clipDuration = animationDurations[selected].toDouble()
+            if (clipDuration > 0.0) {
+                animator.applyAnimation(selected, cursor.coerceIn(0.0, clipDuration).toFloat())
+            }
+        }
         animator.updateBoneMatrices()
     }
 
