@@ -46,7 +46,7 @@ internal class NearFieldCreatureWorld(
         lastUpdateNanos = now
 
         for (index in 0 until SLOT_COUNT) {
-            val candidate = candidate(centerDistance, index)
+            val candidate = candidate(centerDistance, index, now)
             if (candidate == null) {
                 if (activeSpecies[index] != null) {
                     creatures[index].hide()
@@ -98,7 +98,7 @@ internal class NearFieldCreatureWorld(
         val scale: Double
     )
 
-    private fun candidate(centerDistance: Double, slot: Int): Candidate? {
+    private fun candidate(centerDistance: Double, slot: Int, nowNanos: Long): Candidate? {
         val distanceBand = kotlin.math.floor(centerDistance / 72.0).toLong()
         val seed = stableSeed(distanceBand)
         val biome = WorldDirector.profile(centerDistance + 30.0).biome
@@ -116,7 +116,22 @@ internal class NearFieldCreatureWorld(
 
         // Keep the two authored animals on opposite roadside sides when possible.
         val side = if (((seed + slot.toLong()) and 1L) == 0L) 1.0 else -1.0
-        val sample = RoadSpline.sampleRelative(centerDistance + spawnDistance, centerDistance)
+        val phase = stablePhase(seed, slot, species)
+        val elapsedSeconds = nowNanos * 1e-9
+        val motionSpeed = when (species) {
+            "horse" -> 0.34
+            "deer" -> 0.28
+            "wolf" -> 0.24
+            "fox" -> 0.20
+            else -> 0.22
+        }
+        // Smooth, bounded wandering keeps movement readable and naturally returns
+        // the animal toward its roadside area instead of teleporting.
+        val walkOffset = sin(elapsedSeconds * motionSpeed + phase) * 4.0
+        val sample = RoadSpline.sampleRelative(
+            centerDistance + spawnDistance + walkOffset,
+            centerDistance
+        )
         val lateral = when (species) {
             "horse" -> 13.0
             "wolf" -> 12.0
@@ -125,9 +140,13 @@ internal class NearFieldCreatureWorld(
             else -> 12.0
         } * side
 
-        val x = sample.x + sin(sample.yaw) * lateral
-        val z = sample.z + cos(sample.yaw) * lateral
-        val facing = sample.yaw + if (side > 0.0) -1.5708 else 1.5708
+        val lateralWander = sin(elapsedSeconds * motionSpeed * 0.72 + phase * 1.37) * 1.6
+        val x = sample.x + sin(sample.yaw) * (lateral + lateralWander)
+        val z = sample.z + cos(sample.yaw) * (lateral + lateralWander)
+        val travelSign = cos(elapsedSeconds * motionSpeed + phase)
+        val facing = sample.yaw +
+            if (travelSign >= 0.0) 0.0 else kotlin.math.PI +
+            if (side > 0.0) -1.5708 else 1.5708
         val scale = when (species) {
             "horse" -> 1.18
             "wolf" -> 1.10
@@ -137,6 +156,12 @@ internal class NearFieldCreatureWorld(
         }
 
         return Candidate(species, x, sample.y, z, facing, scale)
+    }
+
+    private fun stablePhase(seed: Long, slot: Int, species: String): Double {
+        val speciesHash = species.fold(0L) { acc, ch -> acc * 33L + ch.code.toLong() }
+        val mixed = stableSeed(seed xor (slot.toLong() * 97L) xor speciesHash)
+        return ((mixed ushr 11) % 6283L) / 1000.0
     }
 
     private fun speciesPool(biome: WorldDirector.Biome): List<String> = when (biome) {
