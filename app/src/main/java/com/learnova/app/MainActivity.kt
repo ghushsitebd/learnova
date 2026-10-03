@@ -106,6 +106,12 @@ class MainActivity : AppCompatActivity() {
         private var levelComplete = false
         private val minimumLevelDurationMs = 180_000L
         private var levelElapsedMs = 0L
+        private val learningSessionDurationMs = 90_000L
+        private val learningActivityDurationMs = 18_000L
+        private var learningSessionActive = false
+        private var learningSessionElapsedMs = 0L
+        private var learningActivityIndex = 0
+        private var lastLearningActivityMs = 0L
         private var lastGameplayTickMs = 0L
         private var lastProgressSaveMs = 0L
         private var lessonStage = 0
@@ -203,6 +209,7 @@ class MainActivity : AppCompatActivity() {
                         return true
                     }
                     if (handleQuranChoice(x, y, w, h)) return true
+                    if (learningSessionActive) return true
                     if (currentRoadsideSign != null) { if (!listeningForChild) startChildListening(); return true }
                     // The vehicle badge opens the real 100-slot garage.
                     if (y < h * 0.22f && x > w * 0.76f) {
@@ -404,9 +411,9 @@ class MainActivity : AppCompatActivity() {
                 distance += speed
                 levelProgress += speed / LearnovaUnlimitedWorld.level(level).targetDistance * 0.006f
                 levelProgress = levelProgress.coerceAtMost(1f)
-
-                // Between learning stops, inject small world moments so the three-minute
-                // journey keeps changing without interrupting the drive.
+                // The three-minute phase is driving/adventure only. Learning never
+                // interrupts the journey. After the driving target is reached, the
+                // separate 90-second learning phase starts automatically.
                 if (currentRoadsideSign == null && !levelComplete) {
                     val journeyEvent = journeyEventDirector.poll(levelElapsedMs, running)
                     if (journeyEvent != null) {
@@ -420,41 +427,10 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-                val roadsideSign = roadsideDirector.maybeStop(level, levelProgress)
-                if (roadsideSign != null && currentRoadsideSign == null && !levelComplete) {
-                    currentRoadsideSign = roadsideSign
-                    threeDWorld.showLearningSign()
-                    companionInteractionStart = System.currentTimeMillis()
-                    companionInteractionUntil = companionInteractionStart + 4200L
-
-                    // The discovery begins in the world itself: show the matching
-                    // animal as soon as the vehicle reaches the Magic Learning Point.
-                    // The child can see/hear the object before being invited to speak,
-                    // keeping learning inside the journey instead of opening a quiz.
-                    roadsideSign.visualKey?.let { threeDWorld.triggerLearningAnimal(it) }
-
-                    running = false
-                    speed = 0f
-                    threeDWorld.setDriving(false)
-                    natureAudio.stop()
-                    voice.speakCharacter(currentFriendName(), "Look! " + roadsideSign.english + "!")
-                    postDelayed({ if (!isFinishing && currentRoadsideSign != null) startChildListening() }, 450L)
-
-                }
-
                 if (levelProgress >= 1f && levelElapsedMs >= minimumLevelDurationMs && !levelComplete) {
-                    // A journey finishes by driving, not by answering a question.
-                    // Pause naturally for a short celebration, then open the next
-                    // journey automatically so the child never needs a NEXT button.
-                    levelComplete = true
-                    celebrationUntil = System.currentTimeMillis() + 1400L
-                    running = false
-                    steeringInput = 0f
-                    threeDWorld.setDriving(false)
-                    natureAudio.stop()
-                    saveProgress()
-                    voice.speakInstruction(true)
+                    startAutomaticLearningSession()
                 }
+
 
                 // Lateral inertia makes the body settle into a curve instead of
                 // snapping sideways.
@@ -483,16 +459,31 @@ class MainActivity : AppCompatActivity() {
                 laneOffset += (-laneOffset) * 0.06f
                 suspensionVelocity *= 0.70f
                 suspensionOffset *= 0.78f
-                if (levelProgress >= 1f && levelElapsedMs >= minimumLevelDurationMs && !levelComplete) {
-                    levelComplete = true
-                    celebrationUntil = System.currentTimeMillis() + 1400L
+                if (levelProgress >= 1f && levelElapsedMs >= minimumLevelDurationMs && !levelComplete && !learningSessionActive) {
+                    startAutomaticLearningSession()
                 }
             }
 
-            // Journey completion advances automatically after a short, non-blocking
-            // celebration. Learning remains an event inside the journey instead of
-            // being the gate that decides when driving can continue.
-            if (levelComplete && celebrationUntil > 0L) {
+            // The level advances only after the mandatory 90-second learning phase.
+            if (learningSessionActive) {
+                val now = System.currentTimeMillis()
+                val delta = if (lastLearningActivityMs == 0L) 0L
+                    else (now - lastLearningActivityMs).coerceIn(0L, 1000L)
+                lastLearningActivityMs = now
+                learningSessionElapsedMs = (learningSessionElapsedMs + delta).coerceAtMost(learningSessionDurationMs)
+
+                val nextActivityAt = (learningActivityIndex + 1) * learningActivityDurationMs
+                if (learningSessionElapsedMs >= nextActivityAt && learningActivityIndex < 4) {
+                    learningActivityIndex += 1
+                    beginAutomaticLearningActivity()
+                }
+
+                if (learningSessionElapsedMs >= learningSessionDurationMs) {
+                    finishAutomaticLearningSession()
+                } else {
+                    postInvalidateOnAnimation()
+                }
+            } else if (levelComplete && celebrationUntil > 0L) {
                 val now = System.currentTimeMillis()
                 if (now >= celebrationUntil) {
                     celebrationUntil = 0L
@@ -2625,6 +2616,60 @@ class MainActivity : AppCompatActivity() {
                 "gazelle", "falcon", "deer", "horse", "wolf" -> threeDWorld.triggerLearningAnimal(lesson.visualKey)
             }
             voice.speakSmartLesson(lesson)
+        }
+
+        private fun startAutomaticLearningSession() {
+            if (learningSessionActive || levelComplete) return
+            learningSessionActive = true
+            learningSessionElapsedMs = 0L
+            learningActivityIndex = 0
+            lastLearningActivityMs = System.currentTimeMillis()
+            currentRoadsideSign = null
+            listeningForChild = false
+            childVoiceRecognizer.stop()
+            running = false
+            speed = 0f
+            levelProgress = 1f
+            threeDWorld.setDriving(false)
+            threeDWorld.hideLearningSign()
+            natureAudio.stop()
+            voice.speakCharacter(currentFriendName(), "Great driving! Now let's learn together for one minute and thirty seconds.")
+            beginAutomaticLearningActivity()
+            saveProgress()
+            invalidate()
+        }
+
+        private fun beginAutomaticLearningActivity() {
+            val sign = roadsideDirector.lessonForLearningSession(level, learningActivityIndex)
+            currentRoadsideSign = sign
+            threeDWorld.showLearningSign()
+            sign.visualKey?.let { threeDWorld.triggerLearningAnimal(it) }
+            voice.speakCharacter(
+                currentFriendName(),
+                sign.english + ". " + sign.bangla + ". " + sign.arabic + "."
+            )
+            postDelayed({
+                if (!isFinishing && learningSessionActive) {
+                    voice.speak(sign.prompt, java.util.Locale.US)
+                }
+            }, 900L)
+            invalidate()
+        }
+
+        private fun finishAutomaticLearningSession() {
+            learningSessionActive = false
+            learningSessionElapsedMs = 0L
+            learningActivityIndex = 0
+            lastLearningActivityMs = 0L
+            listeningForChild = false
+            childVoiceRecognizer.stop()
+            threeDWorld.hideLearningSign()
+            currentRoadsideSign = null
+            levelComplete = true
+            celebrationUntil = System.currentTimeMillis() + 1400L
+            saveProgress()
+            voice.speakCharacter(currentFriendName(), "Wonderful! Learning time is complete. Let's go!")
+            postInvalidateOnAnimation()
         }
 
         private fun nextLesson() {
