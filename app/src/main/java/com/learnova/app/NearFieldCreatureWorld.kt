@@ -141,8 +141,12 @@ internal class NearFieldCreatureWorld(
         } * side
 
         val lateralWander = sin(elapsedSeconds * motionSpeed * 0.72 + phase * 1.37) * 1.6
-        val x = sample.x + sin(sample.yaw) * (lateral + lateralWander)
-        val z = sample.z + cos(sample.yaw) * (lateral + lateralWander)
+        // RoadSpline uses +Z as forward. The roadside normal is therefore
+        // (cos(yaw), -sin(yaw)); using the tangent here would place animals
+        // along the carriageway instead of beside it at near-field range.
+        val roadsideOffset = lateral + lateralWander
+        val x = sample.x + cos(sample.yaw) * roadsideOffset
+        val z = sample.z - sin(sample.yaw) * roadsideOffset
         val travelSign = cos(elapsedSeconds * motionSpeed + phase)
         val facing = sample.yaw +
             if (travelSign >= 0.0) 0.0 else kotlin.math.PI +
