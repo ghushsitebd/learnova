@@ -126,6 +126,13 @@ jobs:
 
           echo "Signing keystore normalized successfully."
 
+      - name: Fetch verified real vehicle GLB assets
+        run: |
+          set -euo pipefail
+          python3 tools/fetch_vehicle_assets.py
+          test -s app/src/main/assets/vehicles/vehicle_001_city_car.glb
+          test -s app/src/main/assets/vehicles/vehicle_040_box_truck.glb
+
       - name: Validate vehicle asset contracts
         run: |
           set -euo pipefail
