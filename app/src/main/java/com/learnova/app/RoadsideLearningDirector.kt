@@ -46,13 +46,30 @@ internal class RoadsideLearningDirector {
         SignLesson("car", "CAR", null, "গাড়ি", "سيارة", "Say: car", setOf("car", "কার", "গাড়ি", "سيارة"))
     )
 
+    // Learning uses habitat-aware animal rosters so each 90-second chapter
+    // feels like a real discovery in the world instead of a random vocabulary list.
+    // These keys are limited to verified creature keys already consumed by the renderer.
+    private val habitatRosters = listOf(
+        listOf("fox", "deer", "bear", "monkey", "tiger"),
+        listOf("lion", "elephant", "giraffe", "zebra", "gazelle"),
+        listOf("horse", "cat", "dog", "rabbit", "monkey"),
+        listOf("camel", "gazelle", "falcon", "fox", "rabbit"),
+        listOf("fish", "elephant", "deer", "parrot", "monkey"),
+        listOf("wolf", "bear", "deer", "falcon", "rabbit")
+    )
+
+    private val lessonByKey = lessons.associateBy { it.key }
+
     private var lastLevel = -1
     private var shown = false
 
     fun lessonForLevel(level: Int): SignLesson = lessons[(level - 1).mod(lessons.size)]
 
-    fun lessonForLearningSession(level: Int, activityIndex: Int): SignLesson =
-        lessons[(level - 1 + activityIndex * 5).mod(lessons.size)]
+    fun lessonForLearningSession(level: Int, activityIndex: Int): SignLesson {
+        val roster = habitatRosters[(level - 1).mod(habitatRosters.size)]
+        val key = roster[activityIndex.mod(roster.size)]
+        return lessonByKey.getValue(key)
+    }
 
     fun maybeStop(level: Int, progress: Float): SignLesson? {
         if (level != lastLevel) {
