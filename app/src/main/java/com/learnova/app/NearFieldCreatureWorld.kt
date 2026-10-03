@@ -9,30 +9,32 @@ import kotlin.math.sin
 /**
  * Near-field wildlife layer.
  *
- * Distant life remains the low-cost population mesh. When a supported authored
- * animal enters the readable roadside range, this layer swaps in one real
- * animated GLB and moves it with the same road coordinate system. This keeps
- * the world visually credible without attempting to keep hundreds of GLBs resident.
+ * Distant life remains the low-cost population mesh. When verified authored
+ * animals enter readable roadside range, this layer streams up to two real
+ * animated GLBs at once. Two bounded slots add visible wildlife variety while
+ * keeping resident authored assets small enough for mobile rendering.
  */
 internal class NearFieldCreatureWorld(
     context: Context,
     engine: Engine,
     scene: Scene
 ) {
-    private val creature = CreatureGlbController(context, engine, scene)
+    private val creatures = arrayOf(
+        CreatureGlbController(context, engine, scene),
+        CreatureGlbController(context, engine, scene)
+    )
     private val packagedSpecies = CreatureAssetCoverage.packagedSpecies(context)
-    private var activeSpecies: String? = null
+    private val activeSpecies = arrayOfNulls<String>(2)
     private var lastUpdateNanos = 0L
-    private var lastCenter = Double.NaN
 
     private companion object {
         const val MIN_DISTANCE = 22.0
         const val MAX_DISTANCE = 58.0
         const val UPDATE_NANOS = 100_000_000L
+        const val SLOT_COUNT = 2
 
         // Only authored binaries are promoted into the near-field presentation.
-        // These species are backed by the production asset manifest; unsupported
-        // catalog entries remain on the lightweight distant-life path.
+        // Unsupported catalog entries remain on the lightweight distant-life path.
         val SUPPORTED = setOf("deer", "fox", "horse", "wolf")
     }
 
@@ -43,32 +45,48 @@ internal class NearFieldCreatureWorld(
         if (now - lastUpdateNanos < UPDATE_NANOS) return
         lastUpdateNanos = now
 
-        val candidate = candidate(centerDistance)
-        if (candidate == null) {
-            if (activeSpecies != null) {
-                creature.hide()
-                activeSpecies = null
+        for (index in 0 until SLOT_COUNT) {
+            val candidate = candidate(centerDistance, index)
+            if (candidate == null) {
+                if (activeSpecies[index] != null) {
+                    creatures[index].hide()
+                    activeSpecies[index] = null
+                }
+                continue
             }
-            lastCenter = centerDistance
-            return
-        }
 
-        val species = candidate.species
-        if (species != activeSpecies) {
-            creature.hide()
-            activeSpecies = null
-            if (creature.show(species, candidate.x, candidate.y, candidate.z, candidate.yaw, candidate.scale)) {
-                activeSpecies = species
+            val species = candidate.species
+            if (species != activeSpecies[index]) {
+                creatures[index].hide()
+                activeSpecies[index] = null
+                if (creatures[index].show(
+                        species,
+                        candidate.x,
+                        candidate.y,
+                        candidate.z,
+                        candidate.yaw,
+                        candidate.scale
+                    )
+                ) {
+                    activeSpecies[index] = species
+                }
+            } else {
+                creatures[index].move(
+                    candidate.x,
+                    candidate.y,
+                    candidate.z,
+                    candidate.yaw,
+                    candidate.scale
+                )
             }
-        } else {
-            creature.move(candidate.x, candidate.y, candidate.z, candidate.yaw, candidate.scale)
         }
-        lastCenter = centerDistance
     }
 
     fun destroy() {
-        creature.destroy()
-        activeSpecies = null
+        for (index in 0 until SLOT_COUNT) {
+            creatures[index].destroy()
+            activeSpecies[index] = null
+        }
     }
 
     private data class Candidate(
@@ -80,35 +98,31 @@ internal class NearFieldCreatureWorld(
         val scale: Double
     )
 
-    private fun candidate(centerDistance: Double): Candidate? {
+    private fun candidate(centerDistance: Double, slot: Int): Candidate? {
         val distanceBand = kotlin.math.floor(centerDistance / 72.0).toLong()
         val seed = stableSeed(distanceBand)
         val biome = WorldDirector.profile(centerDistance + 30.0).biome
+        val pool = speciesPool(biome)
+        if (pool.isEmpty()) return null
 
-        // Select only a verified authored species for the active habitat.
-        val species = when (biome) {
-            WorldDirector.Biome.FOREST -> when ((seed ushr 2) and 3L) {
-                0L -> "wolf"
-                1L -> "fox"
-                2L -> "deer"
-                else -> "horse"
-            }
-            WorldDirector.Biome.MOUNTAIN -> if ((seed and 1L) == 0L) "wolf" else "horse"
-            WorldDirector.Biome.PLATEAU -> if ((seed and 1L) == 0L) "deer" else "horse"
-            WorldDirector.Biome.VILLAGE -> if ((seed and 3L) == 0L) "horse" else "deer"
-            else -> null
-        } ?: return null
-
+        val speciesIndex = ((seed ushr (3 + slot)) + slot.toLong()) % pool.size
+        val species = pool[speciesIndex.toInt()]
         if (species !in SUPPORTED || species !in packagedSpecies) return null
 
-        val spawnDistance = MIN_DISTANCE + ((seed ushr 12) % 37L).toDouble()
-        val side = if ((seed and 1L) == 0L) 1.0 else -1.0
+        val baseDistance = MIN_DISTANCE + slot * 18.0
+        val available = (MAX_DISTANCE - baseDistance).toInt().coerceAtLeast(0)
+        val variation = if (available == 0) 0L else (seed ushr (12 + slot)) % (available + 1).toLong()
+        val spawnDistance = baseDistance + variation
+
+        // Keep the two authored animals on opposite roadside sides when possible.
+        val side = if (((seed + slot.toLong()) and 1L) == 0L) 1.0 else -1.0
         val sample = RoadSpline.sampleRelative(centerDistance + spawnDistance, centerDistance)
         val lateral = when (species) {
             "horse" -> 13.0
             "wolf" -> 12.0
             "fox" -> 11.0
-            else -> 14.0
+            "deer" -> 14.0
+            else -> 12.0
         } * side
 
         val x = sample.x + sin(sample.yaw) * lateral
@@ -123,6 +137,14 @@ internal class NearFieldCreatureWorld(
         }
 
         return Candidate(species, x, sample.y, z, facing, scale)
+    }
+
+    private fun speciesPool(biome: WorldDirector.Biome): List<String> = when (biome) {
+        WorldDirector.Biome.FOREST -> listOf("wolf", "fox", "deer", "horse")
+        WorldDirector.Biome.MOUNTAIN -> listOf("wolf", "horse")
+        WorldDirector.Biome.PLATEAU -> listOf("deer", "horse")
+        WorldDirector.Biome.VILLAGE -> listOf("horse", "deer")
+        else -> emptyList()
     }
 
     private fun stableSeed(value: Long): Long {
