@@ -251,21 +251,21 @@ jobs:
           done
           echo "Verified near-field inventory gate passed: deer, fox, horse, wolf."
           if [ -f "$ROOT/lion.glb.b64" ]; then
-            python3 - <<'PY'
-import base64
-from pathlib import Path
-
-p = Path("app/src/main/assets/creatures/lion.glb.b64")
-raw = "".join(p.read_text(encoding="ascii").split())
-try:
-    blob = base64.b64decode(raw, validate=True)
-except Exception as exc:
-    raise SystemExit(f"::error::lion.glb.b64 is not valid base64: {exc}")
-if len(blob) < 20 or blob[:4] != b"glTF":
-    raise SystemExit("::error::lion.glb.b64 does not decode to a valid GLB container.")
-print(f"Verified authored lion GLB container: {len(blob)} bytes")
-PY
-          else
+                      python3 - <<'PY'
+          import base64
+          from pathlib import Path
+          
+          p = Path("app/src/main/assets/creatures/lion.glb.b64")
+          raw = "".join(p.read_text(encoding="ascii").split())
+          try:
+              blob = base64.b64decode(raw, validate=True)
+          except Exception as exc:
+              raise SystemExit(f"::error::lion.glb.b64 is not valid base64: {exc}")
+          if len(blob) < 20 or blob[:4] != b"glTF":
+              raise SystemExit("::error::lion.glb.b64 does not decode to a valid GLB container.")
+          print(f"Verified authored lion GLB container: {len(blob)} bytes")
+          PY
+                    else
             echo "::error::Verified near-field asset missing: lion.glb.b64"
             exit 1
           fi
