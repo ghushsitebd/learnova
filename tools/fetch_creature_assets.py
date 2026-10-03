@@ -16,22 +16,22 @@ ROOT = Path("app/src/main/assets/creatures")
 SOURCES = {
     "deer": (
         "Deer",
-        "https://media.githubusercontent.com/media/StateDev08/War-of-the-Kindom-Mobile/"
+        "https://raw.githubusercontent.com/StateDev08/War-of-the-Kindom-Mobile/"
         "main/client/assets/models/quaternius/animals/deer.glb",
     ),
     "fox": (
         "Fox",
-        "https://media.githubusercontent.com/media/StateDev08/War-of-the-Kindom-Mobile/"
+        "https://raw.githubusercontent.com/StateDev08/War-of-the-Kindom-Mobile/"
         "main/client/assets/models/quaternius/animals/fox.glb",
     ),
     "horse": (
         "Horse",
-        "https://media.githubusercontent.com/media/fayipon/racehorse/"
+        "https://raw.githubusercontent.com/fayipon/racehorse/"
         "6dff4c0b42d232c0fc7c817cad992dcaff0b0553/godot/assets/quaternius/horse.glb",
     ),
     "wolf": (
         "Wolf",
-        "https://media.githubusercontent.com/media/StateDev08/War-of-the-Kindom-Mobile/"
+        "https://raw.githubusercontent.com/StateDev08/War-of-the-Kindom-Mobile/"
         "main/client/assets/models/quaternius/animals/wolf.glb",
     ),
 }
