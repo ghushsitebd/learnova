@@ -20,7 +20,7 @@ require(world, r"creature\.move\(candidate\.x, candidate\.y, candidate\.z, candi
 require(controller, r"assetLoader\.createAsset\(ByteBuffer\.wrap\(bytes\)\)", "authored GLB loading")
 require(controller, r"resourceLoader!!\.loadResources\(asset\)", "GLB resource upload")
 require(controller, r"activeAnimator\s*=\s*asset\.instance\?\.animator\?\.takeIf", "animation binding")
-require(controller, r"animator\.applyAnimation\(activeAnimationIndex", "animation playback")
+require(controller, r"animator\.applyAnimation\((?:activeAnimationIndex|selected),", "animation playback")
 require(controller, r"scene\.addEntities\(asset\.entities\)", "scene attachment")
 require(controller, r"scene\.removeEntities\(asset\.entities\)", "scene cleanup")
 require(view, r"nearFieldCreatureWorld\?\.update\(vehicleDistance\)", "render-loop integration")
