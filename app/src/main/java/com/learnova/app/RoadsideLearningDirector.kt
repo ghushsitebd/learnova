@@ -51,6 +51,9 @@ internal class RoadsideLearningDirector {
 
     fun lessonForLevel(level: Int): SignLesson = lessons[(level - 1).mod(lessons.size)]
 
+    fun lessonForLearningSession(level: Int, activityIndex: Int): SignLesson =
+        lessons[(level - 1 + activityIndex * 5).mod(lessons.size)]
+
     fun maybeStop(level: Int, progress: Float): SignLesson? {
         if (level != lastLevel) {
             lastLevel = level
