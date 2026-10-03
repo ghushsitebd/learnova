@@ -19,19 +19,16 @@ internal class NearFieldCreatureWorld(
     engine: Engine,
     scene: Scene
 ) {
-    private val creatures = arrayOf(
-        CreatureGlbController(context, engine, scene),
-        CreatureGlbController(context, engine, scene)
-    )
+    private val creatures = Array(5) { CreatureGlbController(context, engine, scene) }
     private val packagedSpecies = CreatureAssetCoverage.packagedSpecies(context)
-    private val activeSpecies = arrayOfNulls<String>(2)
+    private val activeSpecies = arrayOfNulls<String>(5)
     private var lastUpdateNanos = 0L
 
     private companion object {
         const val MIN_DISTANCE = 22.0
-        const val MAX_DISTANCE = 58.0
+        const val MAX_DISTANCE = 68.0
         const val UPDATE_NANOS = 100_000_000L
-        const val SLOT_COUNT = 2
+        const val SLOT_COUNT = 5
 
         // Only authored binaries are promoted into the near-field presentation.
         // Unsupported catalog entries remain on the lightweight distant-life path.
@@ -105,11 +102,11 @@ internal class NearFieldCreatureWorld(
         val pool = speciesPool(biome)
         if (pool.isEmpty()) return null
 
-        val speciesIndex = ((seed ushr (3 + slot)) + slot.toLong()) % pool.size
+        val speciesIndex = ((seed ushr (3 + slot)) + slot.toLong() * 3L) % pool.size
         val species = pool[speciesIndex.toInt()]
         if (species !in SUPPORTED || species !in packagedSpecies) return null
 
-        val baseDistance = MIN_DISTANCE + slot * 18.0
+        val baseDistance = MIN_DISTANCE + slot * 9.0
         val available = (MAX_DISTANCE - baseDistance).toInt().coerceAtLeast(0)
         val variation = if (available == 0) 0L else (seed ushr (12 + slot)) % (available + 1).toLong()
         val spawnDistance = baseDistance + variation

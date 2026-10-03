@@ -246,6 +246,7 @@ jobs:
           fi
           count=$(find "$ROOT" -maxdepth 1 -type f \( -name '*.glb' -o -name '*.glb.gz' -o -name '*.glb.b64' \) | sed -E 's/\.(glb|glb\.gz|glb\.b64)$//' | sort -u | wc -l)
           echo "Packaged creature asset keys: $count"
+test "$count" -ge 5 || { echo "::error::At least five real creature asset keys are required."; exit 1; }
           for species in deer fox horse wolf; do
             test -s "$ROOT/$species.glb" || { echo "::error::Verified near-field asset missing: $species.glb"; exit 1; }
           done
