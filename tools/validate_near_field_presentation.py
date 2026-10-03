@@ -14,9 +14,10 @@ def require(text, pattern, label):
 
 require(world, r"const val MIN_DISTANCE\s*=\s*22\.0", "near-field minimum distance")
 require(world, r"const val MAX_DISTANCE\s*=\s*58\.0", "near-field maximum distance")
-require(world, r"if \(candidate == null\).*?creature\.hide\(\).*?activeSpecies = null", "out-of-range hide")
-require(world, r"creature\.show\(species, candidate\.x, candidate\.y, candidate\.z, candidate\.yaw, candidate\.scale\)", "first presentation")
-require(world, r"creature\.move\(candidate\.x, candidate\.y, candidate\.z, candidate\.yaw, candidate\.scale\)", "continuous presentation movement")
+require(world, r"creatures\[index\]\.hide\(\).*?activeSpecies\[index\]\s*=\s*null", "out-of-range hide")
+require(world, r"creatures\[index\]\.show\(species, candidate\.x, candidate\.y, candidate\.z, candidate\.yaw, candidate\.scale\)", "near-field presentation")
+require(world, r"creatures\[index\]\.move\(candidate\.x, candidate\.y, candidate\.z, candidate\.yaw, candidate\.scale\)", "continuous presentation movement")
+require(world, r"val candidatesPerBiome|private fun speciesPool", "deterministic habitat species selection")
 require(controller, r"assetLoader\.createAsset\(ByteBuffer\.wrap\(bytes\)\)", "authored GLB loading")
 require(controller, r"resourceLoader!!\.loadResources\(asset\)", "GLB resource upload")
 require(controller, r"activeAnimator\s*=\s*asset\.instance\?\.animator\?\.takeIf", "animation binding")
@@ -27,7 +28,8 @@ require(view, r"nearFieldCreatureWorld\?\.update\(vehicleDistance\)", "render-lo
 
 print("Near-field presentation contracts verified.")
 print("- bounded roadside range: 22m..58m")
-print("- authored GLB load + resource upload")
+print("- two-slot authored GLB presentation")
+print("- deterministic habitat-aware species selection")
 print("- animation playback + per-frame movement")
 print("- deterministic hide/cleanup")
 print("- Learnova3DView render-loop integration")
