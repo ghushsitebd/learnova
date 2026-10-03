@@ -125,6 +125,7 @@ class MainActivity : AppCompatActivity() {
         private val masterySystem = LearnovaMasterySystem(prefs)
         private val progressionSystem = LearnovaProgressionSystem()
         private val roadsideDirector = RoadsideLearningDirector()
+        private val journeyEventDirector = JourneyEventDirector()
         private var currentRoadsideSign: RoadsideLearningDirector.SignLesson? = null
         private var listeningForChild = false
         private var companionInteractionUntil = 0L
@@ -149,6 +150,7 @@ class MainActivity : AppCompatActivity() {
             vehicle = prefs.getInt("vehicle", 0).coerceIn(0, LearnovaUnlimitedWorld.vehicles.lastIndex)
             worldSceneId = prefs.getInt("worldSceneId", 1).coerceAtLeast(1)
             levelProgress = prefs.getFloat("levelProgress", 0f).coerceIn(0f, 1f)
+            journeyEventDirector.resetForLevel(level)
             levelElapsedMs = prefs.getLong("levelElapsedMs", 0L).coerceIn(0L, minimumLevelDurationMs)
             levelComplete = prefs.getBoolean("level_complete", false)
             if (levelComplete) {
@@ -367,7 +369,11 @@ class MainActivity : AppCompatActivity() {
                 val gameplayNow = System.currentTimeMillis()
                 if (lastGameplayTickMs == 0L) lastGameplayTickMs = gameplayNow
                 val elapsedDelta = (gameplayNow - lastGameplayTickMs).coerceIn(0L, 1000L)
-                levelElapsedMs = (levelElapsedMs + elapsedDelta).coerceAtMost(minimumLevelDurationMs)
+                // The three-minute minimum is active driving time. Pausing the car
+                // must not silently consume the child's journey duration.
+                if (running && !levelComplete) {
+                    levelElapsedMs = (levelElapsedMs + elapsedDelta).coerceAtMost(minimumLevelDurationMs)
+                }
                 lastGameplayTickMs = gameplayNow
                 if (gameplayNow - lastProgressSaveMs >= 1000L) {
                     lastProgressSaveMs = gameplayNow
@@ -392,12 +398,27 @@ class MainActivity : AppCompatActivity() {
                 steering += (targetSteer - steering) * 0.085f
                 vehicleHeading += (steering * 7.0f - vehicleHeading) * 0.11f
 
-                val targetSpeed = 0.018f
-                speed += (targetSpeed - speed) * 0.022f
+                val targetSpeed = if (running) 0.018f else 0f
+                speed += (targetSpeed - speed) * 0.045f
                 speed = speed.coerceIn(0f, targetSpeed)
                 distance += speed
                 levelProgress += speed / LearnovaUnlimitedWorld.level(level).targetDistance * 0.006f
                 levelProgress = levelProgress.coerceAtMost(1f)
+
+                // Between learning stops, inject small world moments so the three-minute
+                // journey keeps changing without interrupting the drive.
+                if (currentRoadsideSign == null && !levelComplete) {
+                    val journeyEvent = journeyEventDirector.poll(levelElapsedMs, running)
+                    if (journeyEvent != null) {
+                        journeyEvent.visualKey?.let { key ->
+                            threeDWorld.triggerLearningAnimal(key)
+                            voice.speakCharacter(currentFriendName(), "Look! " + key.uppercase() + "!")
+                        }
+                        postDelayed({
+                            if (!isFinishing) journeyEventDirector.acknowledgeAndArmNext()
+                        }, 2_400L)
+                    }
+                }
 
                 val roadsideSign = roadsideDirector.maybeStop(level, levelProgress)
                 if (roadsideSign != null && currentRoadsideSign == null && !levelComplete) {
@@ -2624,6 +2645,7 @@ class MainActivity : AppCompatActivity() {
             worldSceneId += 1
             levelProgress = 0f
             levelElapsedMs = 0L
+            journeyEventDirector.resetForLevel(level)
             lastGameplayTickMs = 0L
             lastProgressSaveMs = 0L
             levelComplete = false
