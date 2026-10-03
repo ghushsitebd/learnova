@@ -245,13 +245,14 @@ jobs:
             exit 1
           fi
           count=$(find "$ROOT" -maxdepth 1 -type f \( -name '*.glb' -o -name '*.glb.gz' -o -name '*.glb.b64' \) | sed -E 's/\.(glb|glb\.gz|glb\.b64)$//' | sort -u | wc -l)
-          echo "Packaged unique real-creature asset keys: $count"
-          test "$count" -ge 1
-          if ! find "$ROOT" -maxdepth 1 -type f -name 'lion.glb.b64' -print -quit | grep -q .; then
-            echo "::error::Production near-field lion asset is missing."
-            exit 1
+          echo "Packaged creature asset keys: $count"
+          for species in deer fox horse wolf; do
+            test -s "$ROOT/$species.glb" || { echo "::error::Verified near-field asset missing: $species.glb"; exit 1; }
+          done
+          echo "Verified near-field inventory gate passed: deer, fox, horse, wolf."
+          if [ -f "$ROOT/lion.glb.b64" ]; then
+            echo "INFO: lion.glb.b64 remains catalog/fallback content and is not counted as a verified animated near-field asset."
           fi
-          echo "Real-asset gate passed: at least one packaged GLB representation exists and lion is present."
 
       - name: Verify Baseline Profile packaging
         shell: bash
