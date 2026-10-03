@@ -106,8 +106,10 @@ class MainActivity : AppCompatActivity() {
         private var levelComplete = false
         private val minimumLevelDurationMs = 180_000L
         private var levelElapsedMs = 0L
+        // Learning is embedded inside the 3-minute journey, not appended after it.
         private val learningSessionDurationMs = 90_000L
         private val learningActivityDurationMs = 18_000L
+        private val learningStartAtMs = 60_000L
         private var learningSessionActive = false
         private var learningSessionElapsedMs = 0L
         private var learningActivityIndex = 0
@@ -376,9 +378,10 @@ class MainActivity : AppCompatActivity() {
                 val gameplayNow = System.currentTimeMillis()
                 if (lastGameplayTickMs == 0L) lastGameplayTickMs = gameplayNow
                 val elapsedDelta = (gameplayNow - lastGameplayTickMs).coerceIn(0L, 1000L)
-                // The three-minute minimum is active driving time. Pausing the car
-                // must not silently consume the child's journey duration.
-                if (running && !levelComplete) {
+                // The three-minute level clock includes the integrated 90-second learning
+                // chapter. A manual stop pauses the journey clock; learning owns its own
+                // timed chapter while the vehicle is safely stopped.
+                if ((running || learningSessionActive) && !levelComplete) {
                     levelElapsedMs = (levelElapsedMs + elapsedDelta).coerceAtMost(minimumLevelDurationMs)
                 }
                 lastGameplayTickMs = gameplayNow
@@ -459,12 +462,24 @@ class MainActivity : AppCompatActivity() {
                 laneOffset += (-laneOffset) * 0.06f
                 suspensionVelocity *= 0.70f
                 suspensionOffset *= 0.78f
-                if (levelProgress >= 1f && levelElapsedMs >= minimumLevelDurationMs && !levelComplete && !learningSessionActive) {
-                    startAutomaticLearningSession()
-                }
             }
 
             // The level advances only after the mandatory 90-second learning phase.
+            if (!learningSessionActive &&
+                !levelComplete &&
+                learningSessionWasCompleted() &&
+                levelElapsedMs >= minimumLevelDurationMs) {
+                levelProgress = 1f
+                levelComplete = true
+                running = false
+                speed = 0f
+                threeDWorld.setDriving(false)
+                natureAudio.stop()
+                celebrationUntil = System.currentTimeMillis() + 1400L
+                voice.speakCharacter(currentFriendName(), "Great journey! You discovered and learned so much!")
+                saveProgress()
+            }
+
             if (learningSessionActive) {
                 val now = System.currentTimeMillis()
                 val delta = if (lastLearningActivityMs == 0L) 0L
@@ -2618,8 +2633,11 @@ class MainActivity : AppCompatActivity() {
             voice.speakSmartLesson(lesson)
         }
 
+        private fun learningSessionWasCompleted(): Boolean =
+            prefs.getBoolean("learning_completed_level_$level", false)
+
         private fun startAutomaticLearningSession() {
-            if (learningSessionActive || levelComplete) return
+            if (learningSessionActive || levelComplete || learningSessionWasCompleted()) return
             learningSessionActive = true
             learningSessionElapsedMs = 0L
             learningActivityIndex = 0
@@ -2627,13 +2645,18 @@ class MainActivity : AppCompatActivity() {
             currentRoadsideSign = null
             listeningForChild = false
             childVoiceRecognizer.stop()
+
+            // Preserve the exact world/road position. The vehicle gently settles to
+            // a stop beside the physical learning marker; no new screen or mode opens.
             running = false
             speed = 0f
-            levelProgress = 1f
             threeDWorld.setDriving(false)
-            threeDWorld.hideLearningSign()
+            threeDWorld.showLearningSign()
             natureAudio.stop()
-            voice.speakCharacter(currentFriendName(), "Great driving! Now let's learn together for one minute and thirty seconds.")
+            voice.speakCharacter(
+                currentFriendName(),
+                "Look! Our Magic Learning Point. Let's discover together!"
+            )
             beginAutomaticLearningActivity()
             saveProgress()
             invalidate()
@@ -2643,10 +2666,14 @@ class MainActivity : AppCompatActivity() {
             val sign = roadsideDirector.lessonForLearningSession(level, learningActivityIndex)
             currentRoadsideSign = sign
             threeDWorld.showLearningSign()
-            sign.visualKey?.let { threeDWorld.triggerLearningAnimal(it) }
+            sign.visualKey?.let { key ->
+                // Trigger the realistic near-field creature in the current biome.
+                // It appears ahead of the vehicle instead of replacing the driving world.
+                threeDWorld.triggerLearningAnimal(key)
+            }
             voice.speakCharacter(
                 currentFriendName(),
-                sign.english + ". " + sign.bangla + ". " + sign.arabic + "."
+                "Look! " + sign.english + ". " + sign.bangla + ". " + sign.arabic + "."
             )
             postDelayed({
                 if (!isFinishing && learningSessionActive) {
@@ -2665,10 +2692,15 @@ class MainActivity : AppCompatActivity() {
             childVoiceRecognizer.stop()
             threeDWorld.hideLearningSign()
             currentRoadsideSign = null
-            levelComplete = true
-            celebrationUntil = System.currentTimeMillis() + 1400L
+            prefs.edit().putBoolean("learning_completed_level_$level", true).apply()
+
+            // Resume the same journey from the same world position. The level still
+            // has the remaining time before its 180-second completion point.
+            running = true
+            threeDWorld.setDriving(true)
+            natureAudio.start()
+            voice.speakCharacter(currentFriendName(), "Wonderful! Let's keep exploring!")
             saveProgress()
-            voice.speakCharacter(currentFriendName(), "Wonderful! Learning time is complete. Let's go!")
             postInvalidateOnAnimation()
         }
 
@@ -2694,6 +2726,11 @@ class MainActivity : AppCompatActivity() {
             lastGameplayTickMs = 0L
             lastProgressSaveMs = 0L
             levelComplete = false
+            prefs.edit().remove("learning_completed_level_$level").apply()
+            learningSessionActive = false
+            learningSessionElapsedMs = 0L
+            learningActivityIndex = 0
+            lastLearningActivityMs = 0L
             saveProgress()
             speakCurrentLesson()
         }
