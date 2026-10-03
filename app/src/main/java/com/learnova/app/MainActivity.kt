@@ -417,7 +417,34 @@ class MainActivity : AppCompatActivity() {
                 // The three-minute phase is driving/adventure only. Learning never
                 // interrupts the journey. After the driving target is reached, the
                 // separate 90-second learning phase starts automatically.
-                if (currentRoadsideSign == null && !levelComplete) {
+                // The Magic Learning Point is a physical roadside encounter inside
+                // the driving journey. It stops the vehicle safely, presents the real
+                // roadside sign, and lets the child answer by voice before driving on.
+                if (!learningSessionActive && currentRoadsideSign == null && !levelComplete &&
+                    levelElapsedMs >= 25_000L && running) {
+                    roadsideDirector.maybeStop(level, levelProgress)?.let { sign ->
+                        currentRoadsideSign = sign
+                        listeningForChild = false
+                        running = false
+                        speed = 0f
+                        threeDWorld.setDriving(false)
+                        natureAudio.stop()
+                        threeDWorld.showLearningSign()
+                        sign.visualKey?.let { key -> threeDWorld.triggerLearningAnimal(key) }
+                        voice.speakCharacter(
+                            currentFriendName(),
+                            "Look! Our Magic Learning Point. " +
+                                sign.english + ". " + sign.bangla + ". " + sign.arabic + "."
+                        )
+                        postDelayed({
+                            if (!isFinishing && currentRoadsideSign === sign) {
+                                startChildListening()
+                            }
+                        }, 900L)
+                    }
+                }
+
+                if (currentRoadsideSign == null && !levelComplete && running) {
                     val journeyEvent = journeyEventDirector.poll(levelElapsedMs, running)
                     if (journeyEvent != null) {
                         journeyEvent.visualKey?.let { key ->
