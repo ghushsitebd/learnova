@@ -26,46 +26,39 @@ class LearnovaBaselineProfile {
         packageName = "com.learnova.app",
         strictStability = true,
         profileBlock = {
+            // Learnova continuously renders its 3D world, so an unconditional
+            // waitForIdle() can wait forever on a managed device. Use bounded
+            // pauses around the real tap journey instead.
             startActivityAndWait()
-            device.waitForIdle()
+            Thread.sleep(1200)
 
             device.click(
                 device.displayWidth / 2,
                 (device.displayHeight * 0.42f).toInt()
             )
-            device.waitForIdle()
+            Thread.sleep(1200)
 
             device.swipe(
-                (device.displayWidth * 0.18f).toInt(),
+                (device.displayWidth * 0.25f).toInt(),
                 (device.displayHeight * 0.42f).toInt(),
-                (device.displayWidth * 0.82f).toInt(),
+                (device.displayWidth * 0.75f).toInt(),
                 (device.displayHeight * 0.42f).toInt(),
-                450
+                350
             )
-            device.swipe(
-                (device.displayWidth * 0.82f).toInt(),
-                (device.displayHeight * 0.42f).toInt(),
-                (device.displayWidth * 0.18f).toInt(),
-                (device.displayHeight * 0.42f).toInt(),
-                450
-            )
-            device.waitForIdle()
+            Thread.sleep(900)
 
             device.click(
-                (device.displayWidth * 0.50f).toInt(),
-                (device.displayHeight * 0.76f).toInt()
+                device.displayWidth / 2,
+                (device.displayHeight * 0.42f).toInt()
             )
-            device.waitForIdle()
+            Thread.sleep(900)
 
-            // Keep the target process alive at the end of the journey. This is
-            // important on Gradle Managed Devices because BaselineProfileRule
-            // flushes ART profiles by killing the target process after the block.
-            // Re-launching here makes the capture deterministic even if a UI
-            // interaction caused the activity to be recreated or backgrounded.
+            // Return to a stable foreground state so ART can flush the profile
+            // without depending on renderer-idle detection.
             device.pressHome()
-            device.waitForIdle()
+            Thread.sleep(700)
             startActivityAndWait()
-            device.waitForIdle()
+            Thread.sleep(900)
         }
     )
 }
