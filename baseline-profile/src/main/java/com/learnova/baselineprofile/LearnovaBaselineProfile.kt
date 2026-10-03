@@ -57,16 +57,14 @@ class LearnovaBaselineProfile {
             )
             device.waitForIdle()
 
-            device.click(
-                device.displayWidth / 2,
-                (device.displayHeight * 0.42f).toInt()
-            )
+            // Keep the target process alive at the end of the journey. This is
+            // important on Gradle Managed Devices because BaselineProfileRule
+            // flushes ART profiles by killing the target process after the block.
+            // Re-launching here makes the capture deterministic even if a UI
+            // interaction caused the activity to be recreated or backgrounded.
+            device.pressHome()
             device.waitForIdle()
-
-            device.click(
-                (device.displayWidth * 0.88f).toInt(),
-                (device.displayHeight * 0.12f).toInt()
-            )
+            startActivityAndWait()
             device.waitForIdle()
         }
     )
