@@ -20,6 +20,10 @@ SOURCES = {
         "CesiumMilkTruck",
         "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/CesiumMilkTruck/glTF-Binary/CesiumMilkTruck.glb",
     ),
+    "vehicle_068_buggy": (
+        "Buggy",
+        "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Buggy/glTF-Binary/Buggy.glb",
+    ),
 }
 
 def fetch(url: str, target: Path) -> None:
