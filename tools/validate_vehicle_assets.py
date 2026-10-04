@@ -82,7 +82,28 @@ if any(key.startswith("_") or key.endswith("_") for key in asset_keys):
 if any(key == "" for key in asset_keys):
     print("::error::Vehicle asset keys must be non-empty.")
     sys.exit(1)
-\ndef validate_glb_container(path):
+
+if ASSETS.exists():
+    for candidate in ASSETS.iterdir():
+        if candidate.is_file() and candidate.suffix in {".glb", ".gz"} and candidate.name.lower() != candidate.name:
+            print(f"::error::Vehicle asset filename must be lowercase: {candidate.name}")
+            sys.exit(1)
+
+if ASSETS.exists():
+    for candidate in ASSETS.iterdir():
+        if candidate.is_file() and candidate.suffix == ".gz" and not candidate.name.endswith(".glb.gz"):
+            print(f"::error::Unsupported compressed vehicle asset: {candidate.name}")
+            sys.exit(1)
+
+if ASSETS.exists():
+    for candidate in ASSETS.iterdir():
+        if candidate.is_file() and candidate.suffix in {".glb", ".gz"} and candidate.stat().st_size == 0:
+            print(f"::error::Empty vehicle asset: {candidate.name}")
+            sys.exit(1)
+
+
+# 3D asset hardening: validate the binary GLB container header, version and length.
+def validate_glb_container(path):
     try:
         with path.open("rb") as stream:
             header = stream.read(12)
@@ -97,28 +118,7 @@ if any(key == "" for key in asset_keys):
                 return "invalid GLB declared length"
     except OSError as exc:
         return f"cannot read asset: {exc}"
-    return None\n\nif ASSETS.exists():
-    for candidate in ASSETS.iterdir():
-        if candidate.is_file() and candidate.suffix in {".glb", ".gz"} and candidate.name.lower() != candidate.name:
-
-if ASSETS.exists():
-    for candidate in ASSETS.iterdir():
-        if candidate.is_file() and candidate.name.lower() != candidate.name:
-            print(f"::error::Vehicle asset filename must be lowercase: {candidate.name}")
-            sys.exit(1)
-
-if ASSETS.exists():
-    for candidate in ASSETS.iterdir():
-        if candidate.is_file() and candidate.name.endswith(".gz") and not candidate.name.endswith(".glb.gz"):
-            print(f"::error::Unsupported compressed vehicle asset: {candidate.name}")
-            sys.exit(1)
-
-if ASSETS.exists():
-    for candidate in ASSETS.iterdir():
-        if candidate.is_file() and candidate.stat().st_size == 0:
-            print(f"::error::Empty vehicle asset: {candidate.name}")
-            sys.exit(1)
-
+    return None
 print("Learnova vehicle validation completed with production-safe asset naming and size guards.")
 
 if not ASSETS.exists():
@@ -261,9 +261,6 @@ if found == 0:
 # Engineering checkpoint 299: keep CI asset-contract validation reproducible.
 
 # Engineering checkpoint 300: keep CI asset-contract validation reproducible.
-
-# 3D asset hardening: validate the binary GLB container header, version and length.
-
 # Checkpoint 301: reject symlinked production vehicle assets.
 if ASSETS.exists():
     for candidate in ASSETS.iterdir():
