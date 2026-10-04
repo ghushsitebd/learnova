@@ -2,17 +2,22 @@
 """Validate downloaded Learnova creature GLBs as real animated glTF 2.0 assets."""
 
 from pathlib import Path
+import base64
 import json
 import struct
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "app/src/main/assets/creatures"
-SPECIES = ("deer", "fox", "horse", "wolf")
+SPECIES = ("deer", "fox", "horse", "wolf", "lion")
 
 
 def read_glb_json(path: Path):
     data = path.read_bytes()
+    return read_glb_json_bytes(data)
+
+
+def read_glb_json_bytes(data: bytes):
     if len(data) < 20 or data[:4] != b"glTF":
         raise ValueError("invalid GLB header")
     version, declared = struct.unpack_from("<II", data, 4)
@@ -110,18 +115,37 @@ def main():
 
     for species in SPECIES:
         path = ASSETS / f"{species}.glb"
-        if not path.is_file():
-            failures.append(f"{species}: missing downloaded GLB")
-            continue
-
         try:
-            animations, nodes, joints, duration = validate(path)
+            if path.is_file():
+                animations, nodes, joints, duration = validate(path)
+            elif species == "lion":
+                b64_path = ASSETS / "lion.glb.b64"
+                if not b64_path.is_file():
+                    raise ValueError("missing lion.glb.b64")
+                encoded = "".join(b64_path.read_text(encoding="ascii").split())
+                data = base64.b64decode(encoded, validate=True)
+                temp = ASSETS / ".lion-validation.glb"
+                temp.write_bytes(data)
+                try:
+                    doc = read_glb_json_bytes(data)
+                    if doc.get("asset", {}).get("version") != "2.0":
+                        raise ValueError("glTF asset.version must be 2.0")
+                    animations = len(doc.get("animations", []))
+                    if animations == 0:
+                        raise ValueError("no skeletal animation tracks")
+                    # Reuse the full structural validator without requiring the
+                    # repository to materialize the large binary as a tracked file.
+                    animations, nodes, joints, duration = validate(temp)
+                finally:
+                    temp.unlink(missing_ok=True)
+            else:
+                raise ValueError("missing downloaded GLB")
             checked += 1
             print(
                 f"OK creature {species}: animations={animations}, "
                 f"animated_nodes={nodes}, joints={joints}, duration={duration:.3f}s"
             )
-        except (OSError, ValueError, json.JSONDecodeError, struct.error) as exc:
+        except (OSError, ValueError, json.JSONDecodeError, struct.error, base64.binascii.Error) as exc:
             failures.append(f"{species}: {exc}")
 
     if failures:
@@ -129,7 +153,7 @@ def main():
             print(f"::error::{failure}")
         sys.exit(1)
 
-    print(f"Validated {checked}/{len(SPECIES)} real animated creature GLBs.")
+    print(f"Validated {checked}/{len(SPECIES)} real animated creature assets.")
 
 
 if __name__ == "__main__":
