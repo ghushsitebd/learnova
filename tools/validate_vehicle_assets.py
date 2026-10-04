@@ -160,7 +160,7 @@ for vehicle_id, key in keys:
         continue
 
     found += 1
-    print(f"OK vehicle {vehicle_id:03d}: {path.relative_to(ROOT)}")
+    print(f"OK vehicle {int(vehicle_id):03d}: {path.relative_to(ROOT)}")
 
 print(f"Validated {found} real vehicle asset(s) out of 100 catalog slots.")
 
