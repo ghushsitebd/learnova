@@ -9,7 +9,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "app/src/main/assets/creatures"
-SPECIES = ("deer", "fox", "horse", "wolf")
+SPECIES = ("deer", "fox", "horse", "wolf", "cow")
 
 
 def read_glb_json(path: Path):
