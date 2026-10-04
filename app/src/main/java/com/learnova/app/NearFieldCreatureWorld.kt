@@ -32,7 +32,7 @@ internal class NearFieldCreatureWorld(
 
         // Only authored binaries are promoted into the near-field presentation.
         // Unsupported catalog entries remain on the lightweight distant-life path.
-        val SUPPORTED = setOf("deer", "fox", "horse", "wolf")
+        val SUPPORTED = setOf("deer", "fox", "horse", "wolf", "cow")
     }
 
     fun build(): Boolean = true
@@ -117,7 +117,7 @@ internal class NearFieldCreatureWorld(
         val elapsedSeconds = nowNanos * 1e-9
         val motionSpeed = when (species) {
             "horse" -> 0.34
-            "deer" -> 0.28
+            "deer" -> 0.28\n            "cow" -> 0.16
             "wolf" -> 0.24
             "fox" -> 0.20
             else -> 0.22
@@ -133,7 +133,7 @@ internal class NearFieldCreatureWorld(
             "horse" -> 13.0
             "wolf" -> 12.0
             "fox" -> 11.0
-            "deer" -> 14.0
+            "deer" -> 14.0\n            "cow" -> 15.0
             else -> 12.0
         } * side
 
@@ -152,7 +152,7 @@ internal class NearFieldCreatureWorld(
             "horse" -> 1.18
             "wolf" -> 1.10
             "fox" -> 0.92
-            "deer" -> 1.05
+            "deer" -> 1.05\n            "cow" -> 1.22
             else -> 0.86
         }
 
@@ -166,10 +166,10 @@ internal class NearFieldCreatureWorld(
     }
 
     private fun speciesPool(biome: WorldDirector.Biome): List<String> = when (biome) {
-        WorldDirector.Biome.FOREST -> listOf("wolf", "fox", "deer", "horse")
+        WorldDirector.Biome.FOREST -> listOf("wolf", "fox", "deer", "horse", "cow")
         WorldDirector.Biome.MOUNTAIN -> listOf("wolf", "horse")
         WorldDirector.Biome.PLATEAU -> listOf("deer", "horse")
-        WorldDirector.Biome.VILLAGE -> listOf("horse", "deer")
+        WorldDirector.Biome.VILLAGE -> listOf("horse", "deer", "cow")
         else -> emptyList()
     }
 
