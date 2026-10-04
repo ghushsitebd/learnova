@@ -78,7 +78,7 @@ SPLandroidx/activity/OnBackPressedDispatcher;->addCallback(Landroidx/lifecycle/L
 SPLandroidx/activity/OnBackPressedDispatcher;->addCancellableCallback$activity_release(Landroidx/activity/OnBackPressedCallback;)Landroidx/activity/Cancellable;
 HSPLandroidx/activity/OnBackPressedDispatcher;->hasEnabledCallbacks()Z
 SPLandroidx/activity/OnBackPressedDispatcher;->setOnBackInvokedDispatcher(Landroid/window/OnBackInvokedDispatcher;)V
-SPLandroidx/activity/OnBackPressedDispatcher;->updateBackInvokedCallbackState$activity_release()V
+HSPLandroidx/activity/OnBackPressedDispatcher;->updateBackInvokedCallbackState$activity_release()V
 Landroidx/activity/OnBackPressedDispatcher$1;
 SPLandroidx/activity/OnBackPressedDispatcher$1;-><init>(Landroidx/activity/OnBackPressedDispatcher;)V
 SPLandroidx/activity/OnBackPressedDispatcher$1;->invoke()Ljava/lang/Object;
@@ -970,7 +970,7 @@ SPLandroidx/fragment/app/FragmentManager;-><init>()V
 SPLandroidx/fragment/app/FragmentManager;->addFragmentOnAttachListener(Landroidx/fragment/app/FragmentOnAttachListener;)V
 SPLandroidx/fragment/app/FragmentManager;->attachController(Landroidx/fragment/app/FragmentHostCallback;Landroidx/fragment/app/FragmentContainer;Landroidx/fragment/app/Fragment;)V
 PLandroidx/fragment/app/FragmentManager;->clearBackStackStateViewModels()V
-SPLandroidx/fragment/app/FragmentManager;->collectAllSpecialEffectsController()Ljava/util/Set;
+HSPLandroidx/fragment/app/FragmentManager;->collectAllSpecialEffectsController()Ljava/util/Set;
 SPLandroidx/fragment/app/FragmentManager;->dispatchActivityCreated()V
 SPLandroidx/fragment/app/FragmentManager;->dispatchCreate()V
 PLandroidx/fragment/app/FragmentManager;->dispatchDestroy()V
@@ -1050,7 +1050,7 @@ HSPLandroidx/fragment/app/FragmentStore;->getActiveFragmentStateManagers()Ljava/
 PLandroidx/fragment/app/FragmentStore;->getAllSavedState()Ljava/util/ArrayList;
 SPLandroidx/fragment/app/FragmentStore;->getFragments()Ljava/util/List;
 PLandroidx/fragment/app/FragmentStore;->getNonConfig()Landroidx/fragment/app/FragmentManagerViewModel;
-SPLandroidx/fragment/app/FragmentStore;->moveToExpectedState()V
+HSPLandroidx/fragment/app/FragmentStore;->moveToExpectedState()V
 PLandroidx/fragment/app/FragmentStore;->saveActiveFragments()Ljava/util/ArrayList;
 SPLandroidx/fragment/app/FragmentStore;->setNonConfig(Landroidx/fragment/app/FragmentManagerViewModel;)V
 Landroidx/fragment/app/SpecialEffectsControllerFactory;
@@ -1112,7 +1112,7 @@ SPLandroidx/lifecycle/LifecycleRegistry;-><init>(Landroidx/lifecycle/LifecycleOw
 HSPLandroidx/lifecycle/LifecycleRegistry;->addObserver(Landroidx/lifecycle/LifecycleObserver;)V
 HPLandroidx/lifecycle/LifecycleRegistry;->backwardPass(Landroidx/lifecycle/LifecycleOwner;)V
 HSPLandroidx/lifecycle/LifecycleRegistry;->calculateTargetState(Landroidx/lifecycle/LifecycleObserver;)Landroidx/lifecycle/Lifecycle$State;
-SPLandroidx/lifecycle/LifecycleRegistry;->enforceMainThreadIfNeeded(Ljava/lang/String;)V
+HSPLandroidx/lifecycle/LifecycleRegistry;->enforceMainThreadIfNeeded(Ljava/lang/String;)V
 HSPLandroidx/lifecycle/LifecycleRegistry;->forwardPass(Landroidx/lifecycle/LifecycleOwner;)V
 SPLandroidx/lifecycle/LifecycleRegistry;->getCurrentState()Landroidx/lifecycle/Lifecycle$State;
 HSPLandroidx/lifecycle/LifecycleRegistry;->handleLifecycleEvent(Landroidx/lifecycle/Lifecycle$Event;)V
@@ -2273,7 +2273,7 @@ Lkotlin/collections/CollectionsKt;
 Lkotlin/collections/CollectionsKt__CollectionsJVMKt;
 Lkotlin/collections/CollectionsKt__CollectionsKt;
 SPLkotlin/collections/CollectionsKt__CollectionsKt;->emptyList()Ljava/util/List;
-HSPLkotlin/collections/CollectionsKt__CollectionsKt;->getLastIndex(Ljava/util/List;)I
+SPLkotlin/collections/CollectionsKt__CollectionsKt;->getLastIndex(Ljava/util/List;)I
 SPLkotlin/collections/CollectionsKt__CollectionsKt;->listOf([Ljava/lang/Object;)Ljava/util/List;
 Lkotlin/collections/CollectionsKt__IterablesKt;
 SPLkotlin/collections/CollectionsKt__IterablesKt;->collectionSizeOrDefault(Ljava/lang/Iterable;I)I
@@ -2420,7 +2420,7 @@ SPLkotlin/ranges/IntProgression;-><clinit>()V
 HSPLkotlin/ranges/IntProgression;-><init>(III)V
 SPLkotlin/ranges/IntProgression;->getFirst()I
 SPLkotlin/ranges/IntProgression;->getLast()I
-HSPLkotlin/ranges/IntProgression;->getStep()I
+SPLkotlin/ranges/IntProgression;->getStep()I
 SPLkotlin/ranges/IntProgression;->iterator()Ljava/util/Iterator;
 SPLkotlin/ranges/IntProgression;->iterator()Lkotlin/collections/IntIterator;
 Lkotlin/ranges/IntProgression$Companion;
