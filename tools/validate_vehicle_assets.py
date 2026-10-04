@@ -82,6 +82,24 @@ if any(key.startswith("_") or key.endswith("_") for key in asset_keys):
 if any(key == "" for key in asset_keys):
     print("::error::Vehicle asset keys must be non-empty.")
     sys.exit(1)
+\ndef validate_glb_container(path):
+    try:
+        with path.open("rb") as stream:
+            header = stream.read(12)
+            if len(header) != 12 or header[:4] != b"glTF":
+                return "invalid GLB header"
+            version = int.from_bytes(header[4:8], "little")
+            declared_length = int.from_bytes(header[8:12], "little")
+            actual_length = path.stat().st_size
+            if version != 2:
+                return f"unsupported GLB version {version}"
+            if declared_length < 12 or declared_length > actual_length:
+                return "invalid GLB declared length"
+    except OSError as exc:
+        return f"cannot read asset: {exc}"
+    return None\n\nif ASSETS.exists():
+    for candidate in ASSETS.iterdir():
+        if candidate.is_file() and candidate.suffix in {".glb", ".gz"} and candidate.name.lower() != candidate.name:
 
 if ASSETS.exists():
     for candidate in ASSETS.iterdir():
@@ -245,22 +263,6 @@ if found == 0:
 # Engineering checkpoint 300: keep CI asset-contract validation reproducible.
 
 # 3D asset hardening: validate the binary GLB container header, version and length.
-def validate_glb_container(path):
-    try:
-        with path.open("rb") as stream:
-            header = stream.read(12)
-            if len(header) != 12 or header[:4] != b"glTF":
-                return "invalid GLB header"
-            version = int.from_bytes(header[4:8], "little")
-            declared_length = int.from_bytes(header[8:12], "little")
-            actual_length = path.stat().st_size
-            if version != 2:
-                return f"unsupported GLB version {version}"
-            if declared_length < 12 or declared_length > actual_length:
-                return "invalid GLB declared length"
-    except OSError as exc:
-        return f"cannot read asset: {exc}"
-    return None
 
 # Checkpoint 301: reject symlinked production vehicle assets.
 if ASSETS.exists():
