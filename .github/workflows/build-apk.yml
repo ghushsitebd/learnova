@@ -176,6 +176,7 @@ jobs:
           test -s app/src/main/assets/creatures/fox.glb
           test -s app/src/main/assets/creatures/horse.glb
           test -s app/src/main/assets/creatures/wolf.glb
+          test -s app/src/main/assets/creatures/cow.glb
           du -h app/src/main/assets/creatures/*.glb
 
       - name: Validate real creature animation assets
@@ -259,7 +260,7 @@ jobs:
             test -s "$ROOT/$species.glb" || { echo "::error::Verified near-field asset missing: $species.glb"; exit 1; }
           done
           echo "Verified near-field inventory gate passed: deer, fox, horse, wolf, cow."
-          # The previous authored lion payload was structurally invalid (GLB header length mismatch).\n          # Do not package or advertise it until a verified real animated lion source is available.\n          echo "Verified near-field inventory gate passed: deer, fox, horse, wolf."
+          # Lion remains excluded until a verified real animated GLB is available.
 
       - name: Verify Baseline Profile packaging
         shell: bash
