@@ -1986,7 +1986,7 @@ Lcom/learnova/app/LearnovaRenderQuality;
 SPLcom/learnova/app/LearnovaRenderQuality;-><init>(Landroid/content/Context;)V
 SPLcom/learnova/app/LearnovaRenderQuality;->animalCount()I
 SPLcom/learnova/app/LearnovaRenderQuality;->beginFrame()J
-HSPLcom/learnova/app/LearnovaRenderQuality;->distantTrafficCount()I
+SPLcom/learnova/app/LearnovaRenderQuality;->distantTrafficCount()I
 HSPLcom/learnova/app/LearnovaRenderQuality;->endFrame(J)V
 SPLcom/learnova/app/LearnovaRenderQuality;->level()I
 SPLcom/learnova/app/LearnovaRenderQuality;->shadowAlpha()I
@@ -2322,7 +2322,7 @@ PLkotlin/internal/PlatformImplementationsKt;-><clinit>()V
 Lkotlin/internal/ProgressionUtilKt;
 HSPLkotlin/internal/ProgressionUtilKt;->differenceModulo(III)I
 HSPLkotlin/internal/ProgressionUtilKt;->getProgressionLastElement(III)I
-HSPLkotlin/internal/ProgressionUtilKt;->mod(II)I
+SPLkotlin/internal/ProgressionUtilKt;->mod(II)I
 Lkotlin/internal/jdk7/JDK7PlatformImplementations;
 PLkotlin/internal/jdk7/JDK7PlatformImplementations;-><init>()V
 Lkotlin/internal/jdk8/JDK8PlatformImplementations;
@@ -2440,7 +2440,6 @@ Lkotlin/ranges/OpenEndRange;
 Lkotlin/ranges/RangesKt;
 Lkotlin/ranges/RangesKt__RangesKt;
 Lkotlin/ranges/RangesKt___RangesKt;
-PLkotlin/ranges/RangesKt___RangesKt;->coerceAtLeast(DD)D
 SPLkotlin/ranges/RangesKt___RangesKt;->coerceAtLeast(II)I
 SPLkotlin/ranges/RangesKt___RangesKt;->coerceAtLeast(JJ)J
 SPLkotlin/ranges/RangesKt___RangesKt;->coerceAtMost(FF)F
