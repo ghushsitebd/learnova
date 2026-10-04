@@ -34,6 +34,11 @@ SOURCES = {
         "https://raw.githubusercontent.com/StateDev08/War-of-the-Kindom-Mobile/"
         "main/client/assets/models/quaternius/animals/wolf.glb",
     ),
+    "cow": (
+        "Cow",
+        "https://raw.githubusercontent.com/webgrid/glbtest/"
+        "main/Cow_anim.glb",
+    ),
 }
 
 
@@ -102,7 +107,7 @@ def main() -> None:
             validate_glb(target, display_name)
             print(f"Normalized animated {display_name}: {target.stat().st_size} bytes")
 
-    print(f"Fetched and normalized {len(SOURCES)} verified animated CC0 creature GLBs.")
+    print(f"Fetched and normalized {len(SOURCES)} verified animated creature GLBs.")
 
 
 if __name__ == "__main__":
