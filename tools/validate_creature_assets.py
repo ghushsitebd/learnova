@@ -116,8 +116,6 @@ def main():
     for species in SPECIES:
         path = ASSETS / f"{species}.glb"
         try:
-            if path.is_file():
-                animations, nodes, joints, duration = validate(path)
             if species == "lion":
                 b64_path = ASSETS / "lion.glb.b64"
                 if not b64_path.is_file():
@@ -138,8 +136,6 @@ def main():
                     animations, nodes, joints, duration = validate(temp)
                 finally:
                     temp.unlink(missing_ok=True)
-            elif path.is_file():
-                animations, nodes, joints, duration = validate(path)
             else:
                 raise ValueError("missing downloaded GLB")
             checked += 1
