@@ -12,6 +12,8 @@ import kotlin.math.cos
 import kotlin.math.abs
 import kotlin.math.pow
 
+private const val LEARNOVA_LEARNOVA_MAX_LEVEL = 500
+
 class MainActivity : AppCompatActivity() {
 
     private lateinit var gameView: LearnovaGameView
@@ -99,10 +101,6 @@ class MainActivity : AppCompatActivity() {
         // Steering is autonomous; touch input never directly steers the vehicle.
         private var suspensionOffset = 0f
         private var suspensionVelocity = 0f
-        private companion object {
-            const val MAX_LEVEL = 500
-        }
-
         private var level = 1
         private var vehicle = 0
         private var levelProgress = 0f
