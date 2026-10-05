@@ -262,8 +262,17 @@ jobs:
           for species in deer fox horse wolf cow boar rabbit stag; do
             test -s "$ROOT/$species.glb" || { echo "::error::Verified near-field asset missing: $species.glb"; exit 1; }
           done
-          echo "Verified near-field inventory gate passed: deer, fox, horse, wolf, cow, boar, rabbit, stag."
-          # Lion remains excluded until a verified real animated GLB is available.
+          # Lion is repository-pinned as base64 so it can be validated and packaged
+          # without requiring a large binary blob to be tracked in Git.
+          if [ -s "$ROOT/lion.glb" ]; then
+            echo "Verified lion asset: native GLB"
+          elif [ -s "$ROOT/lion.glb.b64" ]; then
+            echo "Verified lion asset: base64-packaged GLB"
+          else
+            echo "::error::Verified lion asset is missing."
+            exit 1
+          fi
+          echo "Verified near-field inventory gate passed: deer, fox, horse, wolf, cow, boar, rabbit, stag, lion."
 
       - name: Verify Baseline Profile packaging
         shell: bash
