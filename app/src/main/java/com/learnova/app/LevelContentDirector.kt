@@ -10,6 +10,8 @@ package com.learnova.app
  */
 internal object LevelContentDirector {
 
+    data class LessonContent(val english: String, val bangla: String, val arabic: String, val prompt: String, val answer: String)
+
     data class LevelProfile(
         val level: Int,
         val chapter: Int,
@@ -17,7 +19,8 @@ internal object LevelContentDirector {
         val focus: String,
         val primaryEncounter: String,
         val secondaryEncounter: String,
-        val lessonMode: String
+        val lessonMode: String,
+        val lessons: List<LessonContent>
     )
 
     private const val MAX_LEVEL = 500
@@ -54,8 +57,45 @@ internal object LevelContentDirector {
             focus = theme.second,
             primaryEncounter = theme.third,
             secondaryEncounter = encounterFor(theme.third, local),
-            lessonMode = lessonModes[(chapter * 3 + local) % lessonModes.size]
+            lessonMode = lessonModes[(chapter * 3 + local) % lessonModes.size],
+            lessons = lessonPack(theme.third, encounterFor(theme.third, local), local, chapter)
         )
+    }
+
+    private fun lessonPack(primary: String, secondary: String, local: Int, chapter: Int): List<LessonContent> {
+        val words = mapOf(
+            "deer" to Triple("Deer", "হরিণ", "غزال"), "fox" to Triple("Fox", "শিয়াল", "ثعلب"),
+            "rabbit" to Triple("Rabbit", "খরগোশ", "أرنب"), "wolf" to Triple("Wolf", "নেকড়ে", "ذئب"),
+            "horse" to Triple("Horse", "ঘোড়া", "حصان"), "cow" to Triple("Cow", "গরু", "بقرة"),
+            "fish" to Triple("Fish", "মাছ", "سمك"), "duck" to Triple("Duck", "হাঁস", "بطة"),
+            "turtle" to Triple("Turtle", "কচ্ছপ", "سلحفاة"), "dolphin" to Triple("Dolphin", "ডলফিন", "دلفين"),
+            "camel" to Triple("Camel", "উট", "جمل"), "eagle" to Triple("Eagle", "ঈগল", "نسر"),
+            "car" to Triple("Car", "গাড়ি", "سيارة"), "bird" to Triple("Bird", "পাখি", "طائر"),
+            "goat" to Triple("Goat", "ছাগল", "ماعز"), "sheep" to Triple("Sheep", "ভেড়া", "خروف"),
+            "chicken" to Triple("Chicken", "মুরগি", "دجاج")
+        )
+        fun make(key: String, mode: String): LessonContent {
+            val w = words[key] ?: Triple(key.replaceFirstChar { it.uppercase() }, key, key)
+            val prompt = when (mode) {
+                "arabic_word" -> "Say the Arabic word"
+                "bangla_word" -> "Say it in Bangla"
+                "english_word" -> "Say it in English"
+                "match_words" -> "Match the three words"
+                "sound_and_motion" -> "Watch and name the animal"
+                "count_and_say" -> "How many do you see?"
+                else -> "Listen and repeat"
+            }
+            val answer = when (mode) {
+                "arabic_word" -> w.third
+                "bangla_word" -> w.second
+                else -> w.first
+            }
+            return LessonContent(w.first, w.second, w.third, prompt, answer)
+        }
+        val a = lessonModes[(chapter + local) % lessonModes.size]
+        val b = lessonModes[(chapter + local + 3) % lessonModes.size]
+        val d = lessonModes[(chapter + local + 6) % lessonModes.size]
+        return listOf(make(primary, a), make(secondary, b), make(primary, d))
     }
 
     private fun encounterFor(primary: String, local: Int): String {
