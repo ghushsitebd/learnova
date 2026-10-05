@@ -36,6 +36,7 @@ internal class JourneyEventDirector {
     private var profile = LevelContentDirector.profile(1)
     private var cursor = 0
     private var emitted = false
+    private var eventCount = 0
     private val emittedTypes = LinkedHashSet<EventType>()
 
     fun resetForLevel(level: Int) {
@@ -44,6 +45,7 @@ internal class JourneyEventDirector {
         cursor = ((level - 1).coerceAtLeast(0)) % templates.size
         emitted = false
         emittedTypes.clear()
+        eventCount = 0
     }
 
     /**
@@ -56,9 +58,12 @@ internal class JourneyEventDirector {
         if (emitted) return null
 
         val base = templates[cursor]
-        val candidate = if (cursor == 0) base.copy(visualKey = profile.primaryEncounter)
-        else if (cursor == 1) base.copy(visualKey = profile.secondaryEncounter)
-        else base
+        val candidate = when (cursor) {
+            0 -> base.copy(visualKey = profile.primaryEncounter)
+            1 -> base.copy(visualKey = profile.secondaryEncounter)
+            2 -> base.copy(visualKey = profile.primaryEncounter)
+            else -> base
+        }
         if (elapsedMs < candidate.atMs) return null
         if (elapsedMs > candidate.atMs + 12_000L) {
             cursor = (cursor + 1) % templates.size
@@ -68,6 +73,7 @@ internal class JourneyEventDirector {
 
         if (!emittedTypes.add(candidate.type)) return null
         emitted = true
+        eventCount++
         return candidate
     }
 
