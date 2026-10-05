@@ -121,6 +121,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var powerManager: PowerManager? = null
     private var thermalListener: PowerManager.OnThermalStatusChangedListener? = null
     private var traceFrameCounter = 0
+    // The permanent companion occasionally leaves the vehicle for a short, safe roadside walk.\n    private var friendWalkCycle = 0.0
 
     // Physical entry/exit state is kept separate from the child-simple drive
     // control. If a vehicle asset contains named door nodes, this layer animates
@@ -267,6 +268,9 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                     learningAnimalEncounter?.update(vehicleDistance)
                     learningSignWorld?.update(vehicleDistance)
                     vehicleFriend?.setDriving(driving)
+                    friendWalkCycle += dt
+                    val friendOutside = driving && (friendWalkCycle % 42.0) in 24.0..31.0
+                    vehicleFriend?.setOutside(friendOutside)
                     vehicleFriend?.update(vehicleDistance)
                 }
                 traceSectionIfEnabled(traceThisFrame, "Learnova.vehicle") {
