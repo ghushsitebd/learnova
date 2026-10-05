@@ -10,29 +10,29 @@ import kotlin.math.sin
  * Near-field wildlife layer.
  *
  * Distant life remains the low-cost population mesh. When verified authored
- * animals enter readable roadside range, this layer streams up to two real
- * animated GLBs at once. Two bounded slots add visible wildlife variety while
- * keeping resident authored assets small enough for mobile rendering.
+ * animals enter readable roadside range, this layer streams up to eight real
+ * animated GLBs at once. Eight bounded slots add visible wildlife variety
+ * while keeping resident authored assets bounded for mobile rendering.
  */
 internal class NearFieldCreatureWorld(
     context: Context,
     engine: Engine,
     scene: Scene
 ) {
-    private val creatures = Array(5) { CreatureGlbController(context, engine, scene) }
+    private val creatures = Array(8) { CreatureGlbController(context, engine, scene) }
     private val packagedSpecies = CreatureAssetCoverage.packagedSpecies(context)
-    private val activeSpecies = arrayOfNulls<String>(5)
+    private val activeSpecies = arrayOfNulls<String>(8)
     private var lastUpdateNanos = 0L
 
     private companion object {
-        const val MIN_DISTANCE = 22.0
-        const val MAX_DISTANCE = 68.0
+        const val MIN_DISTANCE = 20.0
+        const val MAX_DISTANCE = 78.0
         const val UPDATE_NANOS = 100_000_000L
-        const val SLOT_COUNT = 5
+        const val SLOT_COUNT = 8
 
         // Only authored binaries are promoted into the near-field presentation.
         // Unsupported catalog entries remain on the lightweight distant-life path.
-        val SUPPORTED = setOf("deer", "fox", "horse", "wolf", "cow")
+        val SUPPORTED = setOf("deer", "fox", "horse", "wolf", "cow", "boar", "rabbit", "stag")
     }
 
     fun build(): Boolean = true
@@ -111,7 +111,7 @@ internal class NearFieldCreatureWorld(
         val variation = if (available == 0) 0L else (seed ushr (12 + slot)) % (available + 1).toLong()
         val spawnDistance = baseDistance + variation
 
-        // Keep the two authored animals on opposite roadside sides when possible.
+        // Keep authored animals on opposite roadside sides when possible.
         val side = if (((seed + slot.toLong()) and 1L) == 0L) 1.0 else -1.0
         val phase = stablePhase(seed, slot, species)
         val elapsedSeconds = nowNanos * 1e-9
@@ -169,10 +169,10 @@ internal class NearFieldCreatureWorld(
     }
 
     private fun speciesPool(biome: WorldDirector.Biome): List<String> = when (biome) {
-        WorldDirector.Biome.FOREST -> listOf("wolf", "fox", "deer", "horse", "cow")
-        WorldDirector.Biome.MOUNTAIN -> listOf("wolf", "horse")
-        WorldDirector.Biome.PLATEAU -> listOf("deer", "horse")
-        WorldDirector.Biome.VILLAGE -> listOf("horse", "deer", "cow")
+        WorldDirector.Biome.FOREST -> listOf("wolf", "fox", "deer", "horse", "cow", "boar", "stag", "rabbit")
+        WorldDirector.Biome.MOUNTAIN -> listOf("wolf", "horse", "stag", "boar")
+        WorldDirector.Biome.PLATEAU -> listOf("deer", "horse", "stag", "rabbit")
+        WorldDirector.Biome.VILLAGE -> listOf("horse", "deer", "cow", "rabbit", "boar")
         else -> emptyList()
     }
 

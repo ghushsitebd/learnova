@@ -34,6 +34,21 @@ SOURCES = {
         "https://raw.githubusercontent.com/StateDev08/War-of-the-Kindom-Mobile/"
         "main/client/assets/models/quaternius/animals/wolf.glb",
     ),
+    "boar": (
+        "Boar",
+        "https://raw.githubusercontent.com/StateDev08/War-of-the-Kindom-Mobile/"
+        "main/client/assets/models/quaternius/animals/boar.glb",
+    ),
+    "rabbit": (
+        "Rabbit",
+        "https://raw.githubusercontent.com/StateDev08/War-of-the-Kindom-Mobile/"
+        "main/client/assets/models/quaternius/animals/rabbit.glb",
+    ),
+    "stag": (
+        "Stag",
+        "https://raw.githubusercontent.com/StateDev08/War-of-the-Kindom-Mobile/"
+        "main/client/assets/models/quaternius/animals/stag.glb",
+    ),
     "cow": (
         "Cow",
         "https://raw.githubusercontent.com/webgrid/glbtest/"
