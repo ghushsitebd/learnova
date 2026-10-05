@@ -14,8 +14,8 @@ def require(text, pattern, label):
 
 require(world, r"const val MIN_DISTANCE\s*=\s*20\.0", "near-field minimum distance")
 require(world, r"const val MAX_DISTANCE\s*=\s*78\.0", "near-field maximum distance")
-require(world, r"private val creatures = Array(8) { CreatureGlbController(context, engine, scene) }", "five concurrent near-field slots")
-require(world, r"private val activeSpecies = arrayOfNulls<String>(8)", "five-slot active state")
+require(world, r"private val creatures = Array(8) { CreatureGlbController(context, engine, scene) }", "eight concurrent near-field slots")
+require(world, r"private val activeSpecies = arrayOfNulls<String>(8)", "eight-slot active state")
 require(world, r"creatures\[index\]\.hide\(\)", "out-of-range hide")
 require(world, r"activeSpecies\[index\]\s*=\s*null", "slot state cleanup")
 require(world, r"creatures\[index\]\.show\(\s*species,\s*candidate\.x,\s*candidate\.y,\s*candidate\.z,\s*candidate\.yaw,\s*candidate\.scale\s*\)", "near-field presentation")
