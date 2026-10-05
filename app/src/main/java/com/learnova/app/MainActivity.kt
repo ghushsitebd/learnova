@@ -96,10 +96,13 @@ class MainActivity : AppCompatActivity() {
         private var vehicleHeading = 0f
         private var steeringInput = 0f
         private var lateralVelocity = 0f
-        // A side touch is a hold-to-steer gesture. Releasing the finger recentres
-        // the wheel smoothly instead of leaving steering latched on.
+        // Steering is autonomous; touch input never directly steers the vehicle.
         private var suspensionOffset = 0f
         private var suspensionVelocity = 0f
+        private companion object {
+            const val MAX_LEVEL = 500
+        }
+
         private var level = 1
         private var vehicle = 0
         private var levelProgress = 0f
@@ -154,7 +157,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         init {
-            level = prefs.getInt("level", 1).coerceAtLeast(1)
+            level = prefs.getInt("level", 1).coerceIn(1, MAX_LEVEL)
             vehicle = prefs.getInt("vehicle", 0).coerceIn(0, LearnovaUnlimitedWorld.vehicles.lastIndex)
             worldSceneId = prefs.getInt("worldSceneId", 1).coerceAtLeast(1)
             levelProgress = prefs.getFloat("levelProgress", 0f).coerceIn(0f, 1f)
@@ -2733,6 +2736,15 @@ class MainActivity : AppCompatActivity() {
 
         private fun nextLesson() {
             if (!levelComplete) return
+            if (level >= MAX_LEVEL) {
+                level = MAX_LEVEL
+                levelProgress = 1f
+                levelComplete = true
+                saveProgress()
+                voice.speakCharacter(currentFriendName(), "Amazing! You completed all 500 levels!")
+                invalidate()
+                return
+            }
             completedLessons += 1
             masterySystem.recordCorrect(question, completedLessons)
             val reward = ChildSafeEngagementPolicy.rewardForCorrectLesson(completedLessons)
