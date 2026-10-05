@@ -86,11 +86,11 @@ internal class VehicleFriendWorld(
         val bob=if(driving) sin(phase)*.035 else sin(phase)*.018
         val wave=if(driving) (sin(t*3.6)*.10).coerceIn(-.10,.10) else sin(t*1.8)*.03
         val side=0.92
+        val walkPhase = if (outside) sin(t * 1.7) * 1.8 else 0.0
+        val walkSide = side + walkPhase
         val x=s.x+cos(s.yaw)*walkSide
         val z=s.z-sin(s.yaw)*walkSide
-        val walkPhase = sin(t * 1.7) * 1.8
-        val walkSide = if (outside) side + walkPhase else side
-        val hiddenY=if(outside) s.y + bob else s.y + bob
+        val hiddenY=s.y + bob
         val scale=when {
             friend.lowercase().contains("bear") -> 1.12
             friend.lowercase().contains("rabbit") -> .92
