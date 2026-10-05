@@ -12,7 +12,7 @@ import kotlin.math.cos
 import kotlin.math.abs
 import kotlin.math.pow
 
-private const val LEARNOVA_LEARNOVA_MAX_LEVEL = 500
+private const val MAX_LEVEL = 500
 
 class MainActivity : AppCompatActivity() {
 
