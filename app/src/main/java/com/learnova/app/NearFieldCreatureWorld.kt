@@ -25,14 +25,14 @@ internal class NearFieldCreatureWorld(
     private var lastUpdateNanos = 0L
 
     private companion object {
-        const val MIN_DISTANCE = 22.0
-        const val MAX_DISTANCE = 68.0
+        const val MIN_DISTANCE = 20.0
+        const val MAX_DISTANCE = 78.0
         const val UPDATE_NANOS = 100_000_000L
-        const val SLOT_COUNT = 5
+        const val SLOT_COUNT = 8
 
         // Only authored binaries are promoted into the near-field presentation.
         // Unsupported catalog entries remain on the lightweight distant-life path.
-        val SUPPORTED = setOf("deer", "fox", "horse", "wolf", "cow")
+        val SUPPORTED = setOf("deer", "fox", "horse", "wolf", "cow", "boar", "rabbit", "stag")
     }
 
     fun build(): Boolean = true
@@ -169,10 +169,10 @@ internal class NearFieldCreatureWorld(
     }
 
     private fun speciesPool(biome: WorldDirector.Biome): List<String> = when (biome) {
-        WorldDirector.Biome.FOREST -> listOf("wolf", "fox", "deer", "horse", "cow")
-        WorldDirector.Biome.MOUNTAIN -> listOf("wolf", "horse")
-        WorldDirector.Biome.PLATEAU -> listOf("deer", "horse")
-        WorldDirector.Biome.VILLAGE -> listOf("horse", "deer", "cow")
+        WorldDirector.Biome.FOREST -> listOf("wolf", "fox", "deer", "horse", "cow", "boar", "stag", "rabbit")
+        WorldDirector.Biome.MOUNTAIN -> listOf("wolf", "horse", "stag", "boar")
+        WorldDirector.Biome.PLATEAU -> listOf("deer", "horse", "stag", "rabbit")
+        WorldDirector.Biome.VILLAGE -> listOf("horse", "deer", "cow", "rabbit", "boar")
         else -> emptyList()
     }
 
