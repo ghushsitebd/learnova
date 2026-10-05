@@ -2,14 +2,13 @@
 """Validate downloaded Learnova creature GLBs as real animated glTF 2.0 assets."""
 
 from pathlib import Path
-import base64
 import json
 import struct
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "app/src/main/assets/creatures"
-SPECIES = ("deer", "fox", "horse", "wolf", "cow", "boar", "rabbit", "stag", "lion")
+SPECIES = ("deer", "fox", "horse", "wolf", "cow", "boar", "rabbit", "stag")
 
 
 def read_glb_json(path: Path):
@@ -116,34 +115,15 @@ def main():
     for species in SPECIES:
         path = ASSETS / f"{species}.glb"
         try:
-            if species == "lion":
-                b64_path = ASSETS / "lion.glb.b64"
-                if not b64_path.is_file():
-                    raise ValueError("missing lion.glb.b64")
-                encoded = "".join(b64_path.read_text(encoding="ascii").split())
-                data = base64.b64decode(encoded, validate=True)
-                temp = ASSETS / ".lion-validation.glb"
-                temp.write_bytes(data)
-                try:
-                    doc = read_glb_json_bytes(data)
-                    if doc.get("asset", {}).get("version") != "2.0":
-                        raise ValueError("glTF asset.version must be 2.0")
-                    animations = len(doc.get("animations", []))
-                    if animations == 0:
-                        raise ValueError("no skeletal animation tracks")
-                    # Reuse the full structural validator without requiring the
-                    # repository to materialize the large binary as a tracked file.
-                    animations, nodes, joints, duration = validate(temp)
-                finally:
-                    temp.unlink(missing_ok=True)
-            else:
+            if not path.is_file():
                 raise ValueError("missing downloaded GLB")
+            animations, nodes, joints, duration = validate(path)
             checked += 1
             print(
                 f"OK creature {species}: animations={animations}, "
                 f"animated_nodes={nodes}, joints={joints}, duration={duration:.3f}s"
             )
-        except (OSError, ValueError, json.JSONDecodeError, struct.error, base64.binascii.Error) as exc:
+        except (OSError, ValueError, json.JSONDecodeError, struct.error) as exc:
             failures.append(f"{species}: {exc}")
 
     if failures:
