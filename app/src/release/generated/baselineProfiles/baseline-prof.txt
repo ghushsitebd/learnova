@@ -970,7 +970,7 @@ SPLandroidx/fragment/app/FragmentManager;-><init>()V
 SPLandroidx/fragment/app/FragmentManager;->addFragmentOnAttachListener(Landroidx/fragment/app/FragmentOnAttachListener;)V
 SPLandroidx/fragment/app/FragmentManager;->attachController(Landroidx/fragment/app/FragmentHostCallback;Landroidx/fragment/app/FragmentContainer;Landroidx/fragment/app/Fragment;)V
 PLandroidx/fragment/app/FragmentManager;->clearBackStackStateViewModels()V
-HSPLandroidx/fragment/app/FragmentManager;->collectAllSpecialEffectsController()Ljava/util/Set;
+SPLandroidx/fragment/app/FragmentManager;->collectAllSpecialEffectsController()Ljava/util/Set;
 SPLandroidx/fragment/app/FragmentManager;->dispatchActivityCreated()V
 SPLandroidx/fragment/app/FragmentManager;->dispatchCreate()V
 PLandroidx/fragment/app/FragmentManager;->dispatchDestroy()V
@@ -1050,7 +1050,7 @@ HSPLandroidx/fragment/app/FragmentStore;->getActiveFragmentStateManagers()Ljava/
 PLandroidx/fragment/app/FragmentStore;->getAllSavedState()Ljava/util/ArrayList;
 SPLandroidx/fragment/app/FragmentStore;->getFragments()Ljava/util/List;
 PLandroidx/fragment/app/FragmentStore;->getNonConfig()Landroidx/fragment/app/FragmentManagerViewModel;
-HSPLandroidx/fragment/app/FragmentStore;->moveToExpectedState()V
+SPLandroidx/fragment/app/FragmentStore;->moveToExpectedState()V
 PLandroidx/fragment/app/FragmentStore;->saveActiveFragments()Ljava/util/ArrayList;
 SPLandroidx/fragment/app/FragmentStore;->setNonConfig(Landroidx/fragment/app/FragmentManagerViewModel;)V
 Landroidx/fragment/app/SpecialEffectsControllerFactory;
@@ -1078,7 +1078,7 @@ Landroidx/lifecycle/Lifecycle$Event;
 SPLandroidx/lifecycle/Lifecycle$Event;->$values()[Landroidx/lifecycle/Lifecycle$Event;
 SPLandroidx/lifecycle/Lifecycle$Event;-><clinit>()V
 SPLandroidx/lifecycle/Lifecycle$Event;-><init>(Ljava/lang/String;I)V
-HSPLandroidx/lifecycle/Lifecycle$Event;->getTargetState()Landroidx/lifecycle/Lifecycle$State;
+SPLandroidx/lifecycle/Lifecycle$Event;->getTargetState()Landroidx/lifecycle/Lifecycle$State;
 SPLandroidx/lifecycle/Lifecycle$Event;->values()[Landroidx/lifecycle/Lifecycle$Event;
 Landroidx/lifecycle/Lifecycle$Event$Companion;
 SPLandroidx/lifecycle/Lifecycle$Event$Companion;-><init>()V
@@ -1112,7 +1112,7 @@ SPLandroidx/lifecycle/LifecycleRegistry;-><init>(Landroidx/lifecycle/LifecycleOw
 HSPLandroidx/lifecycle/LifecycleRegistry;->addObserver(Landroidx/lifecycle/LifecycleObserver;)V
 HPLandroidx/lifecycle/LifecycleRegistry;->backwardPass(Landroidx/lifecycle/LifecycleOwner;)V
 HSPLandroidx/lifecycle/LifecycleRegistry;->calculateTargetState(Landroidx/lifecycle/LifecycleObserver;)Landroidx/lifecycle/Lifecycle$State;
-HSPLandroidx/lifecycle/LifecycleRegistry;->enforceMainThreadIfNeeded(Ljava/lang/String;)V
+SPLandroidx/lifecycle/LifecycleRegistry;->enforceMainThreadIfNeeded(Ljava/lang/String;)V
 HSPLandroidx/lifecycle/LifecycleRegistry;->forwardPass(Landroidx/lifecycle/LifecycleOwner;)V
 SPLandroidx/lifecycle/LifecycleRegistry;->getCurrentState()Landroidx/lifecycle/Lifecycle$State;
 HSPLandroidx/lifecycle/LifecycleRegistry;->handleLifecycleEvent(Landroidx/lifecycle/Lifecycle$Event;)V
@@ -1990,7 +1990,7 @@ SPLcom/learnova/app/LearnovaProgressionSystem;-><init>()V
 Lcom/learnova/app/LearnovaQuranCatalog;
 SPLcom/learnova/app/LearnovaQuranCatalog;-><clinit>()V
 SPLcom/learnova/app/LearnovaQuranCatalog;-><init>()V
-HSPLcom/learnova/app/LearnovaQuranCatalog;->getLessons()Ljava/util/List;
+SPLcom/learnova/app/LearnovaQuranCatalog;->getLessons()Ljava/util/List;
 SPLcom/learnova/app/LearnovaQuranCatalog;->lessons_delegate$lambda$1()Ljava/util/List;
 Lcom/learnova/app/LearnovaQuranCatalog$$ExternalSyntheticLambda0;
 SPLcom/learnova/app/LearnovaQuranCatalog$$ExternalSyntheticLambda0;-><init>()V
@@ -2036,6 +2036,7 @@ Lcom/learnova/app/LevelContentDirector;
 SPLcom/learnova/app/LevelContentDirector;-><clinit>()V
 SPLcom/learnova/app/LevelContentDirector;-><init>()V
 SPLcom/learnova/app/LevelContentDirector;->encounterFor(Ljava/lang/String;I)Ljava/lang/String;
+SPLcom/learnova/app/LevelContentDirector;->expandedEncounter(Ljava/lang/String;I)Ljava/lang/String;
 HSPLcom/learnova/app/LevelContentDirector;->lessonPack$make(Ljava/util/Map;Ljava/lang/String;Ljava/lang/String;)Lcom/learnova/app/LevelContentDirector$LessonContent;
 HSPLcom/learnova/app/LevelContentDirector;->lessonPack(Ljava/lang/String;Ljava/lang/String;II)Ljava/util/List;
 SPLcom/learnova/app/LevelContentDirector;->profile(I)Lcom/learnova/app/LevelContentDirector$LevelProfile;
@@ -2069,7 +2070,7 @@ HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawAtmosphere(Landroid/gra
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawCar(Landroid/graphics/Canvas;FFI)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawCinematicLighting(Landroid/graphics/Canvas;FFLcom/learnova/app/SmartScene;)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawCloud(Landroid/graphics/Canvas;FFF)V
-SPLcom/learnova/app/MainActivity$LearnovaGameView;->drawClouds(Landroid/graphics/Canvas;FF)V
+HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawClouds(Landroid/graphics/Canvas;FF)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawCompanion(Landroid/graphics/Canvas;FFLcom/learnova/app/SmartScene;)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawDeer(Landroid/graphics/Canvas;FF)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawDistantWorld(Landroid/graphics/Canvas;FFLcom/learnova/app/SmartScene;)V
@@ -2100,7 +2101,7 @@ HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawVehicle(Landroid/graphi
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawVehicleContactEffects(Landroid/graphics/Canvas;FFLcom/learnova/app/SmartScene;)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawWheel(Landroid/graphics/Canvas;FFF)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->featureColor(IIIII)I
-HSPLcom/learnova/app/MainActivity$LearnovaGameView;->getUse3DWorld()Z
+SPLcom/learnova/app/MainActivity$LearnovaGameView;->getUse3DWorld()Z
 SPLcom/learnova/app/MainActivity$LearnovaGameView;->hSafe(Landroid/graphics/Canvas;)F
 PLcom/learnova/app/MainActivity$LearnovaGameView;->handleQuranChoice(FFFF)Z
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->isQuranLevel()Z
@@ -2353,7 +2354,7 @@ PLkotlin/internal/PlatformImplementationsKt;-><clinit>()V
 Lkotlin/internal/ProgressionUtilKt;
 HSPLkotlin/internal/ProgressionUtilKt;->differenceModulo(III)I
 HSPLkotlin/internal/ProgressionUtilKt;->getProgressionLastElement(III)I
-SPLkotlin/internal/ProgressionUtilKt;->mod(II)I
+HSPLkotlin/internal/ProgressionUtilKt;->mod(II)I
 Lkotlin/internal/jdk7/JDK7PlatformImplementations;
 PLkotlin/internal/jdk7/JDK7PlatformImplementations;-><init>()V
 Lkotlin/internal/jdk8/JDK8PlatformImplementations;
@@ -2449,7 +2450,7 @@ Lkotlin/ranges/ClosedRange;
 Lkotlin/ranges/IntProgression;
 SPLkotlin/ranges/IntProgression;-><clinit>()V
 HSPLkotlin/ranges/IntProgression;-><init>(III)V
-SPLkotlin/ranges/IntProgression;->getFirst()I
+HSPLkotlin/ranges/IntProgression;->getFirst()I
 SPLkotlin/ranges/IntProgression;->getLast()I
 SPLkotlin/ranges/IntProgression;->getStep()I
 SPLkotlin/ranges/IntProgression;->iterator()Ljava/util/Iterator;
@@ -2471,6 +2472,7 @@ Lkotlin/ranges/OpenEndRange;
 Lkotlin/ranges/RangesKt;
 Lkotlin/ranges/RangesKt__RangesKt;
 Lkotlin/ranges/RangesKt___RangesKt;
+PLkotlin/ranges/RangesKt___RangesKt;->coerceAtLeast(DD)D
 SPLkotlin/ranges/RangesKt___RangesKt;->coerceAtLeast(II)I
 SPLkotlin/ranges/RangesKt___RangesKt;->coerceAtLeast(JJ)J
 SPLkotlin/ranges/RangesKt___RangesKt;->coerceAtMost(FF)F
