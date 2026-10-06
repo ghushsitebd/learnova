@@ -342,12 +342,14 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             return
         }
 
-        // The 90-second learning window is divided into three short, automatic
-        // roadside encounters. Each encounter resolves from the same 500-level
-        // multilingual curriculum used by the sign and wildlife systems.
-        val activityIndex = (snapshot.learningElapsedSeconds / 30.0)
+        // The 90-second learning window is divided into five short, automatic
+        // roadside encounters. Each 18-second chapter resolves from the same
+        // 500-level multilingual curriculum used by the sign and wildlife systems.
+        // Keeping the cadence inside the existing 90-second window increases learning
+        // variety without extending the level or introducing manual controls.
+        val activityIndex = (snapshot.learningElapsedSeconds / 18.0)
             .toInt()
-            .coerceIn(0, 2)
+            .coerceIn(0, 4)
         if (activityIndex == learningActivityIndex) return
 
         val lesson = RoadsideLearningDirector().lessonForLearningSession(snapshot.level, activityIndex)
