@@ -4,7 +4,7 @@ import android.content.Context
 import android.util.Base64
 import java.io.FileNotFoundException
 import java.util.zip.GZIPInputStream
-import java.util.concurrent.ConcurrentHashMap
+import java.util.LinkedHashMap
 
 /**
  * Resolves authored near-field creature assets.
@@ -29,7 +29,10 @@ internal class CreatureAssetResolver(private val context: Context) {
         // Authored GLBs are optional but repeatedly reused by near-field encounters.
         // Cache decoded bytes so a lesson transition does not repeatedly perform
         // AssetManager I/O + Base64 decoding on the render thread.
-        private val decodedCache = ConcurrentHashMap<String, ByteArray>()
+        private const val MAX_CACHE_BYTES = 16 * 1024 * 1024
+        private val cacheLock = Any()
+        private val decodedCache = object : LinkedHashMap<String, ByteArray>(16, 0.75f, true) {}
+        private var cachedBytes = 0
 
         fun assetPath(species: String): String? {
             val key = normalize(species)
@@ -46,7 +49,9 @@ internal class CreatureAssetResolver(private val context: Context) {
     fun load(species: String): ByteArray? {
         val key = normalize(species)
         if (key.isBlank()) return null
-        decodedCache[key]?.let { return it }
+        synchronized(cacheLock) {
+            decodedCache[key]?.let { return it }
+        }
 
         // Prefer binary assets, then compressed binary, then repository-safe
         // base64 assets. This makes the runtime compatible with both the current
@@ -78,8 +83,21 @@ internal class CreatureAssetResolver(private val context: Context) {
                         bytes[3] != 0x46.toByte()) {
                         continue
                     }
-                    decodedCache.putIfAbsent(key, bytes)
-                    return decodedCache[key] ?: bytes
+                    synchronized(cacheLock) {
+                        if (bytes.size <= MAX_CACHE_BYTES) {
+                            decodedCache.remove(key)?.let { cachedBytes -= it.size }
+                            decodedCache[key] = bytes
+                            cachedBytes += bytes.size
+                            val iterator = decodedCache.entries.iterator()
+                            while (cachedBytes > MAX_CACHE_BYTES && iterator.hasNext()) {
+                                val entry = iterator.next()
+                                if (entry.key == key && decodedCache.size > 1) continue
+                                cachedBytes -= entry.value.size
+                                iterator.remove()
+                            }
+                        }
+                        return decodedCache[key] ?: bytes
+                    }
                 }
             } catch (_: FileNotFoundException) {
                 // Try the next representation; missing authored assets must not
