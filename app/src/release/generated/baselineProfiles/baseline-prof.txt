@@ -764,9 +764,9 @@ Landroidx/emoji2/text/EmojiCompat$DefaultSpanFactory;
 SPLandroidx/emoji2/text/EmojiCompat$DefaultSpanFactory;-><init>()V
 Landroidx/emoji2/text/EmojiCompat$GlyphChecker;
 Landroidx/emoji2/text/EmojiCompat$ListenerDispatcher;
-SPLandroidx/emoji2/text/EmojiCompat$ListenerDispatcher;-><init>(Ljava/util/Collection;I)V
-SPLandroidx/emoji2/text/EmojiCompat$ListenerDispatcher;-><init>(Ljava/util/Collection;ILjava/lang/Throwable;)V
-SPLandroidx/emoji2/text/EmojiCompat$ListenerDispatcher;->run()V
+PLandroidx/emoji2/text/EmojiCompat$ListenerDispatcher;-><init>(Ljava/util/Collection;I)V
+PLandroidx/emoji2/text/EmojiCompat$ListenerDispatcher;-><init>(Ljava/util/Collection;ILjava/lang/Throwable;)V
+PLandroidx/emoji2/text/EmojiCompat$ListenerDispatcher;->run()V
 Landroidx/emoji2/text/EmojiCompat$MetadataRepoLoader;
 Landroidx/emoji2/text/EmojiCompat$MetadataRepoLoaderCallback;
 SPLandroidx/emoji2/text/EmojiCompat$MetadataRepoLoaderCallback;-><init>()V
@@ -798,14 +798,14 @@ Landroidx/emoji2/text/EmojiCompatInitializer$LoadEmojiCompatRunnable;
 SPLandroidx/emoji2/text/EmojiCompatInitializer$LoadEmojiCompatRunnable;-><init>()V
 SPLandroidx/emoji2/text/EmojiCompatInitializer$LoadEmojiCompatRunnable;->run()V
 Landroidx/emoji2/text/EmojiExclusions;
-SPLandroidx/emoji2/text/EmojiExclusions;->getEmojiExclusions()Ljava/util/Set;
+PLandroidx/emoji2/text/EmojiExclusions;->getEmojiExclusions()Ljava/util/Set;
 Landroidx/emoji2/text/EmojiExclusions$EmojiExclusions_Api34;
-SPLandroidx/emoji2/text/EmojiExclusions$EmojiExclusions_Api34;->getExclusions()Ljava/util/Set;
+PLandroidx/emoji2/text/EmojiExclusions$EmojiExclusions_Api34;->getExclusions()Ljava/util/Set;
 Landroidx/emoji2/text/EmojiExclusions$EmojiExclusions_Reflections;
-SPLandroidx/emoji2/text/EmojiExclusions$EmojiExclusions_Reflections;->getExclusions()Ljava/util/Set;
+PLandroidx/emoji2/text/EmojiExclusions$EmojiExclusions_Reflections;->getExclusions()Ljava/util/Set;
 Landroidx/emoji2/text/EmojiProcessor;
-SPLandroidx/emoji2/text/EmojiProcessor;-><init>(Landroidx/emoji2/text/MetadataRepo;Landroidx/emoji2/text/EmojiCompat$SpanFactory;Landroidx/emoji2/text/EmojiCompat$GlyphChecker;Z[ILjava/util/Set;)V
-SPLandroidx/emoji2/text/EmojiProcessor;->initExclusions(Ljava/util/Set;)V
+PLandroidx/emoji2/text/EmojiProcessor;-><init>(Landroidx/emoji2/text/MetadataRepo;Landroidx/emoji2/text/EmojiCompat$SpanFactory;Landroidx/emoji2/text/EmojiCompat$GlyphChecker;Z[ILjava/util/Set;)V
+PLandroidx/emoji2/text/EmojiProcessor;->initExclusions(Ljava/util/Set;)V
 Landroidx/emoji2/text/FontRequestEmojiCompatConfig;
 SPLandroidx/emoji2/text/FontRequestEmojiCompatConfig;-><clinit>()V
 SPLandroidx/emoji2/text/FontRequestEmojiCompatConfig;-><init>(Landroid/content/Context;Landroidx/core/provider/FontRequest;)V
@@ -970,7 +970,7 @@ SPLandroidx/fragment/app/FragmentManager;-><init>()V
 SPLandroidx/fragment/app/FragmentManager;->addFragmentOnAttachListener(Landroidx/fragment/app/FragmentOnAttachListener;)V
 SPLandroidx/fragment/app/FragmentManager;->attachController(Landroidx/fragment/app/FragmentHostCallback;Landroidx/fragment/app/FragmentContainer;Landroidx/fragment/app/Fragment;)V
 PLandroidx/fragment/app/FragmentManager;->clearBackStackStateViewModels()V
-HSPLandroidx/fragment/app/FragmentManager;->collectAllSpecialEffectsController()Ljava/util/Set;
+SPLandroidx/fragment/app/FragmentManager;->collectAllSpecialEffectsController()Ljava/util/Set;
 SPLandroidx/fragment/app/FragmentManager;->dispatchActivityCreated()V
 SPLandroidx/fragment/app/FragmentManager;->dispatchCreate()V
 PLandroidx/fragment/app/FragmentManager;->dispatchDestroy()V
@@ -1112,7 +1112,7 @@ SPLandroidx/lifecycle/LifecycleRegistry;-><init>(Landroidx/lifecycle/LifecycleOw
 HSPLandroidx/lifecycle/LifecycleRegistry;->addObserver(Landroidx/lifecycle/LifecycleObserver;)V
 HPLandroidx/lifecycle/LifecycleRegistry;->backwardPass(Landroidx/lifecycle/LifecycleOwner;)V
 HSPLandroidx/lifecycle/LifecycleRegistry;->calculateTargetState(Landroidx/lifecycle/LifecycleObserver;)Landroidx/lifecycle/Lifecycle$State;
-HSPLandroidx/lifecycle/LifecycleRegistry;->enforceMainThreadIfNeeded(Ljava/lang/String;)V
+SPLandroidx/lifecycle/LifecycleRegistry;->enforceMainThreadIfNeeded(Ljava/lang/String;)V
 HSPLandroidx/lifecycle/LifecycleRegistry;->forwardPass(Landroidx/lifecycle/LifecycleOwner;)V
 SPLandroidx/lifecycle/LifecycleRegistry;->getCurrentState()Landroidx/lifecycle/Lifecycle$State;
 HSPLandroidx/lifecycle/LifecycleRegistry;->handleLifecycleEvent(Landroidx/lifecycle/Lifecycle$Event;)V
@@ -1883,6 +1883,18 @@ SPLandroidx/work/impl/utils/taskexecutor/WorkManagerTaskExecutor$1;-><init>(Land
 Lcom/learnova/app/AnimalSpecies;
 SPLcom/learnova/app/AnimalSpecies;-><init>(ILjava/lang/String;Ljava/lang/String;FF)V
 SPLcom/learnova/app/AnimalSpecies;->getScale()F
+Lcom/learnova/app/CharacterVoiceProfile;
+SPLcom/learnova/app/CharacterVoiceProfile;-><clinit>()V
+SPLcom/learnova/app/CharacterVoiceProfile;-><init>(Ljava/lang/String;Ljava/util/Locale;FFLjava/util/List;)V
+SPLcom/learnova/app/CharacterVoiceProfile;->getId()Ljava/lang/String;
+SPLcom/learnova/app/CharacterVoiceProfile;->getLocale()Ljava/util/Locale;
+SPLcom/learnova/app/CharacterVoiceProfile;->getPitch()F
+SPLcom/learnova/app/CharacterVoiceProfile;->getRate()F
+SPLcom/learnova/app/CharacterVoiceProfile;->getVoiceHints()Ljava/util/List;
+Lcom/learnova/app/CharacterVoiceProfile$Companion;
+SPLcom/learnova/app/CharacterVoiceProfile$Companion;-><init>()V
+SPLcom/learnova/app/CharacterVoiceProfile$Companion;-><init>(Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+SPLcom/learnova/app/CharacterVoiceProfile$Companion;->forName(Ljava/lang/String;)Lcom/learnova/app/CharacterVoiceProfile;
 Lcom/learnova/app/ChildDialogue;
 SPLcom/learnova/app/ChildDialogue;-><init>(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 SPLcom/learnova/app/ChildDialogue;-><init>(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -1914,6 +1926,7 @@ Lcom/learnova/app/JourneyDriveDirector$WhenMappings;
 PLcom/learnova/app/JourneyDriveDirector$WhenMappings;-><clinit>()V
 Lcom/learnova/app/JourneyEventDirector;
 SPLcom/learnova/app/JourneyEventDirector;-><init>()V
+PLcom/learnova/app/JourneyEventDirector;->acknowledgeAndArmNext()V
 HPLcom/learnova/app/JourneyEventDirector;->poll(JZ)Lcom/learnova/app/JourneyEventDirector$JourneyEvent;
 SPLcom/learnova/app/JourneyEventDirector;->resetForLevel(I)V
 Lcom/learnova/app/JourneyEventDirector$EventType;
@@ -2012,7 +2025,9 @@ SPLcom/learnova/app/LearnovaVoice;->playChildLesson(Lcom/learnova/app/SmartLesso
 SPLcom/learnova/app/LearnovaVoice;->playChildLine(Ljava/util/List;I)V
 SPLcom/learnova/app/LearnovaVoice;->playChildSequence(Ljava/util/List;)V
 PLcom/learnova/app/LearnovaVoice;->playSalamExchange()V
+HSPLcom/learnova/app/LearnovaVoice;->selectCharacterVoice(Lcom/learnova/app/CharacterVoiceProfile;)V
 PLcom/learnova/app/LearnovaVoice;->speak(Ljava/lang/String;Ljava/util/Locale;)V
+SPLcom/learnova/app/LearnovaVoice;->speakCharacter(Ljava/lang/String;Ljava/lang/String;)V
 HSPLcom/learnova/app/LearnovaVoice;->speakChildFallback(Ljava/lang/String;Ljava/lang/String;)V
 PLcom/learnova/app/LearnovaVoice;->speakInstruction(Z)V
 SPLcom/learnova/app/LearnovaVoice;->speakSmartLesson(Lcom/learnova/app/SmartLesson;)V
@@ -2046,6 +2061,7 @@ Lcom/learnova/app/MainActivity$$ExternalSyntheticLambda2;
 SPLcom/learnova/app/MainActivity$$ExternalSyntheticLambda2;-><init>(Lcom/learnova/app/MainActivity;)V
 Lcom/learnova/app/MainActivity$LearnovaGameView;
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;-><init>(Lcom/learnova/app/MainActivity;)V
+SPLcom/learnova/app/MainActivity$LearnovaGameView;->currentFriendName()Ljava/lang/String;
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawAnimals(Landroid/graphics/Canvas;FFLcom/learnova/app/SmartScene;)V
 SPLcom/learnova/app/MainActivity$LearnovaGameView;->drawAnimatedAnimal$default(Lcom/learnova/app/MainActivity$LearnovaGameView;Landroid/graphics/Canvas;Ljava/lang/String;FFFZFILjava/lang/Object;)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->drawAnimatedAnimal(Landroid/graphics/Canvas;Ljava/lang/String;FFFZF)V
@@ -2089,6 +2105,7 @@ SPLcom/learnova/app/MainActivity$LearnovaGameView;->hSafe(Landroid/graphics/Canv
 PLcom/learnova/app/MainActivity$LearnovaGameView;->handleQuranChoice(FFFF)Z
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->isQuranLevel()Z
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->learningSessionWasCompleted()Z
+PLcom/learnova/app/MainActivity$LearnovaGameView;->onDraw$lambda$9(Lcom/learnova/app/MainActivity;Lcom/learnova/app/MainActivity$LearnovaGameView;)V
 HSPLcom/learnova/app/MainActivity$LearnovaGameView;->onDraw(Landroid/graphics/Canvas;)V
 HPLcom/learnova/app/MainActivity$LearnovaGameView;->onTouchEvent(Landroid/view/MotionEvent;)Z
 PLcom/learnova/app/MainActivity$LearnovaGameView;->performClick()Z
@@ -2097,6 +2114,8 @@ HSPLcom/learnova/app/MainActivity$LearnovaGameView;->roadCenterAt(FFI)F
 HPLcom/learnova/app/MainActivity$LearnovaGameView;->saveProgress()V
 SPLcom/learnova/app/MainActivity$LearnovaGameView;->speakCurrentLesson()V
 SPLcom/learnova/app/MainActivity$LearnovaGameView;->wSafe(Landroid/graphics/Canvas;)F
+Lcom/learnova/app/MainActivity$LearnovaGameView$$ExternalSyntheticLambda5;
+PLcom/learnova/app/MainActivity$LearnovaGameView$$ExternalSyntheticLambda5;->run()V
 Lcom/learnova/app/MainActivity$LearnovaGameView$$ExternalSyntheticLambda6;
 SPLcom/learnova/app/MainActivity$LearnovaGameView$$ExternalSyntheticLambda6;-><init>(Lcom/learnova/app/MainActivity$LearnovaGameView;)V
 Lcom/learnova/app/MainActivity$LearnovaGameView$$ExternalSyntheticLambda7;
@@ -2106,6 +2125,7 @@ Lcom/learnova/app/QuranSurahLesson;
 SPLcom/learnova/app/QuranSurahLesson;-><init>(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 Lcom/learnova/app/RoadsideLearningDirector;
 HSPLcom/learnova/app/RoadsideLearningDirector;-><init>()V
+SPLcom/learnova/app/RoadsideLearningDirector;->maybeStop(IF)Lcom/learnova/app/RoadsideLearningDirector$SignLesson;
 SPLcom/learnova/app/RoadsideLearningDirector;->resetForLevel(I)V
 Lcom/learnova/app/RoadsideLearningDirector$SignLesson;
 HSPLcom/learnova/app/RoadsideLearningDirector$SignLesson;-><init>(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;)V
@@ -2204,9 +2224,11 @@ SPLkotlin/Pair;->getSecond()Ljava/lang/Object;
 Lkotlin/Result;
 SPLkotlin/Result;-><clinit>()V
 SPLkotlin/Result;->constructor-impl(Ljava/lang/Object;)Ljava/lang/Object;
+SPLkotlin/Result;->isFailure-impl(Ljava/lang/Object;)Z
 Lkotlin/Result$Companion;
 SPLkotlin/Result$Companion;-><init>()V
 SPLkotlin/Result$Companion;-><init>(Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+Lkotlin/Result$Failure;
 Lkotlin/SynchronizedLazyImpl;
 SPLkotlin/SynchronizedLazyImpl;-><init>(Lkotlin/jvm/functions/Function0;Ljava/lang/Object;)V
 SPLkotlin/SynchronizedLazyImpl;-><init>(Lkotlin/jvm/functions/Function0;Ljava/lang/Object;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -2280,7 +2302,7 @@ Lkotlin/collections/CollectionsKt;
 Lkotlin/collections/CollectionsKt__CollectionsJVMKt;
 Lkotlin/collections/CollectionsKt__CollectionsKt;
 SPLkotlin/collections/CollectionsKt__CollectionsKt;->emptyList()Ljava/util/List;
-SPLkotlin/collections/CollectionsKt__CollectionsKt;->getLastIndex(Ljava/util/List;)I
+HSPLkotlin/collections/CollectionsKt__CollectionsKt;->getLastIndex(Ljava/util/List;)I
 SPLkotlin/collections/CollectionsKt__CollectionsKt;->listOf([Ljava/lang/Object;)Ljava/util/List;
 Lkotlin/collections/CollectionsKt__IterablesKt;
 SPLkotlin/collections/CollectionsKt__IterablesKt;->collectionSizeOrDefault(Ljava/lang/Iterable;I)I
@@ -2296,6 +2318,9 @@ Lkotlin/collections/EmptyList;
 SPLkotlin/collections/EmptyList;-><clinit>()V
 SPLkotlin/collections/EmptyList;-><init>()V
 SPLkotlin/collections/EmptyList;->isEmpty()Z
+Lkotlin/collections/EmptySet;
+SPLkotlin/collections/EmptySet;-><clinit>()V
+SPLkotlin/collections/EmptySet;-><init>()V
 Lkotlin/collections/IntIterator;
 SPLkotlin/collections/IntIterator;-><init>()V
 Lkotlin/collections/MapsKt;
@@ -2314,6 +2339,7 @@ Lkotlin/collections/MapsKt___MapsKt;
 Lkotlin/collections/SetsKt;
 Lkotlin/collections/SetsKt__SetsJVMKt;
 Lkotlin/collections/SetsKt__SetsKt;
+SPLkotlin/collections/SetsKt__SetsKt;->emptySet()Ljava/util/Set;
 SPLkotlin/collections/SetsKt__SetsKt;->setOf([Ljava/lang/Object;)Ljava/util/Set;
 Lkotlin/collections/SetsKt___SetsKt;
 Lkotlin/enums/EnumEntries;
@@ -2425,7 +2451,7 @@ Lkotlin/ranges/IntProgression;
 SPLkotlin/ranges/IntProgression;-><clinit>()V
 HSPLkotlin/ranges/IntProgression;-><init>(III)V
 SPLkotlin/ranges/IntProgression;->getFirst()I
-HSPLkotlin/ranges/IntProgression;->getLast()I
+SPLkotlin/ranges/IntProgression;->getLast()I
 SPLkotlin/ranges/IntProgression;->getStep()I
 SPLkotlin/ranges/IntProgression;->iterator()Ljava/util/Iterator;
 SPLkotlin/ranges/IntProgression;->iterator()Lkotlin/collections/IntIterator;
@@ -2446,6 +2472,7 @@ Lkotlin/ranges/OpenEndRange;
 Lkotlin/ranges/RangesKt;
 Lkotlin/ranges/RangesKt__RangesKt;
 Lkotlin/ranges/RangesKt___RangesKt;
+PLkotlin/ranges/RangesKt___RangesKt;->coerceAtLeast(DD)D
 SPLkotlin/ranges/RangesKt___RangesKt;->coerceAtLeast(II)I
 SPLkotlin/ranges/RangesKt___RangesKt;->coerceAtLeast(JJ)J
 SPLkotlin/ranges/RangesKt___RangesKt;->coerceAtMost(FF)F
