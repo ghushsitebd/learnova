@@ -37,6 +37,7 @@ internal class VehicleFriendWorld(
     private var built=false
     private var learningCue=false
     private var learningCueUntil=0.0
+    private var learningIntensity=0.7
 
     fun build():Boolean {
         if(built) return true
@@ -84,6 +85,11 @@ internal class VehicleFriendWorld(
         if (active) learningCueUntil = t + 18.0
     }
 
+    /** Scales the companion's acknowledgement without changing the gameplay state machine. */
+    fun setLearningIntensity(value: Float) {
+        learningIntensity = value.coerceIn(0.55f, 1.0f)
+    }
+
     fun update(center:Double) {
         if(!built) return
         t += 1.0/60.0
@@ -94,7 +100,7 @@ internal class VehicleFriendWorld(
         val phase=if(driving) t*7.0 else t*2.0
         val bob=if(driving) sin(phase)*.035 else sin(phase)*.018
         val wave=when {
-            learningCue -> sin(t*8.0).coerceIn(-1.0,1.0) * .28
+            learningCue -> sin(t*8.0).coerceIn(-1.0,1.0) * (.18 + .14 * learningIntensity)
             driving -> (sin(t*3.6)*.10).coerceIn(-.10,.10)
             else -> sin(t*1.8)*.03
         }
@@ -103,7 +109,7 @@ internal class VehicleFriendWorld(
         val walkSide = side + walkPhase
         val x=s.x+cos(s.yaw)*walkSide
         val z=s.z-sin(s.yaw)*walkSide
-        val learningLift = if (learningCue) 0.045 * (0.5 + 0.5 * sin(t * 10.0)) else 0.0
+        val learningLift = if (learningCue) (0.028 + 0.024 * learningIntensity) * (0.5 + 0.5 * sin(t * 10.0)) else 0.0
         val hiddenY=s.y + bob + learningLift
         val scale=when {
             friend.lowercase().contains("bear") -> 1.12
