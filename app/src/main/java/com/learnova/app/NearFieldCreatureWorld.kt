@@ -106,11 +106,14 @@ internal class NearFieldCreatureWorld(
         val seed = stableSeed(distanceBand)
         val biome = WorldDirector.profile(centerDistance + 30.0).biome
         val pool = speciesPool(biome)
+            .asSequence()
+            .filter { it in SUPPORTED && it in packagedSpecies }
+            .distinct()
+            .toList()
         if (pool.isEmpty()) return null
 
         val speciesIndex = ((seed ushr (3 + slot)) + slot.toLong() * 3L) % pool.size
         val species = pool[speciesIndex.toInt()]
-        if (species !in SUPPORTED || species !in packagedSpecies) return null
 
         val baseDistance = MIN_DISTANCE + slot * 9.0
         val available = (MAX_DISTANCE - baseDistance).toInt().coerceAtLeast(0)
