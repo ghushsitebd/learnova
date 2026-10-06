@@ -1,9 +1,7 @@
 name: Learnova Macrobenchmark
 
 on:
-  workflow_run:
-    workflows: ["Build Learnova Release APK"]
-    types: [completed]
+  # Expensive performance measurement is deliberate, not per-commit.
   workflow_dispatch:
 
 permissions:
@@ -16,14 +14,14 @@ concurrency:
 jobs:
   benchmark:
     name: Run Learnova Macrobenchmarks
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Source
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.sha }}
 
       - name: Enable KVM group permissions
         run: |
