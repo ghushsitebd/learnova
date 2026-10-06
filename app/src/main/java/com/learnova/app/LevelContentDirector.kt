@@ -74,7 +74,7 @@ internal object LevelContentDirector {
     )
 
     private fun expandedEncounter(primary: String, level: Int): String {
-        val start = (level * 7 + primary.hashCode()).let { kotlin.math.abs(it) }
+        val start = Math.floorMod(level * 7 + primary.hashCode(), expandedEncounterBank.size)
         for (offset in expandedEncounterBank.indices) {
             val candidate = expandedEncounterBank[(start + offset) % expandedEncounterBank.size]
             if (candidate != primary) return candidate
@@ -92,7 +92,36 @@ internal object LevelContentDirector {
             "camel" to Triple("Camel", "উট", "جمل"), "eagle" to Triple("Eagle", "ঈগল", "نسر"),
             "car" to Triple("Car", "গাড়ি", "سيارة"), "bird" to Triple("Bird", "পাখি", "طائر"),
             "goat" to Triple("Goat", "ছাগল", "ماعز"), "sheep" to Triple("Sheep", "ভেড়া", "خروف"),
-            "chicken" to Triple("Chicken", "মুরগি", "دجاج")
+            "chicken" to Triple("Chicken", "মুরগি", "دجاج"),
+            "lion" to Triple("Lion", "সিংহ", "أسد"),
+            "tiger" to Triple("Tiger", "বাঘ", "نمر"),
+            "elephant" to Triple("Elephant", "হাতি", "فيل"),
+            "leopard" to Triple("Leopard", "চিতাবাঘ", "نمر مرقط"),
+            "bear" to Triple("Bear", "ভাল্লুক", "دب"),
+            "monkey" to Triple("Monkey", "বানর", "قرد"),
+            "giraffe" to Triple("Giraffe", "জিরাফ", "زرافة"),
+            "zebra" to Triple("Zebra", "জেব্রা", "حمار وحشي"),
+            "parrot" to Triple("Parrot", "টিয়া", "ببغاء"),
+            "falcon" to Triple("Falcon", "বাজ", "صقر"),
+            "owl" to Triple("Owl", "পেঁচা", "بومة"),
+            "peacock" to Triple("Peacock", "ময়ূর", "طاووس"),
+            "ostrich" to Triple("Ostrich", "উটপাখি", "نعامة"),
+            "buffalo" to Triple("Buffalo", "মহিষ", "جاموس"),
+            "gazelle" to Triple("Gazelle", "গ্যাজেল", "غزال"),
+            "boar" to Triple("Boar", "বুনো শূকর", "خنزير بري"),
+            "frog" to Triple("Frog", "ব্যাঙ", "ضفدع"),
+            "snake" to Triple("Snake", "সাপ", "ثعبان"),
+            "crab" to Triple("Crab", "কাঁকড়া", "سرطان البحر"),
+            "shark" to Triple("Shark", "হাঙর", "قرش"),
+            "whale" to Triple("Whale", "তিমি", "حوت"),
+            "seal" to Triple("Seal", "সিল", "فقمة"),
+            "penguin" to Triple("Penguin", "পেঙ্গুইন", "بطريق"),
+            "donkey" to Triple("Donkey", "গাধা", "حمار"),
+            "bus" to Triple("Bus", "বাস", "حافلة"),
+            "bike" to Triple("Bike", "বাইক", "دراجة"),
+            "train" to Triple("Train", "ট্রেন", "قطار"),
+            "truck" to Triple("Truck", "ট্রাক", "شاحنة"),
+            "bicycle" to Triple("Bicycle", "সাইকেল", "دراجة هوائية")
         )
         fun make(key: String, mode: String): LessonContent {
             val w = words[key] ?: Triple(key.replaceFirstChar { it.uppercase() }, key, key)
@@ -127,6 +156,21 @@ internal object LevelContentDirector {
             make(secondary, d),
             make(primary, e)
         )
+    }
+
+    /** Fast CI/runtime contract for the complete 500-level curriculum. */
+    fun validate(): Boolean {
+        if (MAX_LEVEL != 500 || LEVELS_PER_CHAPTER != 10) return false
+        for (level in 1..MAX_LEVEL) {
+            val profile = profile(level)
+            if (profile.level != level || profile.chapter != ((level - 1) / LEVELS_PER_CHAPTER) + 1) return false
+            if (profile.lessons.size != 5) return false
+            for (lesson in profile.lessons) {
+                if (lesson.english.isBlank() || lesson.bangla.isBlank() || lesson.arabic.isBlank()) return false
+                if (lesson.prompt.isBlank() || lesson.answer.isBlank()) return false
+            }
+        }
+        return true
     }
 
     private fun encounterFor(primary: String, local: Int): String {
