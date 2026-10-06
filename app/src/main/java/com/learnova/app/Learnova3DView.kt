@@ -40,6 +40,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var frameCallback: Choreographer.FrameCallback? = null
     private var started = false
     private var driving = false
+    private val journeyDirector = JourneyDriveDirector()
     private var driveTime = 0.0
     private var vehicleDistance = 0.0
     // Floating origin keeps Filament coordinates close to the camera during very long sessions.
@@ -250,6 +251,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 var physicsSteps = 0
                 while (physicsAccumulator >= physicsStepSeconds && physicsSteps < maxPhysicsStepsPerFrame) {
                     updatePhysicsStep(physicsStepSeconds)
+                    journeyDirector.update(physicsStepSeconds)
                     physicsAccumulator -= physicsStepSeconds
                     physicsSteps++
                 }
@@ -584,13 +586,29 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
     fun setDriving(value: Boolean) {
         vehicleFriend?.setDriving(value)
-        // A child cannot start moving while the avatar is in the middle of
-        // entering/exiting a vehicle. The normal gameplay path still remains
-        // one tap to drive / one tap to stop.
         if (value && vehicleInteraction.state != VehicleInteractionController.State.OUTSIDE) return
-        driving = value
-        if (!value && vehicleSpeed < 0.02) vehicleSpeed = 0.0
+        if (value == driving) return
+        if (value) {
+            if (!journeyDirector.toggleDrive()) return
+            driving = true
+        } else {
+            journeyDirector.toggleDrive()
+            driving = false
+        }
+        if (!driving && vehicleSpeed < 0.02) vehicleSpeed = 0.0
     }
+
+    /** Child-simple one-tap drive toggle; steering remains fully automatic. */
+    fun toggleJourney(): Boolean {
+        if (vehicleInteraction.state != VehicleInteractionController.State.OUTSIDE) return false
+        val nowDriving = journeyDirector.toggleDrive()
+        driving = nowDriving
+        vehicleFriend?.setDriving(nowDriving)
+        if (!nowDriving && vehicleSpeed < 0.02) vehicleSpeed = 0.0
+        return nowDriving
+    }
+
+    fun journeySnapshot(): JourneyDriveDirector.Snapshot = journeyDirector.snapshot()
 
     /** Steering is intentionally not user-controlled; road curvature drives it. */
 
