@@ -329,6 +329,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         }
     }
 
+    private val roadsideCurriculum = RoadsideLearningDirector()
+
     private fun updateLearningLessonDirector() {
         val snapshot = journeyDirector.snapshot()
         if (snapshot.level != activeLearningLessonLevel) {
@@ -338,23 +340,14 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         if (snapshot.state != JourneyDriveDirector.State.LEARNING || learningLessonTriggered) return
         if (snapshot.learningElapsedSeconds < 28.0) return
 
-        val animal = when ((snapshot.level - 1) % 12) {
-            0 -> "lion"
-            1 -> "elephant"
-            2 -> "tiger"
-            3 -> "deer"
-            4 -> "camel"
-            5 -> "fox"
-            6 -> "horse"
-            7 -> "rabbit"
-            8 -> "zebra"
-            9 -> "bear"
-            10 -> "giraffe"
-            else -> "frog"
-        }
+        // Use the same level curriculum as the Android learning UI. This prevents
+        // the 3D encounter from showing a different animal than the physical sign.
+        val activityIndex = (snapshot.learningElapsedSeconds / 18.0)
+            .toInt()
+            .coerceIn(0, 2)
+        val lesson = roadsideCurriculum.lessonForLearningSession(snapshot.level, activityIndex)
         learningLessonTriggered = true
-        showLearningSign()
-        triggerLearningAnimal(animal)
+        lesson.visualKey?.let(::triggerLearningAnimal)
     }
 
     /** Fixed 60Hz gameplay simulation; rendering remains driven by Choreographer. */
@@ -1398,44 +1391,3 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         terrainMesh?.destroy()
         terrainMesh = null
         roadsideWorld?.destroy()
-        waterSurfaceWorld?.destroy()
-        shorelineWorld?.destroy()
-        worldLife?.destroy()
-        nearFieldCreatureWorld?.destroy()
-        worldLife = null
-        nearFieldCreatureWorld = null
-        childNPC?.destroy()
-        childNPC = null
-        learningAnimalEncounter?.destroy()
-        learningAnimalEncounter = null
-        learningSignWorld?.destroy()
-        learningSignWorld = null
-        roadsideWorld = null
-        waterSurfaceWorld = null
-        if (rendererReady && sunEntity != 0) {
-            viewer.scene.removeEntity(sunEntity)
-            viewer.engine.lightManager.destroy(sunEntity)
-            EntityManager.get().destroy(sunEntity)
-            sunEntity = 0
-        }
-        assetIoExecutor.shutdownNow()
-        if (rendererReady) {
-            runCatching { viewer.destroy() }
-            rendererReady = false
-        }
-        super.onDetachedFromWindow()
-    }
-
-    private fun decodeModel(): ByteArray {
-        val compressed = Base64.decode(MODEL_GZ, Base64.DEFAULT)
-        return GZIPInputStream(ByteArrayInputStream(compressed)).use { input ->
-            input.readBytes()
-        }
-    }
-
-    companion object {
-        // Tiny procedural GLB: road, ground, PBR car body, cabin and four wheels.
-        // It is compressed at source so the migration adds very little source size.
-        private const val MODEL_GZ = "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"
-    }
-}
