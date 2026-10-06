@@ -126,6 +126,9 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var friendWalkCycle = 0.0
     private var activeLearningLessonLevel = 0
     private var learningActivityIndex = -1
+    // One shared director coordinates encounter pacing across all 500 levels.
+    // It is intentionally renderer-agnostic so future audio/analytics layers can reuse it.
+    private val learningEncounterDirector = LearningEncounterDirector()
 
     // Physical entry/exit state is kept separate from the child-simple drive
     // control. If a vehicle asset contains named door nodes, this layer animates
@@ -354,9 +357,19 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         if (activityIndex == learningActivityIndex) return
 
         val lesson = RoadsideLearningDirector().lessonForLearningSession(snapshot.level, activityIndex)
+        val encounter = learningEncounterDirector.encounter(
+            level = snapshot.level,
+            chapter = activityIndex,
+            elapsedSeconds = snapshot.learningElapsedSeconds
+        )
         learningActivityIndex = activityIndex
+
+        // Keep the child-facing encounter automatic: the director controls pacing,
+        // while the existing lesson/sign/animal systems remain the authoritative
+        // content sources. This makes the 500-level system scalable without
+        // duplicating assets or adding another gameplay state machine.
         showLearningSign()
-        vehicleFriend?.setLearningCue(true)
+        vehicleFriend?.setLearningCue(encounter.companionCue)
         lesson.visualKey?.let(::triggerLearningAnimal)
     }
 
