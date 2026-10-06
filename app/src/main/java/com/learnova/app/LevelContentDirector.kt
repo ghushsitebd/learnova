@@ -112,10 +112,21 @@ internal object LevelContentDirector {
             }
             return LessonContent(w.first, w.second, w.third, prompt, answer)
         }
+        // Five lesson chapters intentionally match the 90-second / 18-second
+        // roadside cadence. Each chapter gets a deterministic mode so the same
+        // level can be replayed without collapsing back to three repeated prompts.
         val a = lessonModes[(chapter + local) % lessonModes.size]
         val b = lessonModes[(chapter + local + 3) % lessonModes.size]
-        val d = lessonModes[(chapter + local + 6) % lessonModes.size]
-        return listOf(make(primary, a), make(secondary, b), make(primary, d))
+        val c = lessonModes[(chapter + local + 6) % lessonModes.size]
+        val d = lessonModes[(chapter + local + 9) % lessonModes.size]
+        val e = lessonModes[(chapter + local + 2) % lessonModes.size]
+        return listOf(
+            make(primary, a),
+            make(secondary, b),
+            make(primary, c),
+            make(secondary, d),
+            make(primary, e)
+        )
     }
 
     private fun encounterFor(primary: String, local: Int): String {
