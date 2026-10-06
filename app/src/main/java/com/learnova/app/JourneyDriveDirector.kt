@@ -1,7 +1,7 @@
 package com.learnova.app
 
 /** Deterministic 500-level child-simple journey controller. */
-internal class JourneyDriveDirector(
+class JourneyDriveDirector(
     private val levelCount: Int = 500,
     private val minimumLevelSeconds: Double = 180.0,
     private val learningWindowSeconds: Double = 90.0
