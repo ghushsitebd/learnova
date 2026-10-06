@@ -154,9 +154,13 @@ jobs:
 
           # Validate behavior by checking the actual implementation primitives,
           # not comments, so wording changes cannot create false CI failures.
-          grep -F 'running = !running' "$MAIN" >/dev/null
-          grep -F 'threeDWorld.setDriving(running)' "$MAIN" >/dev/null
+          grep -F 'running = threeDWorld.toggleJourney()' "$MAIN" >/dev/null
+          grep -F 'fun toggleJourney(): Boolean' "$WORLD" >/dev/null
           grep -F 'MotionEvent.ACTION_MOVE' "$MAIN" >/dev/null
+          if grep -F 'threeDWorld.setDriving(running)' "$MAIN" >/dev/null; then
+            echo "::error::Legacy direct driving toggle detected; JourneyDriveDirector must remain authoritative."
+            exit 1
+          fi
           grep -F 'RoadSpline.sampleRelative' "$WORLD" >/dev/null
           grep -F 'fun show(worldDistance: Double)' "$SIGN" >/dev/null
           grep -F 'authoredGlb.show(' "$ANIMAL" >/dev/null
