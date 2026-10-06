@@ -87,7 +87,7 @@ internal class VehicleFriendWorld(
 
     /** Scales the companion's acknowledgement without changing the gameplay state machine. */
     fun setLearningIntensity(value: Float) {
-        learningIntensity = value.coerceIn(0.55f, 1.0f)
+        learningIntensity = value.coerceIn(0.55f, 1.0f).toDouble()
     }
 
     fun update(center:Double) {
