@@ -78,7 +78,8 @@ internal class CreatureAssetResolver(private val context: Context) {
                         bytes[3] != 0x46.toByte()) {
                         continue
                     }
-                    return bytes
+                    decodedCache.putIfAbsent(key, bytes)
+                    return decodedCache[key] ?: bytes
                 }
             } catch (_: FileNotFoundException) {
                 // Try the next representation; missing authored assets must not
