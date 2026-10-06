@@ -56,10 +56,30 @@ internal object LevelContentDirector {
             biome = theme.first,
             focus = theme.second,
             primaryEncounter = theme.third,
-            secondaryEncounter = encounterFor(theme.third, local),
+            secondaryEncounter = expandedEncounter(theme.third, safe),
             lessonMode = lessonModes[(chapter * 3 + local) % lessonModes.size],
             lessons = lessonPack(theme.third, encounterFor(theme.third, local), local, chapter)
         )
+    }
+
+
+    // Expanded, deterministic encounter bank. Reusing a compact bank keeps the APK
+    // small while giving all 500 levels varied, multilingual learning targets.
+    private val expandedEncounterBank = arrayOf(
+        "lion", "tiger", "elephant", "leopard", "bear", "monkey", "giraffe", "zebra",
+        "parrot", "falcon", "owl", "peacock", "ostrich", "buffalo", "gazelle", "stag",
+        "boar", "frog", "snake", "crab", "shark", "whale", "seal", "penguin",
+        "dolphin", "turtle", "fish", "duck", "horse", "donkey", "goat", "sheep",
+        "cow", "chicken", "deer", "fox", "rabbit", "wolf", "camel", "bird"
+    )
+
+    private fun expandedEncounter(primary: String, level: Int): String {
+        val start = (level * 7 + primary.hashCode()).let { kotlin.math.abs(it) }
+        for (offset in expandedEncounterBank.indices) {
+            val candidate = expandedEncounterBank[(start + offset) % expandedEncounterBank.size]
+            if (candidate != primary) return candidate
+        }
+        return primary
     }
 
     private fun lessonPack(primary: String, secondary: String, local: Int, chapter: Int): List<LessonContent> {
