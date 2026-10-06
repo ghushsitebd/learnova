@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Base64
 import java.io.FileNotFoundException
 import java.util.zip.GZIPInputStream
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Resolves authored near-field creature assets.
@@ -25,6 +26,10 @@ internal class CreatureAssetResolver(private val context: Context) {
 
     companion object {
         private const val ROOT = "creatures"
+        // Authored GLBs are optional but repeatedly reused by near-field encounters.
+        // Cache decoded bytes so a lesson transition does not repeatedly perform
+        // AssetManager I/O + Base64 decoding on the render thread.
+        private val decodedCache = ConcurrentHashMap<String, ByteArray>()
 
         fun assetPath(species: String): String? {
             val key = normalize(species)
@@ -41,6 +46,7 @@ internal class CreatureAssetResolver(private val context: Context) {
     fun load(species: String): ByteArray? {
         val key = normalize(species)
         if (key.isBlank()) return null
+        decodedCache[key]?.let { return it }
 
         // Prefer binary assets, then compressed binary, then repository-safe
         // base64 assets. This makes the runtime compatible with both the current
