@@ -228,9 +228,11 @@ class MainActivity : AppCompatActivity() {
                         val now = System.currentTimeMillis()
                         if (now - lastTap > 220L) {
                             lastTap = now
-                            running = !running
+                            // One tap is the only child driving control. The 3D journey
+                            // director is the authoritative source of drive/stop state so
+                            // the renderer and the learning clock cannot drift apart.
+                            running = threeDWorld.toggleJourney()
                             steeringInput = 0f
-                            threeDWorld.setDriving(running)
                             if (running) {
                                 natureAudio.start()
                                 if (!salamPlayedForSession) {
