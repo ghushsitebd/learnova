@@ -112,8 +112,16 @@ internal class NearFieldCreatureWorld(
             .toList()
         if (pool.isEmpty()) return null
 
-        val speciesIndex = ((seed ushr (3 + slot)) + slot.toLong() * 3L) % pool.size
-        val species = pool[speciesIndex.toInt()]
+        // Never instantiate the same authored species in multiple near-field
+        // slots at once. This prevents duplicate GLB residency and guarantees
+        // that each additional verified asset increases visible wildlife variety.
+        val uniquePool = pool.filter { species ->
+            species == activeSpecies[slot] || activeSpecies.indexOf(species) < 0
+        }
+        if (uniquePool.isEmpty()) return null
+
+        val speciesIndex = ((seed ushr (3 + slot)) + slot.toLong() * 3L) % uniquePool.size
+        val species = uniquePool[speciesIndex.toInt()]
 
         val baseDistance = MIN_DISTANCE + slot * 9.0
         val available = (MAX_DISTANCE - baseDistance).toInt().coerceAtLeast(0)
