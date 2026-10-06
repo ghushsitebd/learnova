@@ -122,8 +122,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var powerManager: PowerManager? = null
     private var thermalListener: PowerManager.OnThermalStatusChangedListener? = null
     private var traceFrameCounter = 0
+    // The permanent companion occasionally leaves the vehicle for a short, safe roadside walk.
     private var friendWalkCycle = 0.0
-    // The permanent companion occasionally leaves the vehicle for a short, safe roadside walk.\n    private var friendWalkCycle = 0.0
 
     // Physical entry/exit state is kept separate from the child-simple drive
     // control. If a vehicle asset contains named door nodes, this layer animates
