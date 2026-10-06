@@ -6,6 +6,7 @@ import re
 ROOT = Path(__file__).resolve().parents[1]
 world = (ROOT / "app/src/main/java/com/learnova/app/NearFieldCreatureWorld.kt").read_text()
 controller = (ROOT / "app/src/main/java/com/learnova/app/CreatureGlbController.kt").read_text()
+resolver = (ROOT / "app/src/main/java/com/learnova/app/CreatureAssetResolver.kt").read_text()
 view = (ROOT / "app/src/main/java/com/learnova/app/Learnova3DView.kt").read_text()
 
 def require(text, pattern, label):
@@ -31,6 +32,10 @@ require(controller, r"activeAnimator\s*=\s*asset\.instance\?\.animator\?\.takeIf
 require(controller, r"animator\.applyAnimation\((?:activeAnimationIndex|selected),", "animation playback")
 require(controller, r"scene\.addEntities\(asset\.entities\)", "scene attachment")
 require(controller, r"scene\.removeEntities\(asset\.entities\)", "scene cleanup")
+require(resolver, r"MAX_CACHE_BYTES\s*=\s*16\s*\*\s*1024\s*\*\s*1024", "bounded authored asset cache")
+require(resolver, r"LinkedHashMap<String, ByteArray>\(16, 0\.75f, true\)", "LRU cache ordering")
+require(resolver, r"synchronized\(cacheLock\)", "thread-safe cache access")
+require(resolver, r"while \(cachedBytes > MAX_CACHE_BYTES", "cache eviction guard")
 require(view, r"nearFieldCreatureWorld\?\.update\(vehicleDistance\)", "render-loop integration")
 
 print("Near-field presentation contracts verified.")
@@ -39,5 +44,6 @@ print("- eight-slot authored GLB presentation")
 print("- deterministic habitat-aware species selection")
 print("- animation playback + per-frame movement")
 print("- deterministic hide/cleanup")
+print("- bounded 16MiB LRU authored-asset cache")
 print("- only structurally verified creature assets are promoted to near-field path")
 print("- Learnova3DView render-loop integration")
