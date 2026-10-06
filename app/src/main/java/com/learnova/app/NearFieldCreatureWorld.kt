@@ -32,7 +32,13 @@ internal class NearFieldCreatureWorld(
 
         // Only authored binaries are promoted into the near-field presentation.
         // Unsupported catalog entries remain on the lightweight distant-life path.
-        val SUPPORTED = setOf("deer", "fox", "horse", "wolf", "cow", "boar", "rabbit", "stag")
+        val SUPPORTED = setOf(
+            "lion", "tiger", "elephant", "leopard", "bear", "monkey", "giraffe", "zebra",
+            "parrot", "falcon", "owl", "peacock", "ostrich", "buffalo", "gazelle", "stag",
+            "boar", "frog", "snake", "crab", "shark", "whale", "seal", "penguin",
+            "dolphin", "turtle", "fish", "duck", "horse", "donkey", "goat", "sheep",
+            "cow", "chicken", "deer", "fox", "rabbit", "wolf", "camel"
+        )
     }
 
     fun build(): Boolean = true
@@ -169,11 +175,15 @@ internal class NearFieldCreatureWorld(
     }
 
     private fun speciesPool(biome: WorldDirector.Biome): List<String> = when (biome) {
-        WorldDirector.Biome.FOREST -> listOf("wolf", "fox", "deer", "horse", "cow", "boar", "stag", "rabbit")
-        WorldDirector.Biome.MOUNTAIN -> listOf("wolf", "horse", "stag", "boar")
-        WorldDirector.Biome.PLATEAU -> listOf("deer", "horse", "stag", "rabbit")
-        WorldDirector.Biome.VILLAGE -> listOf("horse", "deer", "cow", "rabbit", "boar")
-        else -> emptyList()
+        WorldDirector.Biome.FOREST -> listOf("lion", "tiger", "leopard", "bear", "monkey", "wolf", "fox", "deer", "boar", "stag", "rabbit")
+        WorldDirector.Biome.MOUNTAIN -> listOf("eagle", "falcon", "bear", "wolf", "horse", "stag", "goat")
+        WorldDirector.Biome.PLATEAU -> listOf("giraffe", "zebra", "deer", "horse", "stag", "rabbit", "ostrich")
+        WorldDirector.Biome.VILLAGE -> listOf("horse", "cow", "goat", "sheep", "chicken", "donkey", "rabbit", "buffalo")
+        WorldDirector.Biome.DESERT -> listOf("camel", "gazelle", "ostrich", "fox")
+        WorldDirector.Biome.RIVER -> listOf("dolphin", "turtle", "duck", "fish", "frog")
+        WorldDirector.Biome.COAST -> listOf("dolphin", "whale", "seal", "shark", "turtle", "crab")
+        WorldDirector.Biome.MARKET -> listOf("horse", "donkey", "goat", "cow", "chicken")
+        else -> listOf("deer", "fox", "rabbit", "bird")
     }
 
     private fun stableSeed(value: Long): Long {
