@@ -336,6 +336,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             learningActivityIndex = -1
         }
         if (snapshot.state != JourneyDriveDirector.State.LEARNING) {
+            vehicleFriend?.setLearningCue(false)
             if (learningActivityIndex >= 0 && snapshot.learningElapsedSeconds >= 90.0) {
                 hideLearningSign()
             }
@@ -355,6 +356,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         val lesson = RoadsideLearningDirector().lessonForLearningSession(snapshot.level, activityIndex)
         learningActivityIndex = activityIndex
         showLearningSign()
+        vehicleFriend?.setLearningCue(true)
         lesson.visualKey?.let(::triggerLearningAnimal)
     }
 
