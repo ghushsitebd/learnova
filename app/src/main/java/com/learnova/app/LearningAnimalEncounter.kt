@@ -80,7 +80,7 @@ internal class LearningAnimalEncounter(
         val now = System.nanoTime() * 1e-9
         if (lastNow != 0L && now - lastNow < 1.0 / 45.0) return
         lastNow = (now * 1e9).toLong()
-        val t = ((now - start) / 3.8).coerceIn(0.0, 1.0)
+        val t = ((now - start) / 14.8).coerceIn(0.0, 1.0)
         if (t >= 1.0) {
             active = false
             authoredGlb.hide()
@@ -97,11 +97,11 @@ internal class LearningAnimalEncounter(
         // without freezing the whole driving world.
         val phase = smooth(t)
         val walkPhase = when {
-            t < 0.30 -> smooth(t / 0.30)
-            t < 0.62 -> 1.0
-            else -> smooth((1.0 - t) / 0.38)
+            t < 0.34 -> smooth(t / 0.34)
+            t < 0.72 -> 1.0
+            else -> smooth((1.0 - t) / 0.28)
         }
-        val pause = t in 0.30..0.62
+        val pause = t in 0.34..0.72
         val wave = sin(t * Math.PI * 2.0)
 
         // Keep the encounter lightweight but make movement match the animal's habitat:
