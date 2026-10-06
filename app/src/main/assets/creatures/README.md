@@ -1,18 +1,23 @@
 # Learnova creature assets
 
-The release CI bundles these self-contained GLB files into
-`app/src/main/assets/creatures/` from the permanent 3DAssets.dev CDN URLs.
+Release CI fetches these verified animated GLB files into
+`app/src/main/assets/creatures/` from pinned GitHub-hosted sources.
 
-All four sources are published under **CC0 1.0 Universal**, allowing commercial
-use and redistribution without attribution.
+The runtime does **not** assume that the logical wildlife catalog has a binary
+asset. Only species that are both supported by the near-field controller and
+present in the packaged asset inventory are promoted to the authored 3D
+near-field path.
 
-| File | Animal | Source |
+| File | Animal | Asset pipeline |
 |---|---|---|
-| `lion.glb` | African lioness | https://3dassets.dev/assets/exotic-wildlife-hd-african-lioness-lying-6fe771d6 |
-| `tiger.glb` | Bengal tiger | https://3dassets.dev/assets/exotic-wildlife-hd-bengal-tiger-prowling-b1de9790 |
-| `elephant.glb` | African elephant bull | https://3dassets.dev/assets/exotic-wildlife-hd-african-elephant-bull-29d8c02f |
-| `deer.glb` | Red deer stag | https://3dassets.dev/assets/exotic-wildlife-hd-red-deer-stag-82f8d92a |
+| `deer.glb` | Deer | pinned CC0/Quaternius source |
+| `fox.glb` | Fox | pinned CC0/Quaternius source |
+| `horse.glb` | Horse | pinned CC0/Quaternius source |
+| `wolf.glb` | Wolf | pinned CC0/Quaternius source |
+| `cow.glb` | Cow | pinned GLB source |
+| `boar.glb` | Boar | pinned CC0/Quaternius source |
+| `rabbit.glb` | Rabbit | pinned CC0/Quaternius source |
+| `stag.glb` | Stag | pinned CC0/Quaternius source |
 
-The models are static poses at this stage. Learnova's near-field controller
-handles placement and movement; skeletal animation will be added in the next
-creature-animation stage.
+The fetch/validation pipeline verifies GLB v2 structure, meshes, skins and
+non-zero skeletal animation tracks before the assets are accepted by CI.
