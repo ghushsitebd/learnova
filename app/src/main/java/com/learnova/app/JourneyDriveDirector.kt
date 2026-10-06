@@ -40,8 +40,11 @@ class JourneyDriveDirector(
         val dt = deltaSeconds.coerceIn(0.0, 0.25)
         if (isDriving) {
             elapsed = (elapsed + dt).coerceAtMost(minimumLevelSeconds)
-            if (learningTriggered) {
+            if (learningTriggered && state == State.LEARNING) {
                 learningElapsed = (learningElapsed + dt).coerceAtMost(learningWindowSeconds)
+                if (learningElapsed >= learningWindowSeconds) {
+                    state = State.DRIVING
+                }
             }
             if (!learningTriggered && elapsed >= 45.0) {
                 learningTriggered = true
