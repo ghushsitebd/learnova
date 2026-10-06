@@ -35,6 +35,8 @@ internal class VehicleFriendWorld(
     private var t=0.0
     private var lastCenter=Double.NaN
     private var built=false
+    private var learningCue=false
+    private var learningCueUntil=0.0
 
     fun build():Boolean {
         if(built) return true
@@ -76,21 +78,33 @@ internal class VehicleFriendWorld(
     fun setDriving(value:Boolean) { driving=value }
     fun setOutside(value:Boolean) { outside=value }
 
+    /** A learning encounter makes the permanent friend visibly acknowledge the lesson. */
+    fun setLearningCue(active:Boolean) {
+        learningCue = active
+        if (active) learningCueUntil = t + 18.0
+    }
+
     fun update(center:Double) {
         if(!built) return
         t += 1.0/60.0
         if(!lastCenter.isNaN() && kotlin.math.abs(center-lastCenter)<0.12 && (t*60.0).toInt()%2!=0) return
         lastCenter=center
         val s=RoadSpline.sampleRelative(center,center)
+        if (learningCue && t >= learningCueUntil) learningCue = false
         val phase=if(driving) t*7.0 else t*2.0
         val bob=if(driving) sin(phase)*.035 else sin(phase)*.018
-        val wave=if(driving) (sin(t*3.6)*.10).coerceIn(-.10,.10) else sin(t*1.8)*.03
+        val wave=when {
+            learningCue -> sin(t*8.0).coerceIn(-1.0,1.0) * .28
+            driving -> (sin(t*3.6)*.10).coerceIn(-.10,.10)
+            else -> sin(t*1.8)*.03
+        }
         val side=0.92
         val walkPhase = if (outside) sin(t * 1.7) * 1.8 else 0.0
         val walkSide = side + walkPhase
         val x=s.x+cos(s.yaw)*walkSide
         val z=s.z-sin(s.yaw)*walkSide
-        val hiddenY=s.y + bob
+        val learningLift = if (learningCue) 0.045 * (0.5 + 0.5 * sin(t * 10.0)) else 0.0
+        val hiddenY=s.y + bob + learningLift
         val scale=when {
             friend.lowercase().contains("bear") -> 1.12
             friend.lowercase().contains("rabbit") -> .92
