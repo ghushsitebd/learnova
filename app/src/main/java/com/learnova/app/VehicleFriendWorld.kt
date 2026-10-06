@@ -100,7 +100,7 @@ internal class VehicleFriendWorld(
         val phase=if(driving) t*7.0 else t*2.0
         val bob=if(driving) sin(phase)*.035 else sin(phase)*.018
         val wave=when {
-            learningCue -> sin(t*8.0).coerceIn(-1.0,1.0) * (.18 + .14 * learningIntensity)
+            learningCue -> sin(t*8.0).coerceIn(-1.0,1.0) * (.18 + .14 * learningIntensity.toDouble())
             driving -> (sin(t*3.6)*.10).coerceIn(-.10,.10)
             else -> sin(t*1.8)*.03
         }
@@ -109,7 +109,7 @@ internal class VehicleFriendWorld(
         val walkSide = side + walkPhase
         val x=s.x+cos(s.yaw)*walkSide
         val z=s.z-sin(s.yaw)*walkSide
-        val learningLift = if (learningCue) (0.028 + 0.024 * learningIntensity) * (0.5 + 0.5 * sin(t * 10.0)) else 0.0
+        val learningLift = if (learningCue) (0.028 + 0.024 * learningIntensity.toDouble()) * (0.5 + 0.5 * sin(t * 10.0)) else 0.0
         val hiddenY=s.y + bob + learningLift
         val scale=when {
             friend.lowercase().contains("bear") -> 1.12
