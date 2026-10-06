@@ -124,6 +124,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var traceFrameCounter = 0
     // The permanent companion occasionally leaves the vehicle for a short, safe roadside walk.
     private var friendWalkCycle = 0.0
+    private var activeLearningLessonLevel = 0
+    private var learningLessonTriggered = false
 
     // Physical entry/exit state is kept separate from the child-simple drive
     // control. If a vehicle asset contains named door nodes, this layer animates
@@ -252,6 +254,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 while (physicsAccumulator >= physicsStepSeconds && physicsSteps < maxPhysicsStepsPerFrame) {
                     updatePhysicsStep(physicsStepSeconds)
                     journeyDirector.update(physicsStepSeconds)
+                    updateLearningLessonDirector()
                     physicsAccumulator -= physicsStepSeconds
                     physicsSteps++
                 }
@@ -324,6 +327,34 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         } finally {
             Trace.endSection()
         }
+    }
+
+    private fun updateLearningLessonDirector() {
+        val snapshot = journeyDirector.snapshot()
+        if (snapshot.level != activeLearningLessonLevel) {
+            activeLearningLessonLevel = snapshot.level
+            learningLessonTriggered = false
+        }
+        if (snapshot.state != JourneyDriveDirector.State.LEARNING || learningLessonTriggered) return
+        if (snapshot.learningElapsedSeconds < 28.0) return
+
+        val animal = when ((snapshot.level - 1) % 12) {
+            0 -> "lion"
+            1 -> "elephant"
+            2 -> "tiger"
+            3 -> "deer"
+            4 -> "camel"
+            5 -> "fox"
+            6 -> "horse"
+            7 -> "rabbit"
+            8 -> "zebra"
+            9 -> "bear"
+            10 -> "giraffe"
+            else -> "frog"
+        }
+        learningLessonTriggered = true
+        showLearningSign()
+        triggerLearningAnimal(animal)
     }
 
     /** Fixed 60Hz gameplay simulation; rendering remains driven by Choreographer. */
