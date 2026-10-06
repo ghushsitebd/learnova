@@ -340,6 +340,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         }
         if (snapshot.state != JourneyDriveDirector.State.LEARNING) {
             vehicleFriend?.setLearningCue(false)
+        vehicleFriend?.setLearningIntensity(0.7f)
             if (learningActivityIndex >= 0 && snapshot.learningElapsedSeconds >= 90.0) {
                 hideLearningSign()
             }
