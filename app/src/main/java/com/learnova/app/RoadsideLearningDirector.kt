@@ -3,9 +3,9 @@ package com.learnova.app
 /**
  * Child-first roadside learning director.
  *
- * A journey contains one calm learning stop. The stop is presented as a
- * roadside sign rather than a white information card. The same system can
- * scale to hundreds of levels without storing hundreds of scenes.
+ * The 500 levels are content addresses, not 500 duplicated scenes. This director
+ * resolves every level/activity through LevelContentDirector so the sign, voice,
+ * multilingual vocabulary and near-field creature stay on the same curriculum key.
  */
 internal class RoadsideLearningDirector {
 
@@ -19,56 +19,56 @@ internal class RoadsideLearningDirector {
         val accepted: Set<String>
     )
 
-    private val lessons = listOf(
-        SignLesson("fox", "FOX", "fox", "শিয়াল", "ثعلب", "Say: fox", setOf("fox", "ফক্স", "শিয়াল", "ثعلب")),
-        SignLesson("deer", "DEER", "deer", "হরিণ", "أيل", "Say: deer", setOf("deer", "ডিয়ার", "হরিণ", "أيل")),
-        SignLesson("horse", "HORSE", "horse", "ঘোড়া", "حصان", "Say: horse", setOf("horse", "হর্স", "ঘোড়া", "حصان")),
-        SignLesson("wolf", "WOLF", "wolf", "নেকড়ে", "ذئب", "Say: wolf", setOf("wolf", "উলফ", "নেকড়ে", "ذئب")),
-        SignLesson("bear", "BEAR", "bear", "ভাল্লুক", "دب", "Say: bear", setOf("bear", "বিয়ার", "ভাল্লুক", "دب")),
-        SignLesson("monkey", "MONKEY", "monkey", "বানর", "قرد", "Say: monkey", setOf("monkey", "মাঙ্কি", "বানর", "قرد")),
-        SignLesson("tiger", "TIGER", "tiger", "বাঘ", "نمر", "Say: tiger", setOf("tiger", "টাইগার", "বাঘ", "نمر")),
-        SignLesson("parrot", "PARROT", "parrot", "টিয়া", "ببغاء", "Say: parrot", setOf("parrot", "প্যারট", "টিয়া", "ببغاء")),
-        SignLesson("camel", "CAMEL", "camel", "উট", "جمل", "Say: camel", setOf("camel", "ক্যামেল", "উট", "جمل")),
-        SignLesson("giraffe", "GIRAFFE", "giraffe", "জিরাফ", "زرافة", "Say: giraffe", setOf("giraffe", "জিরাফ", "زرافة")),
-        SignLesson("zebra", "ZEBRA", "zebra", "জেব্রা", "حمار وحشي", "Say: zebra", setOf("zebra", "জেব্রা", "حمار وحشي")),
-        SignLesson("gazelle", "GAZELLE", "gazelle", "গ্যাজেল", "غزال", "Say: gazelle", setOf("gazelle", "গ্যাজেল", "غزال")),
-        SignLesson("falcon", "FALCON", "falcon", "বাজ", "صقر", "Say: falcon", setOf("falcon", "ফ্যালকন", "বাজ", "صقر")),
-        SignLesson("book", "BOOK", null, "বই", "كتاب", "Say: book", setOf("book", "বুক", "বই", "كتاب")),
-        SignLesson("cat", "CAT", "cat", "বিড়াল", "قطة", "Say: cat", setOf("cat", "ক্যাট", "বিড়াল", "قطة")),
-        SignLesson("dog", "DOG", "dog", "কুকুর", "كلب", "Say: dog", setOf("dog", "ডগ", "কুকুর", "كلب")),
-        SignLesson("elephant", "ELEPHANT", "elephant", "হাতি", "فيل", "Say: elephant", setOf("elephant", "এলিফ্যান্ট", "হাতি", "فيل")),
-        SignLesson("lion", "LION", "lion", "সিংহ", "أسد", "Say: lion", setOf("lion", "লায়ন", "সিংহ", "أسد")),
-        SignLesson("rabbit", "RABBIT", "rabbit", "খরগোশ", "أرنب", "Say: rabbit", setOf("rabbit", "র‍্যাবিট", "খরগোশ", "أرنب")),
-        SignLesson("fish", "FISH", "fish", "মাছ", "سمكة", "Say: fish", setOf("fish", "ফিশ", "মাছ", "سمكة")),
-        SignLesson("tree", "TREE", null, "গাছ", "شجرة", "Say: tree", setOf("tree", "ট্রি", "গাছ", "شجرة")),
-        SignLesson("sun", "SUN", null, "সূর্য", "شمس", "Say: sun", setOf("sun", "সান", "সূর্য", "شمس")),
-        SignLesson("moon", "MOON", null, "চাঁদ", "قمر", "Say: moon", setOf("moon", "মুন", "চাঁদ", "قمر")),
-        SignLesson("car", "CAR", null, "গাড়ি", "سيارة", "Say: car", setOf("car", "কার", "গাড়ি", "سيارة"))
+    private val fallback = SignLesson(
+        "deer", "DEER", "deer", "হরিণ", "غزال", "Say: deer",
+        setOf("deer", "ডিয়ার", "হরিণ", "غزال")
     )
 
-    // Learning uses habitat-aware animal rosters so each 90-second chapter
-    // feels like a real discovery in the world instead of a random vocabulary list.
-    // These keys are limited to verified creature keys already consumed by the renderer.
-    private val habitatRosters = listOf(
-        listOf("fox", "deer", "bear", "monkey", "tiger"),
-        listOf("lion", "elephant", "giraffe", "zebra", "gazelle"),
-        listOf("horse", "cat", "dog", "rabbit", "monkey"),
-        listOf("camel", "gazelle", "falcon", "fox", "rabbit"),
-        listOf("fish", "elephant", "deer", "parrot", "monkey"),
-        listOf("wolf", "bear", "deer", "falcon", "rabbit")
+    // Only these species are promoted to the authored near-field GLB path.
+    // Other vocabulary remains valid learning content but uses the lightweight
+    // presentation until its production asset is verified and packaged.
+    private val verifiedVisuals = setOf(
+        "deer", "fox", "horse", "wolf", "cow", "boar", "rabbit", "stag", "lion"
     )
 
-    private val lessonByKey = lessons.associateBy { it.key }
+    private val translations = mapOf(
+        "deer" to Triple("Deer", "হরিণ", "غزال"),
+        "fox" to Triple("Fox", "শিয়াল", "ثعلب"),
+        "horse" to Triple("Horse", "ঘোড়া", "حصان"),
+        "wolf" to Triple("Wolf", "নেকড়ে", "ذئب"),
+        "cow" to Triple("Cow", "গরু", "بقرة"),
+        "boar" to Triple("Boar", "বুনো শূকর", "خنزير بري"),
+        "rabbit" to Triple("Rabbit", "খরগোশ", "أرنب"),
+        "stag" to Triple("Stag", "পুরুষ হরিণ", "أيل"),
+        "lion" to Triple("Lion", "সিংহ", "أسد"),
+        "bear" to Triple("Bear", "ভাল্লুক", "دب"),
+        "monkey" to Triple("Monkey", "বানর", "قرد"),
+        "tiger" to Triple("Tiger", "বাঘ", "نمر"),
+        "parrot" to Triple("Parrot", "টিয়া", "ببغاء"),
+        "camel" to Triple("Camel", "উট", "جمل"),
+        "giraffe" to Triple("Giraffe", "জিরাফ", "زرافة"),
+        "zebra" to Triple("Zebra", "জেব্রা", "حمار وحشي"),
+        "gazelle" to Triple("Gazelle", "গ্যাজেল", "غزال"),
+        "falcon" to Triple("Falcon", "বাজ", "صقر"),
+        "cat" to Triple("Cat", "বিড়াল", "قطة"),
+        "dog" to Triple("Dog", "কুকুর", "كلب"),
+        "elephant" to Triple("Elephant", "হাতি", "فيل"),
+        "fish" to Triple("Fish", "মাছ", "سمكة"),
+        "tree" to Triple("Tree", "গাছ", "شجرة"),
+        "sun" to Triple("Sun", "সূর্য", "شمس"),
+        "moon" to Triple("Moon", "চাঁদ", "قمر"),
+        "car" to Triple("Car", "গাড়ি", "سيارة")
+    )
 
     private var lastLevel = -1
     private var shown = false
 
-    fun lessonForLevel(level: Int): SignLesson = lessons[(level - 1).mod(lessons.size)]
+    fun lessonForLevel(level: Int): SignLesson = lessonFromContent(LevelContentDirector.profile(level).lessons.firstOrNull())
 
     fun lessonForLearningSession(level: Int, activityIndex: Int): SignLesson {
-        val roster = habitatRosters[(level - 1).mod(habitatRosters.size)]
-        val key = roster[activityIndex.mod(roster.size)]
-        return lessonByKey.getValue(key)
+        val profile = LevelContentDirector.profile(level)
+        val lesson = profile.lessons[activityIndex.mod(profile.lessons.size)]
+        return lessonFromContent(lesson)
     }
 
     fun maybeStop(level: Int, progress: Float): SignLesson? {
@@ -92,16 +92,37 @@ internal class RoadsideLearningDirector {
 
     fun matches(sign: SignLesson, heard: String): Boolean {
         val normalized = normalizeForMatch(heard)
-        return sign.accepted.any { normalizeForMatch(it) == normalized || normalized.contains(normalizeForMatch(it)) }
+        return sign.accepted.any {
+            normalizeForMatch(it) == normalized || normalized.contains(normalizeForMatch(it))
+        }
+    }
+
+    private fun lessonFromContent(content: LevelContentDirector.LessonContent?): SignLesson {
+        if (content == null) return fallback
+        val key = content.english.trim().lowercase()
+        val words = translations[key] ?: Triple(content.english, content.bangla, content.arabic)
+        val visual = key.takeIf { it in verifiedVisuals }
+        val accepted = setOf(
+            content.english, content.bangla, content.arabic,
+            words.first, words.second, words.third
+        ).filter { it.isNotBlank() }.toSet()
+        return SignLesson(
+            key = key,
+            english = words.first.uppercase(),
+            visualKey = visual,
+            bangla = words.second,
+            arabic = words.third,
+            prompt = content.prompt,
+            accepted = accepted
+        )
     }
 
     private fun normalizeForMatch(value: String): String {
         return value.trim()
             .lowercase()
-            // Arabic tashkeel/harakat should not make an otherwise correct answer fail.
             .replace(Regex("[\\u064B-\\u065F\\u0670]"), "")
-            .replace(Regex("""[^\p{L}\p{N} ]"""), "")
-            .replace(Regex("""\s+"""), " ")
+            .replace(Regex("[^\\p{L}\\p{N} ]"), "")
+            .replace(Regex("\\s+"), " ")
             .trim()
     }
 }
