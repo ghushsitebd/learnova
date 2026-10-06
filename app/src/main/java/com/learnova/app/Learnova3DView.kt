@@ -125,7 +125,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     // The permanent companion occasionally leaves the vehicle for a short, safe roadside walk.
     private var friendWalkCycle = 0.0
     private var activeLearningLessonLevel = 0
-    private var learningLessonTriggered = false
+    private var learningActivityIndex = -1
 
     // Physical entry/exit state is kept separate from the child-simple drive
     // control. If a vehicle asset contains named door nodes, this layer animates
@@ -333,17 +333,25 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         val snapshot = journeyDirector.snapshot()
         if (snapshot.level != activeLearningLessonLevel) {
             activeLearningLessonLevel = snapshot.level
-            learningLessonTriggered = false
+            learningActivityIndex = -1
         }
-        if (snapshot.state != JourneyDriveDirector.State.LEARNING || learningLessonTriggered) return
-        if (snapshot.learningElapsedSeconds < 28.0) return
+        if (snapshot.state != JourneyDriveDirector.State.LEARNING) {
+            if (learningActivityIndex >= 0 && snapshot.learningElapsedSeconds >= 90.0) {
+                hideLearningSign()
+            }
+            return
+        }
 
-        // Resolve the encounter from the central multilingual level curriculum.
-        val activityIndex = (snapshot.learningElapsedSeconds / 18.0)
+        // The 90-second learning window is divided into three short, automatic
+        // roadside encounters. Each encounter resolves from the same 500-level
+        // multilingual curriculum used by the sign and wildlife systems.
+        val activityIndex = (snapshot.learningElapsedSeconds / 30.0)
             .toInt()
             .coerceIn(0, 2)
+        if (activityIndex == learningActivityIndex) return
+
         val lesson = RoadsideLearningDirector().lessonForLearningSession(snapshot.level, activityIndex)
-        learningLessonTriggered = true
+        learningActivityIndex = activityIndex
         showLearningSign()
         lesson.visualKey?.let(::triggerLearningAnimal)
     }
