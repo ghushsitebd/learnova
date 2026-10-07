@@ -7,7 +7,7 @@ class JourneyDriveDirector(
     private val learningWindowSeconds: Double = 90.0,
     private val vehicle: VehicleDefinition = VehicleCatalog.byId(100)
 ) {
-    private val driveDynamics = VehicleDriveDynamics(vehicle)
+    private var driveDynamics = VehicleDriveDynamics(vehicle)
     enum class State { READY, DRIVING, LEARNING, STOPPED, COMPLETED }
 
     data class Snapshot(
@@ -59,6 +59,14 @@ class JourneyDriveDirector(
     val isDriving: Boolean get() = state == State.DRIVING || state == State.LEARNING
     val isLearning: Boolean get() = state == State.LEARNING
     val isComplete: Boolean get() = state == State.COMPLETED
+
+    /** Selects the authoritative vehicle profile while the journey is stopped. */
+    fun setVehicle(definition: VehicleDefinition): Boolean {
+        if (isDriving) return false
+        driveDynamics = VehicleDriveDynamics(definition)
+        driveDynamics.reset()
+        return true
+    }
 
     fun toggleDrive(): Boolean = when (state) {
         State.READY, State.STOPPED -> { state = State.DRIVING; true }
