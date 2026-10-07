@@ -460,7 +460,12 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-                if (levelProgress >= 1f && levelElapsedMs >= minimumLevelDurationMs && !levelComplete) {
+                // The mandatory 90-second learning chapter lives inside the 180-second
+                // journey: 60s exploration -> 90s learning -> 30s final drive. This
+                // keeps learning integrated with the ride instead of extending a level
+                // into an unexpected 4.5-minute session.
+                if (levelElapsedMs >= 60_000L && !learningSessionActive && !levelComplete &&
+                    !learningSessionWasCompleted()) {
                     startAutomaticLearningSession()
                 }
 
