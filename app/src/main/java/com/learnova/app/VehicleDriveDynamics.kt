@@ -9,6 +9,7 @@ import kotlin.math.min
  *
  * Motion authority lives here:
  * - tap/start requests acceleration toward the selected vehicle target speed;
+ * - the road spline automatically shapes speed before curves and on grades;
  * - tap/stop releases propulsion and lets the vehicle coast down naturally;
  * - learning mode uses a controlled crawl speed;
  * - braking is reported from the same authoritative state consumed by rendering.
@@ -35,6 +36,14 @@ internal class VehicleDriveDynamics(
         const val CONTROLLED_BRAKING_METERS_PER_SECOND_SQUARED = 4.8
         const val LEARNING_CRAWL_SPEED_METERS_PER_SECOND = 1.4
         const val STOP_EPSILON_METERS_PER_SECOND = 0.025
+
+        // The vehicle reads the road a few metres ahead so it can settle its
+        // speed before a bend rather than braking at the last moment.
+        const val SPEED_LOOK_AHEAD_METERS = 6.0
+        const val MAX_CURVE_SPEED_REDUCTION = 0.38
+        const val CURVE_SENSITIVITY = 1.8
+        const val GRADE_SENSITIVITY = 0.50
+        const val MIN_ROAD_SPEED_FACTOR = 0.62
     }
 
     private var speed = 0.0
@@ -56,8 +65,7 @@ internal class VehicleDriveDynamics(
      *
      * requestedMotion=false means propulsion is released, not an instantaneous
      * hard stop. The vehicle continues along the road while speed naturally
-     * falls to zero. The caller may use the same path for an actual braking
-     * condition later without changing renderer ownership of motion.
+     * falls to zero.
      */
     fun update(
         deltaSeconds: Double,
@@ -71,7 +79,7 @@ internal class VehicleDriveDynamics(
             requestedMotion && learningPause ->
                 LEARNING_CRAWL_SPEED_METERS_PER_SECOND
             requestedMotion ->
-                FutureVehicleBehavior.effectiveTargetSpeed(profile)
+                automaticRoadTargetSpeed(sample)
             else ->
                 0.0
         }
@@ -105,7 +113,9 @@ internal class VehicleDriveDynamics(
         distance += speed * dt
 
         val next = RoadSpline.sample(distance)
-        val steering = ((next.yaw - sample.yaw) * 3.2).coerceIn(-1.0, 1.0)
+        val steering = shortestYawDelta(sample.yaw, next.yaw)
+            .times(3.2)
+            .coerceIn(-1.0, 1.0)
         wheelRotation += speed * dt / profile.wheelRadius.coerceAtLeast(0.18)
         last = next
 
@@ -121,12 +131,47 @@ internal class VehicleDriveDynamics(
         )
     }
 
+    /**
+     * Computes a child-friendly automatic speed limit from the authoritative
+     * road spline. The vehicle anticipates curvature and terrain instead of
+     * waiting until the bend is visually underneath it.
+     */
+    private fun automaticRoadTargetSpeed(sample: RoadSpline.Sample): Double {
+        val base = FutureVehicleBehavior.effectiveTargetSpeed(profile)
+        val ahead = RoadSpline.sample(distance + SPEED_LOOK_AHEAD_METERS)
+
+        val curvaturePerMeter =
+            abs(shortestYawDelta(sample.yaw, ahead.yaw)) / SPEED_LOOK_AHEAD_METERS
+
+        val curveReduction =
+            (curvaturePerMeter * CURVE_SENSITIVITY)
+                .coerceIn(0.0, MAX_CURVE_SPEED_REDUCTION)
+
+        val gradeReduction =
+            (abs(sample.grade.toDouble()) * GRADE_SENSITIVITY)
+                .coerceIn(0.0, 0.08)
+
+        val roadFactor =
+            (1.0 - curveReduction - gradeReduction)
+                .coerceIn(MIN_ROAD_SPEED_FACTOR, 1.0)
+
+        return (base * roadFactor).coerceAtLeast(3.5)
+    }
+
+    private fun shortestYawDelta(from: Float, to: Float): Double {
+        var delta = to.toDouble() - from.toDouble()
+        while (delta > Math.PI) delta -= Math.PI * 2.0
+        while (delta < -Math.PI) delta += Math.PI * 2.0
+        return delta
+    }
+
     fun snapshot(): Snapshot = Snapshot(
         speedMetersPerSecond = speed,
         distanceMeters = distance,
-        steering = (
-            (last.yaw - RoadSpline.sample(max(0.0, distance - 0.5)).yaw) * 3.2
-        ).coerceIn(-1.0, 1.0),
+        steering = shortestYawDelta(
+            RoadSpline.sample(max(0.0, distance - 0.5)).yaw,
+            last.yaw
+        ).times(3.2).coerceIn(-1.0, 1.0),
         yaw = last.yaw,
         bank = last.bank,
         grade = last.grade,
