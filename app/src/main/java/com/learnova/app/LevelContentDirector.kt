@@ -73,7 +73,21 @@ internal object LevelContentDirector {
         "cow", "chicken", "deer", "fox", "rabbit", "wolf", "camel", "bird"
     )
 
+    private val authoredNearFieldSpecies = arrayOf(
+        "lion", "deer", "fox", "horse", "wolf", "boar", "rabbit", "stag", "cow"
+    )
+
     private fun expandedEncounter(primary: String, level: Int): String {
+        // Bias a predictable portion of secondary encounters toward species
+        // that already have verified near-field animated GLBs. This increases real
+        // presentation coverage without pretending that every logical catalog species
+        // already has a bundled binary asset.
+        if (level % 3 == 0) {
+            val authored = authoredNearFieldSpecies[
+                Math.floorMod(level * 13 + primary.hashCode(), authoredNearFieldSpecies.size)
+            ]
+            if (authored != primary) return authored
+        }
         val start = Math.floorMod(level * 7 + primary.hashCode(), expandedEncounterBank.size)
         for (offset in expandedEncounterBank.indices) {
             val candidate = expandedEncounterBank[(start + offset) % expandedEncounterBank.size]
