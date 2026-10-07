@@ -658,9 +658,6 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
     fun journeySnapshot(): JourneyDriveDirector.Snapshot = journeyDirector.snapshot()
 
-    /** Synchronizes persisted 500-level progression into the renderer's journey director. */
-    fun setJourneyLevel(level: Int): Boolean = journeyDirector.setCurrentLevel(level)
-
     /** Steering is intentionally not user-controlled; road curvature drives it. */
 
     /**
