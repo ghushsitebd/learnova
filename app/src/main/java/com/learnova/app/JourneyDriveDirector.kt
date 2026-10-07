@@ -26,6 +26,25 @@ class JourneyDriveDirector(
     private var completionLatched = false
 
     val currentLevel: Int get() = level
+
+    /**
+     * Synchronizes the renderer-owned journey state with the persisted gameplay level.
+     * The renderer remains the single source of motion state, while MainActivity owns
+     * persistence. Calling this while a journey is active is intentionally rejected
+     * so a level cannot change underneath a moving vehicle.
+     */
+    fun setCurrentLevel(targetLevel: Int): Boolean {
+        if (isDriving) return false
+        val safe = targetLevel.coerceIn(1, levelCount)
+        if (safe == level) return true
+        level = safe
+        elapsed = 0.0
+        learningElapsed = 0.0
+        learningTriggered = false
+        completionLatched = false
+        state = State.READY
+        return true
+    }
     val isDriving: Boolean get() = state == State.DRIVING || state == State.LEARNING
     val isLearning: Boolean get() = state == State.LEARNING
     val isComplete: Boolean get() = state == State.COMPLETED
@@ -46,7 +65,10 @@ class JourneyDriveDirector(
                     state = State.DRIVING
                 }
             }
-            if (!learningTriggered && elapsed >= 45.0) {
+            // Match the production gameplay contract: the mandatory 90-second
+            // learning chapter begins after the first 60 seconds of the 180-second
+            // journey, leaving a continuous 30-second drive finish.
+            if (!learningTriggered && elapsed >= 60.0) {
                 learningTriggered = true
                 learningElapsed = 0.0
                 state = State.LEARNING
