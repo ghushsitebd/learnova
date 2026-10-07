@@ -69,8 +69,24 @@ class JourneyDriveDirector(
     }
 
     fun toggleDrive(): Boolean = when (state) {
-        State.READY, State.STOPPED -> { state = State.DRIVING; true }
-        State.DRIVING, State.LEARNING -> { state = State.STOPPED; false }
+        State.READY -> {
+            state = State.DRIVING
+            true
+        }
+        State.STOPPED -> {
+            // If the child paused during the mandatory learning chapter, resume
+            // the same chapter instead of silently skipping its remaining time.
+            state = if (learningTriggered && learningElapsed < learningWindowSeconds) {
+                State.LEARNING
+            } else {
+                State.DRIVING
+            }
+            true
+        }
+        State.DRIVING, State.LEARNING -> {
+            state = State.STOPPED
+            false
+        }
         State.COMPLETED -> false
     }
 
