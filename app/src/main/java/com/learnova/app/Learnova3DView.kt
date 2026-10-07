@@ -1270,7 +1270,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         // cornering adds a small load-dependent roll component. The damping keeps
         // the motion smooth enough for a child-facing camera.
         val pitchTarget = (-vehicleAcceleration * 0.0032 +
-            authoritativeGrade.toDouble() * 0.55 +
+            authoritativeVehicleGrade.toDouble() * 0.55 +
             kotlin.math.abs(steeringLoad) * 0.0025)
             .coerceIn(-0.042, 0.042)
         val brakingRollBias = if (authoritativeBraking) 0.0025 * steeringLoad else 0.0
