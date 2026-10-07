@@ -113,16 +113,16 @@ internal object VehicleCatalog {
         VehicleDefinition(88, "Forest Utility", "offroad", "vehicle_088_forest_utility"),
         VehicleDefinition(89, "Snow Rescue", "rescue", "vehicle_089_snow_rescue"),
         VehicleDefinition(90, "Rain Rescue", "rescue", "vehicle_090_rain_rescue"),
-        VehicleDefinition(91, "Classic Taxi", "classic", "vehicle_091_classic_taxi"),
-        VehicleDefinition(92, "Classic Bus", "classic", "vehicle_092_classic_bus"),
-        VehicleDefinition(93, "Vintage Pickup", "classic", "vehicle_093_vintage_pickup"),
-        VehicleDefinition(94, "Vintage Roadster", "classic", "vehicle_094_vintage_roadster"),
-        VehicleDefinition(95, "Premium SUV", "luxury", "vehicle_095_premium_suv"),
-        VehicleDefinition(96, "Premium EV", "luxury", "vehicle_096_premium_ev"),
-        VehicleDefinition(97, "Grand Family Car", "family", "vehicle_097_grand_family"),
-        VehicleDefinition(98, "Kids Explorer", "family", "vehicle_098_kids_explorer"),
-        VehicleDefinition(99, "World Explorer", "offroad", "vehicle_099_world_explorer"),
-        VehicleDefinition(100, "Learnova Future Car", "concept", "vehicle_100_future_car")
+        VehicleDefinition(91, "2050 Aero Taxi", "concept", "vehicle_091_aero_taxi", targetSpeed = 8.0),
+        VehicleDefinition(92, "2050 Solar Transit", "concept", "vehicle_092_solar_transit", targetSpeed = 7.0),
+        VehicleDefinition(93, "2050 Hydrogen Utility", "concept", "vehicle_093_hydrogen_utility", targetSpeed = 7.6),
+        VehicleDefinition(94, "2050 Adaptive Roadster", "concept", "vehicle_094_adaptive_roadster", targetSpeed = 8.8),
+        VehicleDefinition(95, "2050 Terrain EV", "concept", "vehicle_095_terrain_ev", targetSpeed = 7.8),
+        VehicleDefinition(96, "2050 Solid-State EV", "concept", "vehicle_096_solid_state_ev", targetSpeed = 8.2),
+        VehicleDefinition(97, "2050 Family Capsule", "concept", "vehicle_097_family_capsule", targetSpeed = 7.4),
+        VehicleDefinition(98, "2050 Learning Explorer", "concept", "vehicle_098_learning_explorer", targetSpeed = 7.5),
+        VehicleDefinition(99, "2050 Amphibious Explorer", "concept", "vehicle_099_amphibious_explorer", targetSpeed = 6.8),
+        VehicleDefinition(100, "Learnova 2050 Vision", "concept", "vehicle_100_2050_vision", targetSpeed = 8.5)
     )
 
     fun byId(id: Int): VehicleDefinition =
