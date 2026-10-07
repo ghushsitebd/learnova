@@ -255,8 +255,8 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 )
                 var physicsSteps = 0
                 while (physicsAccumulator >= physicsStepSeconds && physicsSteps < maxPhysicsStepsPerFrame) {
-                    updatePhysicsStep(physicsStepSeconds)
                     journeyDirector.update(physicsStepSeconds)
+                    updatePhysicsStep(physicsStepSeconds)
                     updateLearningLessonDirector()
                     physicsAccumulator -= physicsStepSeconds
                     physicsSteps++
@@ -374,65 +374,36 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         lesson.visualKey?.let(::triggerLearningAnimal)
     }
 
-    /** Fixed 60Hz gameplay simulation; rendering remains driven by Choreographer. */
+    /**
+     * Synchronizes renderer state from the authoritative deterministic journey
+     * dynamics. VehicleDriveDynamics owns speed/distance/steering; this layer only
+     * derives presentation cues such as acceleration, lane-centering and floating
+     * origin. Keeping one physics authority prevents the renderer from silently
+     * moving at a different speed than gameplay.
+     */
     private fun updatePhysicsStep(dt: Double) {
-        val requestedSpeed = if (driving) targetSpeed else 0.0
-        val accelerationResponse = when (activeVehicle.type) {
-            "motorcycle", "cycle", "three_wheeler", "electric" -> 3.8
-            "sport", "concept" -> 3.4
-            "truck", "bus", "emergency", "construction", "farm" -> 2.15
-            "offroad", "safari" -> 2.55
-            else -> 2.85
-        }
-        val brakingResponse = when (activeVehicle.type) {
-            "motorcycle", "cycle" -> 7.2
-            "truck", "bus", "construction" -> 5.4
-            else -> 6.6
-        }
-        val response = if (driving) accelerationResponse else brakingResponse
-        val blend = (response * dt).coerceAtMost(1.0)
+        val snapshot = journeyDirector.snapshot()
         previousVehicleSpeed = vehicleSpeed
-        vehicleSpeed += (requestedSpeed - vehicleSpeed) * blend
-        vehicleAcceleration = ((vehicleSpeed - previousVehicleSpeed) / dt).coerceIn(-8.0, 8.0)
-        driveTime += dt * (if (vehicleSpeed > 0.02) 1.0 else 0.0)
-        vehicleDistance += vehicleSpeed * dt
+        vehicleSpeed = snapshot.vehicleSpeedMetersPerSecond
+        vehicleDistance = snapshot.vehicleDistanceMeters
+        vehicleAcceleration = ((vehicleSpeed - previousVehicleSpeed) / dt.coerceAtLeast(1.0 / 240.0))
+            .coerceIn(-8.0, 8.0)
+        driveTime += dt * if (vehicleSpeed > 0.02) 1.0 else 0.0
 
-        val speedRatio = (vehicleSpeed / targetSpeed.coerceAtLeast(0.1)).coerceIn(0.0, 1.0)
-        // Autonomous steering reads the road ahead and anticipates curvature.
-        // The child only controls start/stop; the vehicle follows the road itself.
-        val autoRoad = RoadSpline.sampleRelative(vehicleDistance + 8.0, renderOriginDistance)
-        val currentRoad = RoadSpline.sampleRelative(vehicleDistance, renderOriginDistance)
-        val curvatureError = kotlin.math.atan2(
-            kotlin.math.sin(autoRoad.yaw - currentRoad.yaw),
-            kotlin.math.cos(autoRoad.yaw - currentRoad.yaw)
-        )
-        val desiredAutoSteer = (curvatureError / 0.34).coerceIn(-1.0, 1.0)
-        val autoSteerResponse = (dt * (5.5 + 2.0 * speedRatio)).coerceAtMost(1.0)
-        autoSteeringInput += (desiredAutoSteer - autoSteeringInput) * autoSteerResponse
+        // Steering is authoritative and fully automatic: the road spline dynamics
+        // supplies the input, while the renderer smooths only the visual response.
+        val steeringBlend = (dt * 10.0).coerceAtMost(1.0)
+        autoSteeringInput += (snapshot.vehicleSteering - autoSteeringInput) * steeringBlend
         if (!driving) autoSteeringInput *= (1.0 - (dt * 6.0).coerceAtMost(1.0))
-        val steeringAuthority = (1.12 - 0.48 * speedRatio).coerceIn(0.64, 1.12)
-        val maxLateralVelocity = (0.92 - 0.16 * speedRatio).coerceIn(0.62, 0.92)
-        val desiredLateralVelocity = 0.0
-        val gripResponse = (dt * (6.8 - 1.4 * speedRatio)).coerceAtMost(1.0)
-        val lateralError = desiredLateralVelocity - lateralVelocity
-        lateralVelocity += lateralError * gripResponse
-        val targetSlip = (lateralError * speedRatio * 0.22).coerceIn(-0.18, 0.18)
-        lateralSlip += (targetSlip - lateralSlip) * (dt * 8.0).coerceAtMost(1.0)
-        lateralVelocity -= kotlin.math.sign(lateralVelocity) * (kotlin.math.abs(lateralSlip) * 0.055 * speedRatio) * dt
-        lateralOffset += lateralVelocity * dt * (2.6 + vehicleSpeed * 0.08)
 
-        val laneLimit = 2.72
-        val edgeRatio = (kotlin.math.abs(lateralOffset) / laneLimit).coerceIn(0.0, 1.25)
-        if (edgeRatio > 0.82) {
-            val edgeBrake = ((edgeRatio - 0.82) / 0.43).coerceIn(0.0, 1.0)
-            lateralVelocity *= (1.0 - edgeBrake * dt * 7.5).coerceAtLeast(0.20)
-            lateralOffset *= (1.0 - edgeBrake * dt * 1.8).coerceAtLeast(0.70)
-        }
-        // Autonomous path following keeps the vehicle centred on the authoritative
-        // road spline; no manual lateral drift is introduced by steering controls.
-        lateralVelocity *= (1.0 - (dt * 8.0).coerceAtMost(0.95))
+        // The current production spline keeps the vehicle centered. Preserve a
+        // tiny filtered presentation offset for suspension/turn cues, but never let
+        // it become an independent gameplay movement source.
+        val lateralBlend = (dt * 8.0).coerceAtMost(1.0)
+        lateralVelocity += (0.0 - lateralVelocity) * lateralBlend
+        lateralOffset += lateralVelocity * dt
         lateralOffset *= (1.0 - (dt * 8.0).coerceAtMost(0.95))
-        lateralOffset = lateralOffset.coerceIn(-laneLimit, laneLimit)
+        lateralOffset = lateralOffset.coerceIn(-2.72, 2.72)
 
         if (kotlin.math.abs(vehicleDistance - renderOriginDistance) >= 180.0) {
             renderOriginDistance = vehicleDistance
@@ -682,6 +653,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
      */
     internal fun setVehicle(definition: VehicleDefinition) {
         activeVehicle = definition
+        journeyDirector.setVehicle(definition)
         vehicleFriend?.setFriend(friendForVehicle(definition.id))
         renderProfile = VehicleRenderProfile.forType(definition.type)
         interactionProfile = VehicleInteractionProfiles.forVehicle(definition.type)
