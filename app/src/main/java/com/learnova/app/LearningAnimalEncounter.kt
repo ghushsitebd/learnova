@@ -59,7 +59,7 @@ internal class LearningAnimalEncounter(
         val supported = setOf(
             "cat", "dog", "elephant", "fish", "lion", "tiger",
             "rabbit", "parrot", "whale", "yak", "zebra",
-            "fox", "deer", "horse", "wolf", "camel", "bear", "giraffe", "frog", "bird",
+            "fox", "deer", "horse", "wolf", "boar", "stag", "cow", "camel", "bear", "giraffe", "frog", "bird",
             "gazelle", "falcon"
         )
         if (key !in supported) return
@@ -211,6 +211,7 @@ internal class LearningAnimalEncounter(
 
     private fun animalScale(key: String): Double = when (key) {
         "elephant", "whale" -> 1.55
+        "boar", "stag", "cow" -> 1.08
         "lion", "tiger", "zebra", "yak", "camel", "giraffe" -> 1.18
         "rabbit", "frog", "bird", "falcon" -> 0.72
         else -> 0.92
