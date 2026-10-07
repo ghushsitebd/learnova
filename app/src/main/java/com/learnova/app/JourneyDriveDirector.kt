@@ -76,10 +76,17 @@ class JourneyDriveDirector(
 
     fun update(deltaSeconds: Double): Snapshot {
         val dt = deltaSeconds.coerceIn(0.0, 0.25)
-        if (isDriving) {
-            elapsed = (elapsed + dt).coerceAtMost(minimumLevelSeconds)
-            driveDynamics.update(dt, requestedMotion = true, learningPause = state == State.LEARNING)
-            if (learningTriggered && state == State.LEARNING) {
+        val coastingAfterRelease = state == State.STOPPED && driveDynamics.snapshot().speedMetersPerSecond > 0.0
+        if (isDriving || coastingAfterRelease) {
+            if (isDriving) {
+                elapsed = (elapsed + dt).coerceAtMost(minimumLevelSeconds)
+            }
+            driveDynamics.update(
+                dt,
+                requestedMotion = isDriving,
+                learningPause = state == State.LEARNING
+            )
+            if (isDriving && learningTriggered && state == State.LEARNING) {
                 learningElapsed = (learningElapsed + dt).coerceAtMost(learningWindowSeconds)
                 if (learningElapsed >= learningWindowSeconds) {
                     state = State.DRIVING
@@ -88,12 +95,12 @@ class JourneyDriveDirector(
             // Match the production gameplay contract: the mandatory 90-second
             // learning chapter begins after the first 60 seconds of the 180-second
             // journey, leaving a continuous 30-second drive finish.
-            if (!learningTriggered && elapsed >= 60.0) {
+            if (isDriving && !learningTriggered && elapsed >= 60.0) {
                 learningTriggered = true
                 learningElapsed = 0.0
                 state = State.LEARNING
             }
-            if (elapsed >= minimumLevelSeconds) {
+            if (isDriving && elapsed >= minimumLevelSeconds) {
                 completionLatched = true
                 state = State.COMPLETED
             }
