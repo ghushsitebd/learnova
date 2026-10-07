@@ -10,7 +10,7 @@ package com.learnova.app
  * dedicated asset is supplied, the renderer can fall back to the base vehicle
  * model without breaking the garage UI.
  */
-internal data class VehicleDefinition(
+data class VehicleDefinition(
     val id: Int,
     val name: String,
     val type: String,
