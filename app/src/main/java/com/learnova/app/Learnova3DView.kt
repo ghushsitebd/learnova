@@ -346,38 +346,41 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         }
         if (snapshot.state != JourneyDriveDirector.State.LEARNING) {
             vehicleFriend?.setLearningCue(false)
-        vehicleFriend?.setLearningIntensity(0.7f)
+            vehicleFriend?.setLearningIntensity(0.7f)
             if (learningActivityIndex >= 0 && snapshot.learningElapsedSeconds >= 90.0) {
                 hideLearningSign()
             }
             return
         }
 
-        // The 90-second learning window is divided into five short, automatic
-        // roadside encounters. Each 18-second chapter resolves from the same
-        // 500-level multilingual curriculum used by the sign and wildlife systems.
-        // Keeping the cadence inside the existing 90-second window increases learning
-        // variety without extending the level or introducing manual controls.
+        // Five deterministic 18-second encounters make the 90-second learning
+        // chapter feel like one continuous roadside experience. The encounter
+        // phase is refreshed every frame so the companion reacts naturally as
+        // the child moves from approach -> observe -> repeat -> reward.
         val activityIndex = (snapshot.learningElapsedSeconds / 18.0)
             .toInt()
             .coerceIn(0, 4)
-        if (activityIndex == learningActivityIndex) return
-
-        val lesson = RoadsideLearningDirector().lessonForLearningSession(snapshot.level, activityIndex)
+        val lesson = RoadsideLearningDirector().lessonForLearningSession(
+            snapshot.level,
+            activityIndex
+        )
         val encounter = learningEncounterDirector.encounter(
             level = snapshot.level,
             chapter = activityIndex,
             elapsedSeconds = snapshot.learningElapsedSeconds
         )
-        learningActivityIndex = activityIndex
+        val newActivity = activityIndex != learningActivityIndex
 
-        // Keep the child-facing encounter automatic: the director controls pacing,
-        // while the existing lesson/sign/animal systems remain the authoritative
-        // content sources. This makes the 500-level system scalable without
-        // duplicating assets or adding another gameplay state machine.
-        showLearningSign()
+        if (newActivity) {
+            learningActivityIndex = activityIndex
+            // The sign and creature are introduced once per 18-second chapter;
+            // phase changes only update presentation intensity/cues.
+            showLearningSign()
+            lesson.visualKey?.let(::triggerLearningAnimal)
+        }
+
         vehicleFriend?.setLearningCue(encounter.companionCue)
-        lesson.visualKey?.let(::triggerLearningAnimal)
+        vehicleFriend?.setLearningIntensity(encounter.intensity)
     }
 
     /**
