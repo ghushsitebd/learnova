@@ -52,6 +52,12 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     // to travelled distance. This keeps wheel motion smooth during acceleration/braking.
     private var wheelSpinAngle = 0.0
     private var wheelSpinRate = 0.0
+    // Authoritative presentation cues copied from JourneyDriveDirector's fixed-step snapshot.
+    private var authoritativeWheelRotation = 0.0
+    private var authoritativeVehicleYaw = 0.0f
+    private var authoritativeVehicleBank = 0.0f
+    private var authoritativeVehicleGrade = 0.0f
+    private var authoritativeBraking = false
     private var chassisPitch = 0.0
     private var chassisRoll = 0.0
     private var lastFrameNanos = 0L
@@ -389,6 +395,11 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         vehicleAcceleration = ((vehicleSpeed - previousVehicleSpeed) / dt.coerceAtLeast(1.0 / 240.0))
             .coerceIn(-8.0, 8.0)
         driveTime += dt * if (vehicleSpeed > 0.02) 1.0 else 0.0
+        authoritativeWheelRotation = snapshot.wheelRotationRadians
+        authoritativeVehicleYaw = snapshot.vehicleYaw
+        authoritativeVehicleBank = snapshot.vehicleBank
+        authoritativeVehicleGrade = snapshot.vehicleGrade
+        authoritativeBraking = snapshot.braking
 
         // Steering is authoritative and fully automatic: the road spline dynamics
         // supplies the input, while the renderer smooths only the visual response.
@@ -940,18 +951,18 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
 
         val tm = viewer.engine.transformManager
         val dt = frameDeltaSeconds.coerceIn(1.0 / 240.0, 0.05)
-        // Free-rolling tyre model: angular speed follows the real linear speed,
-        // with a small response filter so acceleration and braking do not make the
-        // wheel visually snap. Radius comes from the active vehicle definition.
-        val targetWheelSpinRate = vehicleSpeed / wheelRadius.coerceAtLeast(0.12)
-        wheelSpinRate += (targetWheelSpinRate - wheelSpinRate) * (dt * 14.0).coerceAtMost(1.0)
-        wheelSpinAngle += wheelSpinRate * dt
-        if (wheelSpinAngle > Math.PI * 2.0 || wheelSpinAngle < -Math.PI * 2.0) {
-            wheelSpinAngle %= Math.PI * 2.0
-        }
-        val wheelAngle = wheelSpinAngle.toFloat()
+        // Wheel rotation now comes directly from the fixed-step drive authority.
+        // The renderer no longer integrates a second tyre clock, preventing drift
+        // between gameplay distance and visible wheel motion.
+        val wheelAngle = authoritativeWheelRotation.toFloat()
 
         val road = RoadSpline.sampleRelative(vehicleDistance, renderOriginDistance)
+        // JourneyDriveDirector already sampled the same authoritative spline.
+        // Blend only tiny floating-point/render-origin differences here; never
+        // replace its yaw/bank/grade with an independent motion estimate.
+        val authoritativeYaw = authoritativeVehicleYaw.toDouble()
+        val authoritativeBank = authoritativeVehicleBank.toDouble()
+        val authoritativeGrade = authoritativeVehicleGrade.toDouble()
         val roadAhead = RoadSpline.sampleRelative(
             vehicleDistance + 1.8,
             renderOriginDistance
@@ -1091,7 +1102,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 val steeringYaw = (autoSteeringInput * steeringClassGain *
                     (vehicleSpeed / targetSpeed.coerceAtLeast(0.1)).coerceIn(0.0, 1.0))
                     .coerceIn(-steeringClassGain, steeringClassGain)
-                val chassisYaw = road.yaw + steeringYaw
+                        val chassisYaw = authoritativeYaw + steeringYaw
                 val chassis = Mat4.of(*baseRoot) *
                     Mat4.of(
                         1f, 0f, 0f, (road.x + kotlin.math.cos(road.yaw) * lateralOffset).toFloat(),
@@ -1105,7 +1116,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                     // filtered response to suspension, steering and acceleration.
                     rotation(
                         Float3(0.0f, 0.0f, 1.0f),
-                        (road.bank + chassisRoll + roadYawRate * 0.010)
+                        (authoritativeBank + chassisRoll + roadYawRate * 0.010)
                             .coerceIn(-0.16, 0.16).toFloat()
                     ) *
                     rotation(
@@ -1259,9 +1270,11 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         // cornering adds a small load-dependent roll component. The damping keeps
         // the motion smooth enough for a child-facing camera.
         val pitchTarget = (-vehicleAcceleration * 0.0032 +
+            authoritativeGrade.toDouble() * 0.55 +
             kotlin.math.abs(steeringLoad) * 0.0025)
             .coerceIn(-0.042, 0.042)
-        val dynamicRoll = (-steeringLoad * vehicleSpeed * 0.0022)
+        val brakingRollBias = if (authoritativeBraking) 0.0025 * steeringLoad else 0.0
+        val dynamicRoll = (-steeringLoad * vehicleSpeed * 0.0022 + brakingRollBias)
             .coerceIn(-0.035, 0.035)
         val combinedRollTarget = (rollTarget + dynamicRoll).coerceIn(-0.095, 0.095)
 
@@ -1355,6 +1368,11 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         vehicleAcceleration = 0.0
         wheelSpinAngle = 0.0
         wheelSpinRate = 0.0
+        authoritativeWheelRotation = 0.0
+        authoritativeVehicleYaw = 0.0f
+        authoritativeVehicleBank = 0.0f
+        authoritativeVehicleGrade = 0.0f
+        authoritativeBraking = false
         chassisPitch = 0.0
         chassisRoll = 0.0
         previousRoadYaw = 0.0
