@@ -156,6 +156,9 @@ class MainActivity : AppCompatActivity() {
 
         init {
             level = prefs.getInt("level", 1).coerceIn(1, LEARNOVA_MAX_LEVEL)
+            // Keep the Filament journey director on the same persisted level as
+            // the child-facing progression layer from the first frame.
+            threeDWorld.setJourneyLevel(level)
             vehicle = prefs.getInt("vehicle", 0).coerceIn(0, LearnovaUnlimitedWorld.vehicles.lastIndex)
             worldSceneId = prefs.getInt("worldSceneId", 1).coerceAtLeast(1)
             levelProgress = prefs.getFloat("levelProgress", 0f).coerceIn(0f, 1f)
@@ -2758,6 +2761,7 @@ class MainActivity : AppCompatActivity() {
             quranStageSolved = false
             quranFeedback = ""
             level += 1
+            threeDWorld.setJourneyLevel(level)
             worldSceneId += 1
             levelProgress = 0f
             levelElapsedMs = 0L
