@@ -4,8 +4,10 @@ package com.learnova.app
 class JourneyDriveDirector(
     private val levelCount: Int = 500,
     private val minimumLevelSeconds: Double = 180.0,
-    private val learningWindowSeconds: Double = 90.0
+    private val learningWindowSeconds: Double = 90.0,
+    private val vehicle: VehicleDefinition = VehicleCatalog.byId(100)
 ) {
+    private val driveDynamics = VehicleDriveDynamics(vehicle)
     enum class State { READY, DRIVING, LEARNING, STOPPED, COMPLETED }
 
     data class Snapshot(
@@ -15,7 +17,15 @@ class JourneyDriveDirector(
         val learningElapsedSeconds: Double,
         val progress: Double,
         val learningProgress: Double,
-        val levelCompleted: Boolean
+        val levelCompleted: Boolean,
+        val vehicleSpeedMetersPerSecond: Double,
+        val vehicleDistanceMeters: Double,
+        val vehicleSteering: Double,
+        val vehicleYaw: Float,
+        val vehicleBank: Float,
+        val vehicleGrade: Float,
+        val wheelRotationRadians: Double,
+        val braking: Boolean
     )
 
     private var level = 1
@@ -43,6 +53,7 @@ class JourneyDriveDirector(
         learningTriggered = false
         completionLatched = false
         state = State.READY
+        driveDynamics.reset()
         return true
     }
     val isDriving: Boolean get() = state == State.DRIVING || state == State.LEARNING
@@ -59,6 +70,7 @@ class JourneyDriveDirector(
         val dt = deltaSeconds.coerceIn(0.0, 0.25)
         if (isDriving) {
             elapsed = (elapsed + dt).coerceAtMost(minimumLevelSeconds)
+            driveDynamics.update(dt, requestedMotion = true, learningPause = state == State.LEARNING)
             if (learningTriggered && state == State.LEARNING) {
                 learningElapsed = (learningElapsed + dt).coerceAtMost(learningWindowSeconds)
                 if (learningElapsed >= learningWindowSeconds) {
@@ -89,6 +101,7 @@ class JourneyDriveDirector(
         learningTriggered = false
         completionLatched = false
         state = State.READY
+        driveDynamics.reset()
         return true
     }
 
@@ -98,14 +111,26 @@ class JourneyDriveDirector(
         learningTriggered = false
         completionLatched = false
         state = State.READY
+        driveDynamics.reset()
     }
 
-    fun snapshot() = Snapshot(
-        level, state, elapsed, learningElapsed,
-        (elapsed / minimumLevelSeconds).coerceIn(0.0, 1.0),
-        (learningElapsed / learningWindowSeconds).coerceIn(0.0, 1.0),
-        completionLatched
-    )
+    fun snapshot(): Snapshot {
+        val drive = driveDynamics.snapshot()
+        return Snapshot(
+            level, state, elapsed, learningElapsed,
+            (elapsed / minimumLevelSeconds).coerceIn(0.0, 1.0),
+            (learningElapsed / learningWindowSeconds).coerceIn(0.0, 1.0),
+            completionLatched,
+            drive.speedMetersPerSecond,
+            drive.distanceMeters,
+            drive.steering,
+            drive.yaw,
+            drive.bank,
+            drive.grade,
+            drive.wheelRotationRadians,
+            drive.braking
+        )
+    }
 
     fun validate(): Boolean =
         levelCount == 500 &&
