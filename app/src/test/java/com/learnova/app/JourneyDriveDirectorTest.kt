@@ -76,7 +76,7 @@ class JourneyDriveDirectorTest {
         assertEquals(500, d.currentLevel)
         assertFalse(d.advanceToNextLevel())
     }
-}
+
     @Test fun vehicleDynamicsSafetyContract() {
         val profile = VehicleCatalog.byId(184)
         val dynamics = VehicleDriveDynamics(profile)
@@ -110,6 +110,4 @@ class JourneyDriveDirectorTest {
         repeat(40) { d.update(0.25) }
         assertTrue(d.setVehicle(VehicleCatalog.byId(1)))
     }
-
-
 }
