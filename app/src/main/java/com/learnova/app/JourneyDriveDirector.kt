@@ -68,11 +68,24 @@ class JourneyDriveDirector(
         return true
     }
 
-    fun toggleDrive(): Boolean = when (state) {
-        State.READY -> {
-            state = State.DRIVING
-            true
+    /**
+     * Motion is requested only while the finger is held. Release enters STOPPED;
+     * VehicleDriveDynamics then performs the natural coast/brake response.
+     */
+    fun setDriveHeld(held: Boolean): Boolean {
+        if (held) {
+            return when (state) {
+                State.READY, State.STOPPED -> {
+                    state = if (learningTriggered && learningElapsed < learningWindowSeconds) State.LEARNING else State.DRIVING
+                    true
+                }
+                State.DRIVING, State.LEARNING -> true
+                State.COMPLETED -> false
+            }
         }
+        if (state == State.DRIVING || state == State.LEARNING) state = State.STOPPED
+        return false
+    }
         State.STOPPED -> {
             // If the child paused during the mandatory learning chapter, resume
             // the same chapter instead of silently skipping its remaining time.
