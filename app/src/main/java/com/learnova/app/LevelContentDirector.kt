@@ -45,8 +45,21 @@ internal object LevelContentDirector {
         "kindness_choice", "surah_review"
     )
 
+    // Profiles are immutable for a given level. Cache them so the renderer and
+    // encounter system can query curriculum data every frame without rebuilding
+    // maps/lists and creating avoidable garbage on lower-memory devices.
+    private val profileCache = arrayOfNulls<LevelProfile>(MAX_LEVEL)
+
     fun profile(level: Int): LevelProfile {
         val safe = level.coerceIn(1, MAX_LEVEL)
+        val index = safe - 1
+        profileCache[index]?.let { return it }
+        val created = buildProfile(safe)
+        profileCache[index] = created
+        return created
+    }
+
+    private fun buildProfile(safe: Int): LevelProfile {
         val chapter = (safe - 1) / LEVELS_PER_CHAPTER
         val theme = chapterThemes[chapter % chapterThemes.size]
         val local = (safe - 1) % LEVELS_PER_CHAPTER
