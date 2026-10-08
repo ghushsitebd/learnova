@@ -89,6 +89,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var terrainMesh: LearnovaTerrainMesh? = null
     private var roadsideWorld: RoadsideWorld? = null
     private var waterSurfaceWorld: WaterSurfaceWorld? = null
+    private var distantRailwayWorld: DistantRailwayWorld? = null
     private var shorelineWorld: ShorelineWorld? = null
     private var worldLife: WorldLifeSimulation? = null
     private var nearFieldCreatureWorld: NearFieldCreatureWorld? = null
@@ -180,6 +181,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 terrainMesh = LearnovaTerrainMesh(viewer.engine, viewer.scene, asset).also { it.build() }
                 roadsideWorld = RoadsideWorld(viewer.engine, viewer.scene, asset).also { it.build() }
                 waterSurfaceWorld = WaterSurfaceWorld(viewer.engine, viewer.scene, asset).also { it.build() }
+                distantRailwayWorld = DistantRailwayWorld(viewer.engine, viewer.scene, asset).also { it.build() }
                 shorelineWorld = ShorelineWorld(viewer.engine, viewer.scene, asset).also { it.build() }
                 worldLife = WorldLifeSimulation(viewer.engine, viewer.scene, asset).also { it.build() }
                 nearFieldCreatureWorld = NearFieldCreatureWorld(context, viewer.engine, viewer.scene,).also { it.build() }
@@ -204,6 +206,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             terrainMesh = null
             roadsideWorld = null
             waterSurfaceWorld = null
+            distantRailwayWorld = null
             shorelineWorld = null
             worldLife = null
             childNPC = null
@@ -279,6 +282,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                     terrainMesh?.update(vehicleDistance)
                     roadsideWorld?.update(vehicleDistance)
                     waterSurfaceWorld?.update(vehicleDistance)
+                    distantRailwayWorld?.update(vehicleDistance, dt)
                     shorelineWorld?.update(vehicleDistance)
                     worldLife?.update(vehicleDistance)
                     nearFieldCreatureWorld?.update(vehicleDistance)
