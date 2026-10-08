@@ -13,8 +13,8 @@ ASSETS = ROOT / "app/src/main/assets/vehicles"
 text = CATALOG.read_text(encoding="utf-8")
 keys = re.findall(r'VehicleDefinition\(\s*(\d+)\s*,\s*"[^"]+"\s*,\s*"[^"]+"\s*,\s*"([^"]+)"', text)
 
-if len(keys) != 200:
-    print(f"::error::Expected 200 vehicle catalog entries, found {len(keys)}.")
+if len(keys) != 500:
+    print(f"::error::Expected 500 vehicle catalog entries, found {len(keys)}.")
     sys.exit(1)
 
 ids = [int(i) for i, _ in keys]
@@ -22,7 +22,7 @@ if any(not key.strip() for _, key in keys):
     print("::error::Vehicle asset keys must not be blank.")
     sys.exit(1)
 
-if ids != list(range(1, 201)):
+if ids != list(range(1, 501)):
     print(f"::error::Vehicle IDs are not exactly 1..100: {ids}")
     sys.exit(1)
 
@@ -63,8 +63,8 @@ if not CATALOG.is_file():
     print("::error::Vehicle catalog file is missing.")
     sys.exit(1)
 
-if any(int(i) < 1 or int(i) > 200 for i, _ in keys):
-    print("::error::Vehicle IDs must stay within the 1..200 production range.")
+if any(int(i) < 1 or int(i) > 500 for i, _ in keys):
+    print("::error::Vehicle IDs must stay within the 1..500 production range.")
     sys.exit(1)
 
 if len(text.encode("utf-8")) > 512 * 1024:
@@ -162,7 +162,7 @@ for vehicle_id, key in keys:
     found += 1
     print(f"OK vehicle {int(vehicle_id):03d}: {path.relative_to(ROOT)}")
 
-print(f"Validated {found} real vehicle asset(s) out of 200 catalog slots.")
+print(f"Validated {found} real vehicle asset(s) out of 500 catalog slots.")
 
 if errors:
     for error in errors:
