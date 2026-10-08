@@ -110,4 +110,24 @@ class JourneyDriveDirectorTest {
         repeat(40) { d.update(0.25) }
         assertTrue(d.setVehicle(VehicleCatalog.byId(1)))
     }
+    @Test fun representative500VehicleSelectionContract() {
+        val d = JourneyDriveDirector()
+        val representativeIds = listOf(1, 50, 100, 184, 250, 350, 500)
+
+        for (id in representativeIds) {
+            assertTrue("vehicle $id must be selectable while stopped", d.setVehicle(VehicleCatalog.byId(id)))
+        }
+
+        assertEquals(VehicleCatalog.all.first(), VehicleCatalog.byId(-100))
+        assertEquals(VehicleCatalog.all.last(), VehicleCatalog.byId(1000))
+
+        d.setDriveHeld(true)
+        repeat(4) { d.update(0.25) }
+        assertTrue(d.snapshot().vehicleSpeedMetersPerSecond > 0.0)
+
+        for (id in representativeIds) {
+            assertFalse("vehicle $id must not change while moving", d.setVehicle(VehicleCatalog.byId(id)))
+        }
+    }
+
 }
