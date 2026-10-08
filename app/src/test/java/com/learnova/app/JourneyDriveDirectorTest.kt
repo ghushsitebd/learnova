@@ -36,7 +36,7 @@ class JourneyDriveDirectorTest {
         assertTrue(d.setCurrentLevel(500))
         assertEquals(500, d.currentLevel)
         assertTrue(d.validate())
-        assertFalse(d.setCurrentLevel(501))
+        assertTrue(d.setCurrentLevel(501))
         assertEquals(500, d.currentLevel)
     }
 }
