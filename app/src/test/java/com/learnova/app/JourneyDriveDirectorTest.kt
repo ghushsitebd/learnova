@@ -77,3 +77,37 @@ class JourneyDriveDirectorTest {
         assertFalse(d.advanceToNextLevel())
     }
 }
+    @Test fun vehicleDynamicsSafetyContract() {
+        val profile = VehicleCatalog.byId(184)
+        val dynamics = VehicleDriveDynamics(profile)
+        dynamics.reset()
+
+        var moving = dynamics.update(0.25, requestedMotion = true)
+        repeat(20) {
+            moving = dynamics.update(0.25, requestedMotion = true)
+        }
+        assertTrue(moving.speedMetersPerSecond > 0.0)
+        assertTrue(moving.distanceMeters > 0.0)
+        assertTrue(moving.wheelRotationRadians > 0.0)
+        assertTrue(dynamics.isStable())
+
+        var released = dynamics.update(0.25, requestedMotion = false)
+        repeat(40) {
+            released = dynamics.update(0.25, requestedMotion = false)
+        }
+        assertEquals(0.0, released.speedMetersPerSecond, 0.05)
+        assertTrue(released.distanceMeters > moving.distanceMeters)
+        assertTrue(dynamics.isStable())
+    }
+
+    @Test fun vehicleSelectionContract() {
+        val d = JourneyDriveDirector()
+        assertTrue(d.setVehicle(VehicleCatalog.byId(184)))
+        d.setDriveHeld(true)
+        repeat(4) { d.update(0.25) }
+        assertFalse(d.setVehicle(VehicleCatalog.byId(1)))
+        d.setDriveHeld(false)
+        repeat(40) { d.update(0.25) }
+        assertTrue(d.setVehicle(VehicleCatalog.byId(1)))
+    }
+
