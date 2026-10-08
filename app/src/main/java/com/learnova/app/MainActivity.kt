@@ -127,8 +127,7 @@ class MainActivity : AppCompatActivity() {
         private val sessionStartedAt = System.currentTimeMillis()
         private var worldSceneId = 1
         private var question = 0
-        private var lastTap = 0L
-        private var salamPlayedForSession = false
+                private var salamPlayedForSession = false
         private val prefs: SharedPreferences = getSharedPreferences("learnova_progress", MODE_PRIVATE)
         private val renderQuality = LearnovaRenderQuality(this@MainActivity)
         private val masterySystem = LearnovaMasterySystem(prefs)
@@ -222,16 +221,10 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     if (inDriveArea) {
-                        // Steering is fully automatic. The child has no left/right
-                        // steering controls or steering gestures; one tap only
-                        // starts/stops the journey.
-                        val now = System.currentTimeMillis()
-                        if (now - lastTap > 220L) {
-                            lastTap = now
-                            // One tap is the only child driving control. The 3D journey
-                            // director is the authoritative source of drive/stop state so
-                            // the renderer and the learning clock cannot drift apart.
-                            running = threeDWorld.toggleJourney()
+                        // Child-simple contract: the vehicle moves only while the finger
+                        // is held. Release lets the authoritative dynamics coast/brake.
+                        if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                            running = threeDWorld.setDriveHeld(true)
                             steeringInput = 0f
                             if (running) {
                                 natureAudio.start()
@@ -241,9 +234,6 @@ class MainActivity : AppCompatActivity() {
                                 } else {
                                     voice.playChildLesson(SmartLearningEngine.lesson(question))
                                 }
-                            } else {
-                                natureAudio.stop()
-                                voice.speakInstruction(false)
                             }
                             performClick()
                             invalidate()
