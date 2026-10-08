@@ -86,23 +86,6 @@ class JourneyDriveDirector(
         if (state == State.DRIVING || state == State.LEARNING) state = State.STOPPED
         return false
     }
-        State.STOPPED -> {
-            // If the child paused during the mandatory learning chapter, resume
-            // the same chapter instead of silently skipping its remaining time.
-            state = if (learningTriggered && learningElapsed < learningWindowSeconds) {
-                State.LEARNING
-            } else {
-                State.DRIVING
-            }
-            true
-        }
-        State.DRIVING, State.LEARNING -> {
-            state = State.STOPPED
-            false
-        }
-        State.COMPLETED -> false
-    }
-
     fun update(deltaSeconds: Double): Snapshot {
         val dt = deltaSeconds.coerceIn(0.0, 0.25)
         val coastingAfterRelease = state == State.STOPPED && driveDynamics.snapshot().speedMetersPerSecond > 0.0
