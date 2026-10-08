@@ -111,3 +111,5 @@ class JourneyDriveDirectorTest {
         assertTrue(d.setVehicle(VehicleCatalog.byId(1)))
     }
 
+
+}
