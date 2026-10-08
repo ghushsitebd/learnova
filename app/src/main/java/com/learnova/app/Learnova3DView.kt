@@ -634,14 +634,13 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         if (!driving && vehicleSpeed < 0.02) vehicleSpeed = 0.0
     }
 
-    /** Child-simple one-tap drive toggle; steering remains fully automatic. */
-    fun toggleJourney(): Boolean {
+    /** Child-simple press-and-hold drive; steering remains fully automatic. */
+    fun setDriveHeld(held: Boolean): Boolean {
         if (vehicleInteraction.state != VehicleInteractionController.State.OUTSIDE) return false
-        val nowDriving = journeyDirector.toggleDrive()
-        driving = nowDriving
-        vehicleFriend?.setDriving(nowDriving)
-        if (!nowDriving && vehicleSpeed < 0.02) vehicleSpeed = 0.0
-        return nowDriving
+        val moving = journeyDirector.setDriveHeld(held)
+        driving = moving
+        vehicleSpeed = journeyDirector.snapshot().vehicleSpeedMetersPerSecond
+        return moving
     }
 
     fun journeySnapshot(): JourneyDriveDirector.Snapshot = journeyDirector.snapshot()
