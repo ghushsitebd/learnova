@@ -346,7 +346,10 @@ jobs:
         timeout-minutes: 20
         with:
           api-level: 35
-          target: google_apis
+          # The smoke test needs the Android runtime, not Google Play services.
+          # Using the default API-35 image avoids the flaky Google APIs archive
+          # mirror that previously failed with "unknown archive".
+          target: default
           arch: x86_64
           profile: pixel_7
           cores: 2
