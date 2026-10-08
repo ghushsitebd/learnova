@@ -12,6 +12,7 @@ import kotlin.math.cos
 import kotlin.math.abs
 import kotlin.math.pow
 
+private const val LEARNOVA_MIN_LEVEL = 1
 private const val LEARNOVA_MAX_LEVEL = 500
 
 class MainActivity : AppCompatActivity() {
@@ -155,7 +156,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         init {
-            level = prefs.getInt("level", 1).coerceIn(1, LEARNOVA_MAX_LEVEL)
+            level = prefs.getInt("level", 1).coerceIn(LEARNOVA_MIN_LEVEL, LEARNOVA_MAX_LEVEL)
             vehicle = prefs.getInt("vehicle", 0).coerceIn(0, LearnovaUnlimitedWorld.vehicles.lastIndex)
             worldSceneId = prefs.getInt("worldSceneId", 1).coerceAtLeast(1)
             levelProgress = prefs.getFloat("levelProgress", 0f).coerceIn(0f, 1f)
