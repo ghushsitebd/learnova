@@ -187,7 +187,7 @@ class MainActivity : AppCompatActivity() {
 
         fun selectVehicleFromGarage(definition: VehicleDefinition) {
             // The catalog selection is stored independently from the current renderer's
-            // legacy 65-role vehicle set. This allows all 100 garage choices immediately;
+            // legacy 65-role vehicle set. This allows all 500 catalog choices immediately;
             // unique GLB assets can be streamed in later without changing the UI contract.
             val mapped = (definition.id - 1) % LearnovaUnlimitedWorld.vehicles.size
             vehicle = mapped
@@ -220,7 +220,7 @@ class MainActivity : AppCompatActivity() {
                     if (handleQuranChoice(x, y, w, h)) return true
                     if (learningSessionActive) return true
                     if (currentRoadsideSign != null) { if (!listeningForChild) startChildListening(); return true }
-                    // The vehicle badge opens the real 100-slot garage.
+                    // The vehicle badge opens the 500-vehicle garage.
                     if (y < h * 0.22f && x > w * 0.76f) {
                         steeringInput = 0f
                         openGarage()
