@@ -46,6 +46,27 @@ class JourneyDriveDirectorTest {
         assertFalse(d.advanceToNextLevel())
     }
 
+    @Test fun vehicleCatalogContract() {
+        assertEquals(500, VehicleCatalog.all.size)
+        assertEquals(500, VehicleCatalog.all.map { it.id }.distinct().size)
+        assertEquals(500, VehicleCatalog.all.map { it.assetKey }.distinct().size)
+        assertTrue(VehicleCatalog.all.all { it.availableFromStart })
+        assertEquals(VehicleCatalog.all.first(), VehicleCatalog.byId(0))
+        assertEquals(VehicleCatalog.all.last(), VehicleCatalog.byId(501))
+    }
+
+    @Test fun releaseRestartContract() {
+        val d = JourneyDriveDirector()
+        d.setDriveHeld(true)
+        repeat(12) { d.update(0.25) }
+        d.setDriveHeld(false)
+        repeat(80) { d.update(0.25) }
+        assertTrue(d.setDriveHeld(true))
+        repeat(8) { d.update(0.25) }
+        assertTrue(d.snapshot().elapsedSeconds > 0.0)
+        assertTrue(d.snapshot().vehicleSpeedMetersPerSecond > 0.0)
+    }
+
     @Test fun levelBoundContract() {
         val d = JourneyDriveDirector()
         assertTrue(d.setCurrentLevel(500))
