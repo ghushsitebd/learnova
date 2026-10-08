@@ -435,7 +435,7 @@ class MainActivity : AppCompatActivity() {
                         listeningForChild = false
                         running = false
                         speed = 0f
-                        threeDWorld.setDriving(false)
+                        threeDWorld.setDriveHeld(false)
                         natureAudio.stop()
                         threeDWorld.showLearningSign()
                         sign.visualKey?.let { key -> threeDWorld.triggerLearningAnimal(key) }
@@ -513,7 +513,7 @@ class MainActivity : AppCompatActivity() {
                 levelComplete = true
                 running = false
                 speed = 0f
-                threeDWorld.setDriving(false)
+                threeDWorld.setDriveHeld(false)
                 natureAudio.stop()
                 celebrationUntil = System.currentTimeMillis() + 1400L
                 voice.speakCharacter(currentFriendName(), "Great journey! You discovered and learned so much!")
@@ -2647,7 +2647,7 @@ class MainActivity : AppCompatActivity() {
                 postDelayed({
                     if (!isFinishing && !levelComplete) {
                         running = true
-                        threeDWorld.setDriving(true)
+                        threeDWorld.setDriveHeld(true)
                         natureAudio.start()
                         invalidate()
                     }
@@ -2690,7 +2690,7 @@ class MainActivity : AppCompatActivity() {
             // a stop beside the physical learning marker; no new screen or mode opens.
             running = false
             speed = 0f
-            threeDWorld.setDriving(false)
+            threeDWorld.setDriveHeld(false)
             threeDWorld.showLearningSign()
             natureAudio.stop()
             voice.speakCharacter(
@@ -2737,7 +2737,7 @@ class MainActivity : AppCompatActivity() {
             // Resume the same journey from the same world position. The level still
             // has the remaining time before its 180-second completion point.
             running = true
-            threeDWorld.setDriving(true)
+            threeDWorld.setDriveHeld(true)
             natureAudio.start()
             voice.speakCharacter(currentFriendName(), "Wonderful! Let's keep exploring!")
             saveProgress()
