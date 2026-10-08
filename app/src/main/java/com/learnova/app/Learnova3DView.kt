@@ -624,13 +624,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         vehicleFriend?.setDriving(value)
         if (value && vehicleInteraction.state != VehicleInteractionController.State.OUTSIDE) return
         if (value == driving) return
-        if (value) {
-            if (!journeyDirector.toggleDrive()) return
-            driving = true
-        } else {
-            journeyDirector.toggleDrive()
-            driving = false
-        }
+        driving = journeyDirector.setDriveHeld(value)
         if (!driving && vehicleSpeed < 0.02) vehicleSpeed = 0.0
     }
 
