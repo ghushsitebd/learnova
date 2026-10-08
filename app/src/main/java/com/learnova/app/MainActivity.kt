@@ -86,6 +86,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         private var running = false
+        private var driveTouchHeld = false
         private val use3DWorld: Boolean
             get() = threeDWorld.isPresentationReady()
         private var frame = 0L
@@ -225,6 +226,7 @@ class MainActivity : AppCompatActivity() {
                         // is held. Release lets the authoritative dynamics coast/brake.
                         if (event.actionMasked == MotionEvent.ACTION_DOWN) {
                             running = threeDWorld.setDriveHeld(true)
+                            driveTouchHeld = running
                             steeringInput = 0f
                             if (running) {
                                 natureAudio.start()
@@ -266,9 +268,17 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    // Release is global to the touch sequence: the child may slide the
+                    // finger outside the drive area before lifting, but the vehicle must
+                    // still receive the release and begin its natural coast/brake.
+                    if (driveTouchHeld) {
+                        driveTouchHeld = false
+                        running = threeDWorld.setDriveHeld(false)
+                        natureAudio.stop()
+                        invalidate()
+                    }
                     if (event.actionMasked == MotionEvent.ACTION_UP && y > h * 0.91f) {
                         // Bottom edge is intentionally not a NEXT control anymore.
-                        // The next journey opens automatically after completion.
                         return true
                     }
                 }
