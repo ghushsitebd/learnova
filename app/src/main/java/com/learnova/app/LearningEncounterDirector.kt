@@ -14,18 +14,28 @@ internal class LearningEncounterDirector {
 
     enum class Phase { APPROACH, OBSERVE, REPEAT, REWARD }
 
-    data class Encounter(
-        val level: Int,
-        val chapter: Int,
-        val phase: Phase,
-        val intensity: Float,
-        val companionCue: Boolean,
-        val recommendedPauseSeconds: Double
+    // Reused presentation snapshot. The renderer queries this every frame;
+    // mutating one object avoids a short-lived Encounter allocation at 60 FPS.
+    class Encounter(
+        var level: Int,
+        var chapter: Int,
+        var phase: Phase,
+        var intensity: Float,
+        var companionCue: Boolean,
+        var recommendedPauseSeconds: Double
     )
 
     private var lastLevel = -1
     private var lastChapter = -1
     private var encounterSerial = 0L
+    private val cachedEncounter = Encounter(
+        level = 1,
+        chapter = 0,
+        phase = Phase.APPROACH,
+        intensity = 0.55f,
+        companionCue = true,
+        recommendedPauseSeconds = 1.5
+    )
 
     fun resetIfNeeded(level: Int, chapter: Int) {
         if (level != lastLevel || chapter != lastChapter) {
@@ -57,19 +67,18 @@ internal class LearningEncounterDirector {
             .coerceIn(0.55, 1.0)
             .toFloat()
 
-        return Encounter(
-            level = level.coerceIn(1, 500),
-            chapter = chapter.coerceIn(0, 4),
-            phase = phase,
-            intensity = intensity,
-            companionCue = phase == Phase.APPROACH || phase == Phase.REPEAT,
-            recommendedPauseSeconds = when (phase) {
-                Phase.APPROACH -> 1.5
-                Phase.OBSERVE -> 2.0
-                Phase.REPEAT -> 1.25
-                Phase.REWARD -> 0.75
-            }
-        )
+        cachedEncounter.level = level.coerceIn(1, 500)
+        cachedEncounter.chapter = chapter.coerceIn(0, 4)
+        cachedEncounter.phase = phase
+        cachedEncounter.intensity = intensity
+        cachedEncounter.companionCue = phase == Phase.APPROACH || phase == Phase.REPEAT
+        cachedEncounter.recommendedPauseSeconds = when (phase) {
+            Phase.APPROACH -> 1.5
+            Phase.OBSERVE -> 2.0
+            Phase.REPEAT -> 1.25
+            Phase.REWARD -> 0.75
+        }
+        return cachedEncounter
     }
 
     fun isMilestoneLevel(level: Int): Boolean {
