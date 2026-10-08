@@ -174,8 +174,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         fun setDrivingFromGarage(value: Boolean) {
-            running = value
-            threeDWorld.setDriving(value)
+            // Garage open/close must use the same authoritative hold-drive
+            // state as gameplay; never bypass JourneyDriveDirector.
+            running = if (value) threeDWorld.setDriveHeld(true) else {
+                threeDWorld.setDriveHeld(false)
+                false
+            }
+            driveTouchHeld = false
             invalidate()
         }
 
