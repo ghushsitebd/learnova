@@ -18,7 +18,37 @@ data class VehicleDefinition(
     val previewKey: String = assetKey,
     val targetSpeed: Double = 7.2,
     val wheelRadius: Double = 0.30,
-    val availableFromStart: Boolean = true
+    val availableFromStart: Boolean = true,
+    // Vehicle-specific longitudinal response keeps different vehicle classes
+    // physically distinct while remaining child-friendly and deterministic.
+    val driveAcceleration: Double = when (type) {
+        "motorcycle", "cycle", "three_wheeler" -> 3.6
+        "electric" -> 3.2
+        "sport" -> 3.5
+        "truck", "bus", "construction", "emergency" -> 1.9
+        "farm" -> 1.6
+        else -> 2.8
+    },
+    val coastDeceleration: Double = when (type) {
+        "motorcycle", "cycle", "three_wheeler" -> 2.0
+        "electric" -> 2.2
+        "truck", "bus", "construction", "emergency" -> 1.5
+        "farm" -> 1.4
+        else -> 2.4
+    },
+    val serviceBraking: Double = when (type) {
+        "motorcycle", "cycle", "three_wheeler" -> 5.4
+        "electric" -> 5.0
+        "truck", "bus", "construction", "emergency" -> 4.1
+        "farm" -> 3.8
+        else -> 4.8
+    },
+    val steeringResponse: Double = when (type) {
+        "motorcycle", "cycle" -> 3.8
+        "truck", "bus", "construction" -> 2.4
+        "farm" -> 2.2
+        else -> 3.2
+    }
 )
 
 internal object VehicleCatalog {
