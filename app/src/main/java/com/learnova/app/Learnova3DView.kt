@@ -135,6 +135,9 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     // One shared director coordinates encounter pacing across all 500 levels.
     // It is intentionally renderer-agnostic so future audio/analytics layers can reuse it.
     private val learningEncounterDirector = LearningEncounterDirector()
+    // Reuse the curriculum director across frames; constructing it inside the render
+    // loop creates avoidable allocations during the 90-second learning chapter.
+    private val roadsideLearningDirector = RoadsideLearningDirector()
 
     // Physical entry/exit state is kept separate from the child-simple drive
     // control. If a vehicle asset contains named door nodes, this layer animates
@@ -360,7 +363,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         val activityIndex = (snapshot.learningElapsedSeconds / 18.0)
             .toInt()
             .coerceIn(0, 4)
-        val lesson = RoadsideLearningDirector().lessonForLearningSession(
+        val lesson = roadsideLearningDirector.lessonForLearningSession(
             snapshot.level,
             activityIndex
         )
