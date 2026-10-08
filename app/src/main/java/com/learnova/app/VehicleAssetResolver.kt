@@ -6,8 +6,9 @@ import java.util.zip.GZIPInputStream
 
 /**
  * Resolves a garage vehicle into renderable GLB bytes without loading the whole
- * garage into memory. Real vehicle assets are optional: missing assets fall back
- * to Learnova's verified base vehicle so selection never crashes the game.
+ * garage into memory. Dedicated vehicle assets are optional: missing assets fall
+ * back to a verified real vehicle class model so selection never crashes the game
+ * or collapses every unprovisioned slot onto one generic mesh.
  *
  * Supported asset paths:
  *   assets/vehicles/<assetKey>.glb
@@ -16,10 +17,36 @@ import java.util.zip.GZIPInputStream
 internal class VehicleAssetResolver(private val context: Context) {
 
     fun load(assetKey: String): ByteArray? {
-        val candidates = listOf(
-            "vehicles/$assetKey.glb",
-            "vehicles/$assetKey.glb.gz"
-        )
+        // Prefer the dedicated model. For the remaining 500-slot catalog, use
+        // a deterministic class fallback among the verified real GLBs already
+        // shipped with the app. This keeps every selection renderable while the
+        // larger authored-asset library is expanded incrementally.
+        val fallbackKey = when {
+            assetKey.contains("truck") ||
+                assetKey.contains("bus") ||
+                assetKey.contains("construction") ||
+                assetKey.contains("emergency") ||
+                assetKey.contains("commercial") ||
+                assetKey.contains("service") ->
+                "vehicle_040_box_truck"
+
+            assetKey.contains("motorcycle") ||
+                assetKey.contains("cycle") ||
+                assetKey.contains("buggy") ||
+                assetKey.contains("offroad") ||
+                assetKey.contains("three_wheeler") ->
+                "vehicle_068_buggy"
+
+            else -> "vehicle_001_city_car"
+        }
+
+        val keys = listOf(assetKey, fallbackKey).distinct()
+        val candidates = keys.flatMap { key ->
+            listOf(
+                "vehicles/$key.glb",
+                "vehicles/$key.glb.gz"
+            )
+        }
 
         for (path in candidates) {
             try {
