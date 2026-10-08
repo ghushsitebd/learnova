@@ -398,3 +398,5 @@ jobs:
 # CI checkpoint 2026-09-30: validate current production pipeline after benchmark hardening.
 # CI checkpoint 2026-10-05: rerun the full gated release validation from the corrected 500-level source tree.
 # CI checkpoint 2026-10-08: trigger full release gate after 500-slot vehicle catalog expansion.
+
+# CI checkpoint 2026-10-08: rerun emulator runtime gate with stable default API-35 image.
