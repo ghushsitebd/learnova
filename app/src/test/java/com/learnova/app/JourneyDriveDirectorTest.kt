@@ -31,6 +31,21 @@ class JourneyDriveDirectorTest {
         assertEquals(JourneyDriveDirector.State.DRIVING, d.snapshot().state)
     }
 
+    @Test fun completionAndNextLevelContract() {
+        val d = JourneyDriveDirector()
+        d.setDriveHeld(true)
+        repeat(720) { d.update(0.25) }
+        assertEquals(JourneyDriveDirector.State.COMPLETED, d.snapshot().state)
+        assertEquals(180.0, d.snapshot().elapsedSeconds, 0.01)
+        assertTrue(d.isComplete)
+        assertTrue(d.advanceToNextLevel())
+        assertEquals(2, d.currentLevel)
+        assertEquals(JourneyDriveDirector.State.READY, d.snapshot().state)
+        assertEquals(0.0, d.snapshot().elapsedSeconds, 0.01)
+        assertFalse(d.isComplete)
+        assertFalse(d.advanceToNextLevel())
+    }
+
     @Test fun levelBoundContract() {
         val d = JourneyDriveDirector()
         assertTrue(d.setCurrentLevel(500))
@@ -38,5 +53,6 @@ class JourneyDriveDirectorTest {
         assertTrue(d.validate())
         assertTrue(d.setCurrentLevel(501))
         assertEquals(500, d.currentLevel)
+        assertFalse(d.advanceToNextLevel())
     }
 }
