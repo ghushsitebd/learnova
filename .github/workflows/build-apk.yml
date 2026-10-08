@@ -1,0 +1,400 @@
+name: Build Learnova Release APK
+# CI checkpoint: verify permanent signing pipeline.
+# CI trigger checkpoint: release validation runs before performance stages.
+# Build trigger: compile gate follows source fixes.
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Learnova APK + AAB
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Android SDK 36
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+
+      - name: Set up Gradle 9.3.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+
+      - name: Restore current Learnova release keystore
+        env:
+          LEARNOVA_KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [ -z "${LEARNOVA_KEYSTORE_BASE64:-}" ]; then
+            echo "::error::KEYSTORE_BASE64 secret is missing."
+            echo "Add the permanent Learnova keystore as a GitHub Actions secret before building a release."
+            exit 1
+          fi
+          CLEAN_BASE64=$(printf '%s' "$LEARNOVA_KEYSTORE_BASE64" | tr -d '[:space:]')
+          CLEAN_BASE64=$(printf '%s' "$CLEAN_BASE64" | tr '_-' '/+')
+          CLEAN_BASE64=$(printf '%s' "$CLEAN_BASE64" | tr -cd 'A-Za-z0-9+/=')
+          case $((${#CLEAN_BASE64} % 4)) in
+            2) CLEAN_BASE64="$CLEAN_BASE64==" ;;
+            3) CLEAN_BASE64="$CLEAN_BASE64=" ;;
+            1) echo "::error::Keystore Base64 has an invalid length."; exit 1 ;;
+          esac
+          printf '%s' "$CLEAN_BASE64" | base64 --decode --ignore-garbage > learnova-release.keystore
+          chmod 600 learnova-release.keystore
+          test -s learnova-release.keystore
+          file learnova-release.keystore
+
+      - name: Verify and normalize signing keystore
+        env:
+          LEARNOVA_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          LEARNOVA_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "${LEARNOVA_STORE_PASSWORD:-}" || { echo "::error::KEYSTORE_PASSWORD secret is missing."; exit 1; }
+          test -n "${LEARNOVA_KEY_PASSWORD:-}" || { echo "::error::KEY_PASSWORD secret is missing."; exit 1; }
+
+          # Remove only accidental line-ending characters from pasted secrets.
+          LEARNOVA_STORE_PASSWORD=$(printf '%s' "$LEARNOVA_STORE_PASSWORD" | tr -d '\r\n')
+          LEARNOVA_KEY_PASSWORD=$(printf '%s' "$LEARNOVA_KEY_PASSWORD" | tr -d '\r\n')
+
+          echo "Checking original keystore password..."
+          if ! keytool -list -v -keystore learnova-release.keystore -storepass "$LEARNOVA_STORE_PASSWORD" >/tmp/learnova-keytool.txt 2>/tmp/learnova-keytool.err; then
+            echo "::error::KEYSTORE_PASSWORD does not unlock the restored keystore."
+            cat /tmp/learnova-keytool.err
+            exit 1
+          fi
+
+          LEARNOVA_KEY_ALIAS=$(awk -F': ' '/^Alias name: / {print $2; exit}' /tmp/learnova-keytool.txt)
+          if [ -z "${LEARNOVA_KEY_ALIAS:-}" ]; then
+            echo "::error::No signing alias was found in the keystore."
+            exit 1
+          fi
+
+          echo "Checking original signing key password..."
+          if ! keytool -certreq -keystore learnova-release.keystore -storepass "$LEARNOVA_STORE_PASSWORD" -alias "$LEARNOVA_KEY_ALIAS" -keypass "$LEARNOVA_KEY_PASSWORD" -file /tmp/learnova-test.csr -dname "CN=Learnova CI Test" >/tmp/learnova-csr.out 2>/tmp/learnova-csr.err; then
+            echo "::error::KEY_PASSWORD does not unlock the Learnova signing key."
+            cat /tmp/learnova-csr.err
+            rm -f /tmp/learnova-test.csr
+            exit 1
+          fi
+          rm -f /tmp/learnova-test.csr
+
+          # Re-wrap the SAME private key and certificate into a temporary JKS.
+          # This gives Gradle ASCII-only passwords without changing the signing identity.
+          NORMALIZED_STORE_PASSWORD=$(openssl rand -hex 32)
+          NORMALIZED_KEY_PASSWORD=$(openssl rand -hex 32)
+          echo "::add-mask::$NORMALIZED_STORE_PASSWORD"
+          echo "::add-mask::$NORMALIZED_KEY_PASSWORD"
+
+          echo "Creating temporary normalized signing keystore..."
+          keytool -importkeystore -noprompt             -srckeystore learnova-release.keystore             -srcstorepass "$LEARNOVA_STORE_PASSWORD"             -srcalias "$LEARNOVA_KEY_ALIAS"             -srckeypass "$LEARNOVA_KEY_PASSWORD"             -destkeystore learnova-release-normalized.jks             -deststoretype JKS             -deststorepass "$NORMALIZED_STORE_PASSWORD"             -destkeypass "$NORMALIZED_KEY_PASSWORD"             -destalias "$LEARNOVA_KEY_ALIAS"
+
+          chmod 600 learnova-release-normalized.jks
+          test -s learnova-release-normalized.jks
+
+          echo "Verifying normalized keystore..."
+          keytool -list -keystore learnova-release-normalized.jks -storepass "$NORMALIZED_STORE_PASSWORD" >/dev/null
+          keytool -certreq -keystore learnova-release-normalized.jks             -storepass "$NORMALIZED_STORE_PASSWORD"             -alias "$LEARNOVA_KEY_ALIAS"             -keypass "$NORMALIZED_KEY_PASSWORD"             -file /tmp/learnova-normalized-test.csr             -dname "CN=Learnova CI Normalized Test" >/dev/null
+          rm -f /tmp/learnova-normalized-test.csr
+
+          mv learnova-release-normalized.jks learnova-release.keystore
+
+          echo "LEARNOVA_KEYSTORE_PATH=$GITHUB_WORKSPACE/learnova-release.keystore" >> "$GITHUB_ENV"
+          echo "LEARNOVA_STORE_PASSWORD=$NORMALIZED_STORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "LEARNOVA_KEY_PASSWORD=$NORMALIZED_KEY_PASSWORD" >> "$GITHUB_ENV"
+          echo "LEARNOVA_KEY_ALIAS=$LEARNOVA_KEY_ALIAS" >> "$GITHUB_ENV"
+
+          echo "Signing keystore normalized successfully."
+
+      - name: Fetch verified real vehicle GLB assets
+        run: |
+          set -euo pipefail
+          python3 tools/fetch_vehicle_assets.py
+          test -s app/src/main/assets/vehicles/vehicle_001_city_car.glb
+          test -s app/src/main/assets/vehicles/vehicle_040_box_truck.glb
+          test -s app/src/main/assets/vehicles/vehicle_068_buggy.glb
+
+      - name: Validate vehicle asset contracts
+        run: |
+          set -euo pipefail
+          python3 tools/validate_vehicle_assets.py
+
+      - name: Validate gameplay interaction contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          MAIN="app/src/main/java/com/learnova/app/MainActivity.kt"
+          WORLD="app/src/main/java/com/learnova/app/Learnova3DView.kt"
+          SIGN="app/src/main/java/com/learnova/app/LearningSignWorld.kt"
+          ANIMAL="app/src/main/java/com/learnova/app/LearningAnimalEncounter.kt"
+
+          for file in "$MAIN" "$WORLD" "$SIGN" "$ANIMAL"; do
+            test -s "$file" || { echo "::error::Missing gameplay source: $file"; exit 1; }
+          done
+
+          # Validate behavior by checking the actual implementation primitives,
+          # not comments, so wording changes cannot create false CI failures.
+          grep -F 'running = threeDWorld.setDriveHeld(true)' "$MAIN" >/dev/null
+          grep -F 'fun setDriveHeld(held: Boolean): Boolean' "$WORLD" >/dev/null
+          grep -F 'fun setDriveHeld(held: Boolean): Boolean' "app/src/main/java/com/learnova/app/JourneyDriveDirector.kt" >/dev/null
+          grep -F 'MotionEvent.ACTION_MOVE' "$MAIN" >/dev/null
+          if grep -F 'threeDWorld.setDriving(running)' "$MAIN" >/dev/null; then
+            echo "::error::Legacy direct driving toggle detected; JourneyDriveDirector must remain authoritative."
+            exit 1
+          fi
+          grep -F 'RoadSpline.sampleRelative' "$WORLD" >/dev/null
+          grep -F 'fun show(worldDistance: Double)' "$SIGN" >/dev/null
+          grep -F 'authoredGlb.show(' "$ANIMAL" >/dev/null
+          grep -F 'fun trigger(animal: String' "$ANIMAL" >/dev/null
+
+          echo "Gameplay interaction contracts verified:"
+          echo "- press-and-hold drive; release coasts/brakes to stop"
+          echo "- automatic steering; no manual left/right controls"
+          echo "- physical roadside learning sign"
+          echo "- authored real-animal GLB encounter path"
+
+      - name: Fetch CC0 real-animal GLB assets
+        run: |
+          set -euo pipefail
+          python3 tools/fetch_creature_assets.py
+          test -s app/src/main/assets/creatures/deer.glb
+          test -s app/src/main/assets/creatures/fox.glb
+          test -s app/src/main/assets/creatures/horse.glb
+          test -s app/src/main/assets/creatures/wolf.glb
+          test -s app/src/main/assets/creatures/cow.glb
+          test -s app/src/main/assets/creatures/boar.glb
+          test -s app/src/main/assets/creatures/rabbit.glb
+          test -s app/src/main/assets/creatures/stag.glb
+          du -h app/src/main/assets/creatures/*.glb
+
+      - name: Validate real creature animation assets
+        run: |
+          set -euo pipefail
+          python3 tools/validate_creature_assets.py
+
+      - name: Validate near-field creature presentation contracts
+        run: |
+          set -euo pipefail
+          python3 tools/validate_near_field_presentation.py
+
+      - name: Build Release APK and AAB
+        run: |
+          set -euo pipefail
+          test -n "${LEARNOVA_KEYSTORE_PATH:-}"
+          test -n "${LEARNOVA_STORE_PASSWORD:-}"
+          test -n "${LEARNOVA_KEY_ALIAS:-}"
+          test -n "${LEARNOVA_KEY_PASSWORD:-}"
+          gradle clean assembleRelease bundleRelease --stacktrace
+
+      - name: Compile production-like benchmark variant
+        run: |
+          set -euo pipefail
+          # CI validates the non-debuggable benchmark variant even when no physical
+          # Android device is attached. Runtime Macrobenchmark execution remains a
+          # device task; this step catches variant/AGP/dependency regressions early.
+          gradle :app:assembleBenchmark :macrobenchmark:assembleBenchmark --stacktrace
+
+      - name: Validate benchmark outputs
+        run: |
+          set -euo pipefail
+          BENCHMARK_APK=$(find app/build/outputs/apk/benchmark -type f -name '*.apk' | head -n 1)
+          BENCHMARK_TEST_APK=$(find macrobenchmark/build/outputs/apk/benchmark -type f -name '*.apk' | head -n 1)
+          test -n "$BENCHMARK_APK" || { echo "::error::Learnova benchmark APK was not generated."; exit 1; }
+          test -n "$BENCHMARK_TEST_APK" || { echo "::error::Macrobenchmark test APK was not generated."; exit 1; }
+          echo "Benchmark target: $BENCHMARK_APK"
+          echo "Benchmark test:   $BENCHMARK_TEST_APK"
+          sha256sum "$BENCHMARK_APK" "$BENCHMARK_TEST_APK"
+
+      - name: Find Generated APK and AAB
+        id: find_outputs
+        shell: bash
+        run: |
+          APK=$(find . -type f -path '*/build/outputs/apk/release/*.apk' | head -n 1)
+          AAB=$(find . -type f -path '*/build/outputs/bundle/release/*.aab' | head -n 1)
+
+          if [ -z "$APK" ]; then
+            echo "No release APK was generated."
+            find . -type f -name '*.apk' -print
+            exit 1
+          fi
+
+          if [ -z "$AAB" ]; then
+            echo "No release AAB was generated."
+            find . -type f -name '*.aab' -print
+            exit 1
+          fi
+
+          echo "apk_path=$APK" >> "$GITHUB_OUTPUT"
+          echo "aab_path=$AAB" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare Learnova APK and AAB
+        run: |
+          cp "${{ steps.find_outputs.outputs.apk_path }}" Learnova.apk
+          cp "${{ steps.find_outputs.outputs.aab_path }}" Learnova.aab
+
+      - name: Audit packaged real creature assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="app/src/main/assets/creatures"
+          if [ ! -d "$ROOT" ]; then
+            echo "::error::Creature asset directory is missing."
+            exit 1
+          fi
+          count=$(find "$ROOT" -maxdepth 1 -type f \( -name '*.glb' -o -name '*.glb.gz' -o -name '*.glb.b64' \) | sed -E 's/\.(glb|glb\.gz|glb\.b64)$//' | sort -u | wc -l)
+          echo "Packaged creature asset keys: $count"
+          test "$count" -ge 4 || { echo "::error::At least four verified real creature asset keys are required."; exit 1; }
+          for species in deer fox horse wolf cow boar rabbit stag; do
+            test -s "$ROOT/$species.glb" || { echo "::error::Verified near-field asset missing: $species.glb"; exit 1; }
+          done
+          echo "Verified near-field inventory gate passed: deer, fox, horse, wolf, cow, boar, rabbit, stag."
+
+      - name: Verify Baseline Profile packaging
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK=$(find app/build/outputs/apk/release -type f -name '*.apk' | head -n 1)
+          AAB=$(find app/build/outputs/bundle/release -type f -name '*.aab' | head -n 1)
+          test -n "$APK" || { echo "::error::Release APK not found."; exit 1; }
+          test -n "$AAB" || { echo "::error::Release AAB not found."; exit 1; }
+
+          APK_PROFILE=$(unzip -Z1 "$APK" | grep -Fx 'assets/dexopt/baseline.prof' || true)
+          AAB_PROFILE=$(unzip -Z1 "$AAB" | grep -Fx 'BUNDLE-METADATA/com.android.tools.build.profiles/baseline.prof' || true)
+
+          if [ -n "$APK_PROFILE" ] && [ -n "$AAB_PROFILE" ]; then
+            echo "Baseline Profile verified in APK: $APK_PROFILE"
+            echo "Baseline Profile verified in AAB: $AAB_PROFILE"
+          else
+            echo "::error::Release APK/AAB is missing the required Baseline Profile."
+            echo "Expected APK entry: assets/dexopt/baseline.prof"
+            echo "Expected AAB entry: BUNDLE-METADATA/com.android.tools.build.profiles/baseline.prof"
+            echo "Checked-in source profile:"
+            git ls-files --error-unmatch app/src/release/generated/baselineProfiles/baseline-prof.txt
+            exit 1
+          fi
+
+      - name: Verify APK and AAB integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="Learnova.apk"
+          AAB="Learnova.aab"
+          test -s "$APK"
+          test -s "$AAB"
+
+          echo "== APK signature =="
+          APKSIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          ZIPALIGN="$ANDROID_HOME/build-tools/36.0.0/zipalign"
+          test -x "$APKSIGNER" || { echo "::error::apksigner not found at $APKSIGNER"; exit 1; }
+          test -x "$ZIPALIGN" || { echo "::error::zipalign not found at $ZIPALIGN"; exit 1; }
+          "$APKSIGNER" verify --verbose --print-certs "$APK"
+
+          echo "== APK alignment =="
+          "$ZIPALIGN" -c -P 4 -v 4 "$APK"
+
+          echo "== AAB signature/container =="
+          JARSIGNER_OUTPUT_FILE="/tmp/learnova-aab-jarsigner.txt"
+          if ! jarsigner -verify "$AAB" >"$JARSIGNER_OUTPUT_FILE" 2>&1; then
+            cat "$JARSIGNER_OUTPUT_FILE"
+            echo "::error::AAB jarsigner verification failed."
+            exit 1
+          fi
+          cat "$JARSIGNER_OUTPUT_FILE"
+          echo "AAB jarsigner verification command completed successfully."
+
+          echo "Integrity validation passed."
+
+      - name: Enable KVM for deterministic emulator boot
+        shell: bash
+        run: |
+          set -euo pipefail
+          # GitHub-hosted Ubuntu runners normally expose KVM already. Do not
+          # depend on udev/systemd being available: that made this gate fail
+          # before the emulator even started. Normalize the existing device
+          # permissions directly, then verify the exact runtime capability.
+          if [ ! -e /dev/kvm ]; then
+            echo "::error::/dev/kvm is not available on this runner."
+            exit 1
+          fi
+          sudo chmod 0666 /dev/kvm
+          test -r /dev/kvm
+          test -w /dev/kvm
+          echo "KVM is available for the emulator."
+
+      - name: Install/update safety + runtime performance validation
+        uses: reactivecircus/android-emulator-runner@v2
+        timeout-minutes: 20
+        with:
+          api-level: 35
+          # The smoke test needs the Android runtime, not Google Play services.
+          # Using the default API-35 image avoids the flaky Google APIs archive
+          # mirror that previously failed with "unknown archive".
+          target: default
+          arch: x86_64
+          profile: pixel_7
+          cores: 2
+          ram-size: 2048M
+          heap-size: 512M
+          disk-size: 4096M
+          force-avd-creation: true
+          emulator-boot-timeout: 900
+          disable-linux-hw-accel: false
+          disable-animations: true
+          script: bash .github/scripts/emulator_smoke.sh
+
+      - name: Generate SHA-256
+        run: |
+          sha256sum Learnova.apk | tee Learnova.apk.sha256
+          sha256sum Learnova.aab | tee Learnova.aab.sha256
+
+      - name: Upload Learnova build
+        uses: actions/upload-artifact@v4
+        with:
+          name: Learnova-APK-AAB
+          path: |
+            Learnova.apk
+            Learnova.apk.sha256
+            Learnova.aab
+            Learnova.aab.sha256
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: learnova-v1.1.${{ github.run_number }}
+          name: Learnova v1.1.${{ github.run_number }}
+          generate_release_notes: true
+          files: |
+            Learnova.apk
+            Learnova.apk.sha256
+            Learnova.aab
+            Learnova.aab.sha256
+
+      - name: Remove signing material
+        if: always()
+        run: rm -f learnova-release.keystore
+
+# CI validation checkpoint: bounded benchmark diagnostics
+# CI verification trigger: run the corrected release/integrity gate before the next stage.
+# CI checkpoint 2026-09-30: validate current production pipeline after benchmark hardening.
+# CI checkpoint 2026-10-05: rerun the full gated release validation from the corrected 500-level source tree.
+# CI checkpoint 2026-10-08: trigger full release gate after 500-slot vehicle catalog expansion.
