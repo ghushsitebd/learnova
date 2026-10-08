@@ -9,7 +9,7 @@ import kotlin.math.ceil
 import kotlin.math.min
 
 /**
- * Lightweight, child-friendly 100-vehicle garage.
+ * Lightweight, child-friendly 500-vehicle garage.
  *
  * Every catalog entry is available immediately. There is deliberately no
  * unlock, payment, level, timer or progression gate.
@@ -57,7 +57,7 @@ internal class VehicleGarageView(
 
         title.textSize = min(w * 0.038f, 17f)
         title.color = Color.rgb(180, 215, 232)
-        c.drawText("100 vehicles • All available", 24f, 68f, title)
+        c.drawText("500 vehicles • All available", 24f, 68f, title)
 
         title.textAlign = Paint.Align.RIGHT
         c.drawText("${page + 1} / $totalPages", w - 24f, 42f, title)

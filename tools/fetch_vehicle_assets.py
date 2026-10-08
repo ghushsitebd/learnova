@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Fetch small, license-verified real vehicle GLBs for the Learnova garage.
 
-The 100-slot catalog remains data-driven; these authored models establish the
+The 500-slot catalog remains data-driven; these authored models establish the
 first real-asset lane while the remaining slots continue to use the safe base
 vehicle fallback until dedicated models are supplied.
 """
