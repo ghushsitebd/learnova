@@ -31,9 +31,6 @@ internal class VehicleDriveDynamics(
     )
 
     private companion object {
-        const val DRIVE_ACCELERATION_METERS_PER_SECOND_SQUARED = 2.8
-        const val COMFORT_DECELERATION_METERS_PER_SECOND_SQUARED = 2.4
-        const val CONTROLLED_BRAKING_METERS_PER_SECOND_SQUARED = 4.8
         const val LEARNING_CRAWL_SPEED_METERS_PER_SECOND = 1.4
         const val STOP_EPSILON_METERS_PER_SECOND = 0.025
 
@@ -91,13 +88,13 @@ internal class VehicleDriveDynamics(
             accelerating ->
                 min(
                     target,
-                    speed + DRIVE_ACCELERATION_METERS_PER_SECOND_SQUARED * dt
+                    speed + profile.driveAcceleration * dt
                 )
             decelerating -> {
                 val rate = if (requestedMotion) {
-                    CONTROLLED_BRAKING_METERS_PER_SECOND_SQUARED
+                    profile.serviceBraking
                 } else {
-                    COMFORT_DECELERATION_METERS_PER_SECOND_SQUARED
+                    profile.coastDeceleration
                 }
                 max(target, speed - rate * dt)
             }
@@ -114,7 +111,7 @@ internal class VehicleDriveDynamics(
 
         val next = RoadSpline.sample(distance)
         val steering = shortestYawDelta(sample.yaw, next.yaw)
-            .times(3.2)
+            .times(profile.steeringResponse)
             .coerceIn(-1.0, 1.0)
         wheelRotation += speed * dt / profile.wheelRadius.coerceAtLeast(0.18)
         last = next
@@ -171,7 +168,7 @@ internal class VehicleDriveDynamics(
         steering = shortestYawDelta(
             RoadSpline.sample(max(0.0, distance - 0.5)).yaw,
             last.yaw
-        ).times(3.2).coerceIn(-1.0, 1.0),
+        ).times(profile.steeringResponse).coerceIn(-1.0, 1.0),
         yaw = last.yaw,
         bank = last.bank,
         grade = last.grade,
