@@ -154,8 +154,9 @@ jobs:
 
           # Validate behavior by checking the actual implementation primitives,
           # not comments, so wording changes cannot create false CI failures.
-          grep -F 'running = threeDWorld.toggleJourney()' "$MAIN" >/dev/null
-          grep -F 'fun toggleJourney(): Boolean' "$WORLD" >/dev/null
+          grep -F 'running = threeDWorld.setDriveHeld(true)' "$MAIN" >/dev/null
+          grep -F 'fun setDriveHeld(held: Boolean): Boolean' "$WORLD" >/dev/null
+          grep -F 'fun setDriveHeld(held: Boolean): Boolean' "app/src/main/java/com/learnova/app/JourneyDriveDirector.kt" >/dev/null
           grep -F 'MotionEvent.ACTION_MOVE' "$MAIN" >/dev/null
           if grep -F 'threeDWorld.setDriving(running)' "$MAIN" >/dev/null; then
             echo "::error::Legacy direct driving toggle detected; JourneyDriveDirector must remain authoritative."
@@ -167,7 +168,7 @@ jobs:
           grep -F 'fun trigger(animal: String' "$ANIMAL" >/dev/null
 
           echo "Gameplay interaction contracts verified:"
-          echo "- one-tap drive/stop"
+          echo "- press-and-hold drive; release coasts/brakes to stop"
           echo "- automatic steering; no manual left/right controls"
           echo "- physical roadside learning sign"
           echo "- authored real-animal GLB encounter path"
