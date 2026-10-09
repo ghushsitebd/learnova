@@ -389,7 +389,7 @@ def _validate_complete_glb(payload):
             if chunk_type != _GLB_JSON_CHUNK:
                 raise ValueError("first GLB chunk must be JSON")
             try:
-                _glb_json.loads(payload[data_start:data_end].decode("utf-8").rstrip(" \\t\\r\\n\\0"))
+                _glb_json.loads(payload[data_start:data_end].decode("utf-8").rstrip(" \t\r\n\0"))
             except (UnicodeDecodeError, _glb_json.JSONDecodeError) as exc:
                 raise ValueError(f"invalid GLB JSON chunk: {exc}") from exc
         offset = data_end
