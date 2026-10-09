@@ -98,15 +98,16 @@ class JourneyDriveDirector(
                 requestedMotion = isDriving,
                 learningPause = state == State.LEARNING
             )
-            if (isDriving && learningTriggered && state == State.LEARNING) {
+            // The learning chapter is part of the 180-second level budget, not
+            // an extra 90 seconds added after it. After 60 seconds of driving,
+            // freeze journey elapsed time while the child completes 90 seconds of
+            // learning, then resume the remaining 30 seconds of driving.
+            if (state == State.LEARNING) {
                 learningElapsed = (learningElapsed + dt).coerceAtMost(learningWindowSeconds)
                 if (learningElapsed >= learningWindowSeconds) {
                     state = State.DRIVING
                 }
             }
-            // Match the production gameplay contract: the mandatory 90-second
-            // learning chapter begins after the first 60 seconds of the 180-second
-            // journey, leaving a continuous 30-second drive finish.
             if (isDriving && !learningTriggered && elapsed >= 60.0) {
                 learningTriggered = true
                 learningElapsed = 0.0
