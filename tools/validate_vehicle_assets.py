@@ -339,3 +339,72 @@ if ASSETS.exists():
 # CI validation 424: final deterministic asset pipeline hardening.
 
 # CI validation 425: final deterministic asset pipeline hardening.
+
+
+# Deep container validation: check the complete GLB structure for plain and gzip assets.
+# Header-only checks can otherwise allow truncated/corrupt models into a release.
+import io as _glb_io
+import json as _glb_json
+import struct as _glb_struct
+
+_MAX_DECOMPRESSED_GLB_BYTES = 64 * 1024 * 1024
+_GLB_JSON_CHUNK = 0x4E4F534A
+
+
+def _read_glb_payload(path):
+    if path.suffix == ".gz":
+        with gzip.open(path, "rb") as stream:
+            payload = stream.read(_MAX_DECOMPRESSED_GLB_BYTES + 1)
+    else:
+        payload = path.read_bytes()
+    if len(payload) > _MAX_DECOMPRESSED_GLB_BYTES:
+        raise ValueError("decompressed GLB exceeds 64 MiB safety limit")
+    return payload
+
+
+def _validate_complete_glb(payload):
+    if len(payload) < 20 or payload[:4] != b"glTF":
+        raise ValueError("invalid or truncated GLB header")
+    version, declared_length = _glb_struct.unpack_from("<II", payload, 4)
+    if version != 2:
+        raise ValueError(f"unsupported GLB version {version}")
+    if declared_length != len(payload):
+        raise ValueError(
+            f"declared GLB length {declared_length} does not match actual {len(payload)}"
+        )
+
+    offset = 12
+    chunk_index = 0
+    while offset < declared_length:
+        if declared_length - offset < 8:
+            raise ValueError("truncated GLB chunk header")
+        chunk_length, chunk_type = _glb_struct.unpack_from("<II", payload, offset)
+        data_start = offset + 8
+        data_end = data_start + chunk_length
+        if chunk_length == 0 or chunk_length % 4:
+            raise ValueError(f"invalid GLB chunk length {chunk_length}")
+        if data_end > declared_length:
+            raise ValueError("GLB chunk extends beyond declared file length")
+        if chunk_index == 0:
+            if chunk_type != _GLB_JSON_CHUNK:
+                raise ValueError("first GLB chunk must be JSON")
+            try:
+                _glb_json.loads(payload[data_start:data_end].decode("utf-8").rstrip(" \t\r\n\0"))
+            except (UnicodeDecodeError, _glb_json.JSONDecodeError) as exc:
+                raise ValueError(f"invalid GLB JSON chunk: {exc}") from exc
+        offset = data_end
+        chunk_index += 1
+    if offset != declared_length or chunk_index == 0:
+        raise ValueError("incomplete GLB chunk table")
+
+
+if ASSETS.exists():
+    for candidate in sorted(ASSETS.iterdir()):
+        if not candidate.is_file() or candidate.suffix not in {".glb", ".gz"}:
+            continue
+        try:
+            _validate_complete_glb(_read_glb_payload(candidate))
+        except (OSError, EOFError, ValueError, gzip.BadGzipFile) as exc:
+            print(f"::error::Deep GLB validation failed for {candidate.name}: {exc}")
+            sys.exit(1)
+    print("Deep GLB validation passed: full lengths, chunk bounds, JSON and gzip integrity checked.")
