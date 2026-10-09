@@ -2565,6 +2565,20 @@ class MainActivity : AppCompatActivity() {
             text.textSize = 13f
             text.color = Color.WHITE
             c.drawText("CUSTOMIZE", button.centerX(), button.centerY() + 5f, text)
+
+            // Turn the clock into useful feedback: this bar advances with the same
+            // persisted 3-minute journey clock, not with render-frame count.
+            val progressTrack = RectF(18f, 76f, w - 18f, 81f)
+            paint.color = Color.argb(145, 20, 55, 50)
+            c.drawRoundRect(progressTrack, 3f, 3f, paint)
+            val progressFraction = (levelElapsedMs / 180_000f).coerceIn(0f, 1f)
+            if (progressFraction > 0f) {
+                paint.color = if (levelComplete) Color.rgb(255, 205, 70) else Color.rgb(0, 205, 135)
+                c.drawRoundRect(
+                    RectF(progressTrack.left, progressTrack.top, progressTrack.left + progressTrack.width() * progressFraction, progressTrack.bottom),
+                    3f, 3f, paint
+                )
+            }
         }
 
         private fun drawLearningCard(c: Canvas, w: Float, h: Float, world: SmartScene) {
@@ -3428,21 +3442,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         private fun drawHint(c: Canvas, w: Float, h: Float) {
-            // Keep the centre of the display completely free for the world.
-            // Guidance is voice-first; only a tiny edge hint remains when stopped.
+            // Keep the centre and bottom edge free of tiny duplicate timer text.
+            // Time and actual level progress are now represented together in the HUD.
             if (running || isQuranLevel()) return
-
-            text.textAlign = Paint.Align.CENTER
-            text.color = Color.WHITE
-            text.textSize = 12f
-            text.setShadowLayer(4f, 0f, 1f, Color.DKGRAY)
-
-            val elapsedSeconds = (levelElapsedMs / 1000L).coerceAtMost(180L)
-            val remainingSeconds = (180L - elapsedSeconds).coerceAtLeast(0L)
-            val secondsText = remainingSeconds % 60L
-            val timerText = if (levelComplete) "✓ JOURNEY COMPLETE" else "TIME " + (remainingSeconds / 60L) + ":" + (if (secondsText < 10L) "0" else "") + secondsText
-            c.drawText(timerText, w / 2f, h * .965f, text)
-            text.clearShadowLayer()
         }
 }
 }
