@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate Learnova garage asset contracts without requiring all 500 models yet."""
+"""Audit all 500 garage slots, dedicated GLBs, and deterministic class fallbacks."""
 
 from pathlib import Path
 import gzip
@@ -105,21 +105,42 @@ if ASSETS.exists():
 # 3D asset hardening: validate the binary GLB container header, version and length.
 def validate_glb_container(path):
     try:
-        with path.open("rb") as stream:
-            header = stream.read(12)
-            if len(header) != 12 or header[:4] != b"glTF":
-                return "invalid GLB header"
-            version = int.from_bytes(header[4:8], "little")
-            declared_length = int.from_bytes(header[8:12], "little")
-            actual_length = path.stat().st_size
-            if version != 2:
-                return f"unsupported GLB version {version}"
-            if declared_length < 12 or declared_length > actual_length:
-                return "invalid GLB declared length"
-    except OSError as exc:
-        return f"cannot read asset: {exc}"
+        if path.name.endswith(".glb.gz"):
+            with gzip.open(path, "rb") as stream:
+                payload = stream.read()
+        else:
+            payload = path.read_bytes()
+        if len(payload) < 20 or payload[:4] != b"glTF":
+            return "invalid or truncated GLB header"
+        version = int.from_bytes(payload[4:8], "little")
+        declared_length = int.from_bytes(payload[8:12], "little")
+        if version != 2:
+            return f"unsupported GLB version {version}"
+        if declared_length != len(payload):
+            return f"declared GLB length {declared_length} != decompressed length {len(payload)}"
+        offset = 12
+        chunk_index = 0
+        while offset < declared_length:
+            if declared_length - offset < 8:
+                return f"truncated chunk header at byte {offset}"
+            chunk_length = int.from_bytes(payload[offset:offset + 4], "little")
+            chunk_type = int.from_bytes(payload[offset + 4:offset + 8], "little")
+            if chunk_length <= 0 or chunk_length % 4:
+                return f"invalid chunk length {chunk_length}"
+            chunk_end = offset + 8 + chunk_length
+            if chunk_end > declared_length:
+                return "chunk extends past declared GLB length"
+            if chunk_index == 0 and chunk_type != 0x4E4F534A:
+                return "first GLB chunk is not JSON"
+            offset = chunk_end
+            chunk_index += 1
+        if offset != declared_length or chunk_index == 0:
+            return "incomplete GLB chunk table"
+    except (OSError, EOFError, gzip.BadGzipFile) as exc:
+        return f"cannot read/decompress asset: {exc}"
     return None
-print("Learnova vehicle validation completed with production-safe asset naming and size guards.")
+
+print("Learnova vehicle validation: auditing all 500 catalog slots and fallback coverage.")
 
 if not ASSETS.exists():
     print("::notice::No real vehicle GLB assets are committed yet; catalog/resolver fallback remains active.")
@@ -154,7 +175,7 @@ for vehicle_id, key in keys:
         errors.append(f"{key}: invalid GLB header.")
         continue
 
-    container_error = validate_glb_container(path) if path.suffix == ".glb" else None
+    container_error = validate_glb_container(path)
     if container_error:
         errors.append(f"{key}: {container_error}.")
         continue
@@ -162,7 +183,26 @@ for vehicle_id, key in keys:
     found += 1
     print(f"OK vehicle {int(vehicle_id):03d}: {path.relative_to(ROOT)}")
 
-print(f"Validated {found} real vehicle asset(s) out of 500 catalog slots.")
+dedicated_ids = {
+    int(vehicle_id)
+    for vehicle_id, key in keys
+    if (ASSETS / f"{key}.glb").is_file() or (ASSETS / f"{key}.glb.gz").is_file()
+}
+fallback_ids = [int(vehicle_id) for vehicle_id, _ in keys if int(vehicle_id) not in dedicated_ids]
+required_fallbacks = {
+    "vehicle_001_city_car": "general fallback",
+    "vehicle_040_box_truck": "truck/bus/construction/emergency fallback",
+    "vehicle_068_buggy": "motorcycle/cycle/buggy/off-road fallback",
+}
+for filename, purpose in required_fallbacks.items():
+    if not (ASSETS / f"{filename}.glb").is_file() and not (ASSETS / f"{filename}.glb.gz").is_file():
+        errors.append(f"Required fallback asset missing: {filename} ({purpose}).")
+
+print(f"Dedicated GLB models validated: {len(dedicated_ids)}/500 catalog slots.")
+print(f"Slots currently using class fallback: {len(fallback_ids)}/500.")
+print("Fallback map: general=city car; truck/bus/construction/emergency=box truck; "
+      "motorcycle/cycle/buggy/off-road=buggy.")
+print("A fallback keeps a slot renderable; it is not a unique model for that slot.")
 
 if errors:
     for error in errors:
