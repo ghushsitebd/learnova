@@ -96,10 +96,12 @@ internal class LearnovaCustomizeView(
                 type.color = Color.WHITE
                 type.textSize = min(cardW * .10f, 16f)
                 val name = vehicle.name
-                c.drawText(if (name.length > 17) name.take(15) + "…" else name, x + cardW / 2f, y + cardH * .56f, type)
-                type.textSize = min(cardW * .075f, 12f)
-                type.color = Color.rgb(190, 215, 230)
-                c.drawText(if (vehicle.id == selectedVehicleId) "SELECTED" else "CHOOSE", x + cardW / 2f, y + cardH * .80f, type)
+                type.textSize = min(cardW * .115f, 18f).coerceAtLeast(13f)
+                val maxChars = (cardW / (type.textSize * 0.58f)).toInt().coerceAtLeast(8)
+                c.drawText(if (name.length > maxChars) name.take(maxChars - 1) + "…" else name, x + cardW / 2f, y + cardH * .53f, type)
+                type.textSize = min(cardW * .09f, 14f).coerceAtLeast(11f)
+                type.color = if (vehicle.id == selectedVehicleId) Color.WHITE else Color.rgb(190, 215, 230)
+                c.drawText(if (vehicle.id == selectedVehicleId) "✓ SELECTED" else "TAP TO CHOOSE", x + cardW / 2f, y + cardH * .80f, type)
             }
         } else {
             val gap = 12f
@@ -172,12 +174,20 @@ internal class LearnovaCustomizeView(
             val top = 162f
             val cardW = (w - gap * (cols + 1)) / cols
             val cardH = (h - top - 78f - gap * 3f) / 4f
+            // Only taps inside a visible card select a vehicle; the gaps are not
+            // accidental hit targets, which makes the catalogue easier for children.
             val col = ((e.x - gap) / (cardW + gap)).toInt()
             val row = ((e.y - top) / (cardH + gap)).toInt()
-            val index = page * pageSize + row * cols + col
-            if (col in 0 until cols && row in 0..3 && index in VehicleCatalog.all.indices) {
-                selectedVehicleId = VehicleCatalog.all[index].id
-                invalidate()
+            if (col in 0 until cols && row in 0..3) {
+                val cardLeft = gap + col * (cardW + gap)
+                val cardTop = top + row * (cardH + gap)
+                val insideCard = e.x >= cardLeft && e.x <= cardLeft + cardW &&
+                    e.y >= cardTop && e.y <= cardTop + cardH
+                val index = page * pageSize + row * cols + col
+                if (insideCard && index in VehicleCatalog.all.indices) {
+                    selectedVehicleId = VehicleCatalog.all[index].id
+                    invalidate()
+                }
             }
         } else {
             val gap = 12f
@@ -186,10 +196,16 @@ internal class LearnovaCustomizeView(
             val bw = (w - 3f * gap) / 2f
             val col = ((e.x - gap) / (bw + gap)).toInt()
             val row = ((e.y - top) / (buttonH + gap)).toInt()
-            val index = row * 2 + col
-            if (col in 0..1 && index in environments.indices) {
-                selectedEnvironment = environments[index].first
-                invalidate()
+            if (col in 0..1 && row >= 0) {
+                val left = gap + col * (bw + gap)
+                val buttonTop = top + row * (buttonH + gap)
+                val insideButton = e.x >= left && e.x <= left + bw &&
+                    e.y >= buttonTop && e.y <= buttonTop + buttonH
+                val index = row * 2 + col
+                if (insideButton && index in environments.indices) {
+                    selectedEnvironment = environments[index].first
+                    invalidate()
+                }
             }
         }
         return true
