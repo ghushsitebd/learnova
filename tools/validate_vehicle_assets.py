@@ -142,9 +142,9 @@ def validate_glb_container(path):
 
 print("Learnova vehicle validation: auditing all 500 catalog slots and fallback coverage.")
 
-if not ASSETS.exists():
-    print("::notice::No real vehicle GLB assets are committed yet; catalog/resolver fallback remains active.")
-    sys.exit(0)
+if not ASSETS.is_dir():
+    print("::error::Vehicle asset directory is missing; release validation cannot prove renderer fallback coverage.")
+    sys.exit(1)
 
 errors = []
 found = 0
@@ -193,6 +193,7 @@ required_fallbacks = {
     "vehicle_001_city_car": "general fallback",
     "vehicle_040_box_truck": "truck/bus/construction/emergency fallback",
     "vehicle_068_buggy": "motorcycle/cycle/buggy/off-road fallback",
+    "vehicle_100_2050_vision": "electric/sport/luxury/2050 concept fallback",
 }
 for filename, purpose in required_fallbacks.items():
     if not (ASSETS / f"{filename}.glb").is_file() and not (ASSETS / f"{filename}.glb.gz").is_file():
