@@ -246,11 +246,9 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             headroomMonitor.start()
             frameCallback = Choreographer.FrameCallback { time ->
                 if (!started) return@FrameCallback
-                if (!rendererReady) {
-                    choreographer.postFrameCallback(frameCallback)
-                    return@FrameCallback
-                }
-
+                // Keep the authoritative journey simulation alive even when Filament
+                // cannot initialize. The Canvas fallback must remain playable on devices
+                // where native rendering or GLB loading fails.
                 val dt = if (lastFrameNanos == 0L) {
                     1.0 / 60.0
                 } else {
@@ -273,6 +271,14 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                     physicsAccumulator -= physicsStepSeconds
                     physicsSteps++
                 }
+
+                // The simulation above is renderer-independent. Skip only GPU work when
+                // the optional 3D presentation is unavailable; never freeze game logic.
+                if (!rendererReady) {
+                    choreographer.postFrameCallback(frameCallback)
+                    return@FrameCallback
+                }
+
                 val traceThisFrame = BuildConfig.PERF_TRACE_ENABLED
                 traceFrameCounter = (traceFrameCounter + 1) and 0x7fffffff
 
