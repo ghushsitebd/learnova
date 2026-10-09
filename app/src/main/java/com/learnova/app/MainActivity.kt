@@ -47,8 +47,9 @@ class MainActivity : AppCompatActivity() {
     private fun openGarage() {
         if (::gameView.isInitialized && ::garageView.isInitialized) {
             gameView.setDrivingFromGarage(false)
-            garageView.setSelectedVehicle(getSharedPreferences("learnova_progress", MODE_PRIVATE)
-                .getInt("garage_vehicle_id", 1))
+            val progress = getSharedPreferences("learnova_progress", MODE_PRIVATE)
+            garageView.setSelectedVehicle(progress.getInt("garage_vehicle_id", 1))
+            garageView.setSelectedEnvironment(progress.getString("environment_preset", "Forest"))
             garageView.visibility = View.VISIBLE
         }
     }
