@@ -26,10 +26,38 @@ internal object WorldDirector {
     )
 
     private const val CHAPTER_LENGTH = 96.0
+    @Volatile private var selectedBiomeOverride: Biome? = null
+
+    /** Apply a child-selected environment consistently across the 3D world systems. */
+    fun selectEnvironment(name: String?) {
+        selectedBiomeOverride = when (name?.lowercase()) {
+            "forest", "jungle", "জঙ্গল" -> Biome.FOREST
+            "village", "গ্রাম" -> Biome.VILLAGE
+            "desert", "মরুভূমি" -> Biome.DESERT
+            "river", "নদী" -> Biome.RIVER
+            "mountain", "পাহাড়", "পাহাড়" -> Biome.MOUNTAIN
+            "market", "বাজার" -> Biome.MARKET
+            "coast", "সমুদ্র" -> Biome.COAST
+            else -> null
+        }
+    }
 
     fun profile(distance: Double): Profile {
+        val override = selectedBiomeOverride
+        if (override != null) return profileForBiome(override)
         val chapter = kotlin.math.floor(kotlin.math.max(0.0, distance) / CHAPTER_LENGTH).toInt()
         return chapterProfile(chapter)
+    }
+
+    private fun profileForBiome(biome: Biome): Profile = when (biome) {
+        Biome.FOREST -> Profile(biome, 2.82, 1.02, 14.0f, 0.0, 0.29f, 0.55f, 0.82f)
+        Biome.RIVER -> Profile(biome, 2.96, 1.06, 14.1f, 0.8, 0.24f, 0.60f, 0.86f)
+        Biome.MOUNTAIN -> Profile(biome, 3.12, 1.10, 13.8f, -0.4, 0.31f, 0.43f, 0.64f)
+        Biome.DESERT -> Profile(biome, 2.86, 1.02, 14.3f, 0.6, 0.72f, 0.48f, 0.30f)
+        Biome.PLATEAU -> Profile(biome, 3.00, 1.08, 14.0f, -0.2, 0.34f, 0.52f, 0.73f)
+        Biome.MARKET -> Profile(biome, 2.78, 1.00, 14.2f, 1.0, 0.38f, 0.57f, 0.78f)
+        Biome.VILLAGE -> Profile(biome, 2.84, 1.02, 14.1f, 0.4, 0.30f, 0.58f, 0.79f)
+        Biome.COAST -> Profile(biome, 2.92, 1.05, 14.2f, 1.2, 0.25f, 0.62f, 0.88f)
     }
 
     /**
@@ -40,6 +68,7 @@ internal object WorldDirector {
      * allocation-free and therefore safe to call from the render loop.
      */
     fun atmosphere(distance: Double): Profile {
+        selectedBiomeOverride?.let { return profileForBiome(it) }
         val safe = kotlin.math.max(0.0, distance)
         val chapterFloat = safe / CHAPTER_LENGTH
         val chapter = kotlin.math.floor(chapterFloat).toInt()

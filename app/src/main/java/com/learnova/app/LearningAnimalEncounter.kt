@@ -60,7 +60,7 @@ internal class LearningAnimalEncounter(
             "cat", "dog", "elephant", "fish", "lion", "tiger",
             "rabbit", "parrot", "whale", "yak", "zebra",
             "fox", "deer", "horse", "wolf", "boar", "stag", "cow", "camel", "bear", "giraffe", "frog", "bird",
-            "gazelle", "falcon"
+            "gazelle", "falcon", "alpaca", "bull", "donkey", "husky", "shiba_inu", "white_horse"
         )
         if (key !in supported) return
         // Every encounter gets a fresh authored-GLB lifecycle so a completed
@@ -164,20 +164,20 @@ internal class LearningAnimalEncounter(
         val aquatic = activeAnimal in setOf("fish", "whale")
         val flying = activeAnimal in setOf("bird", "parrot", "falcon")
         val bodyW = when (activeAnimal) {
-            "elephant", "bear", "yak" -> 0.40
+            "elephant", "bear", "yak", "bull" -> 0.40
             "rabbit", "frog" -> 0.23
             "fish", "whale" -> 0.34
             else -> 0.30
         } * scale
         val bodyH = when (activeAnimal) {
             "giraffe" -> 0.56
-            "elephant", "bear", "yak" -> 0.48
+            "elephant", "bear", "yak", "bull" -> 0.48
             "fish", "whale" -> 0.24
             else -> 0.38
         } * scale
         val bodyD = when (activeAnimal) {
             "fish", "whale" -> 0.92
-            "elephant", "bear", "yak" -> 0.82
+            "elephant", "bear", "yak", "bull" -> 0.82
             else -> 0.72
         } * scale
         box(v,i,x,y+bodyH,z,yaw,bodyW,bodyH,bodyD)
@@ -188,6 +188,7 @@ internal class LearningAnimalEncounter(
         // Ears/horns/crest are represented by the third volume where appropriate.
         val headTop = when (activeAnimal) {
             "elephant" -> 0.92
+            "bull" -> 1.04
             "giraffe" -> 1.32
             "rabbit" -> 1.02
             "tiger", "lion", "bear", "fox" -> 0.96
@@ -211,7 +212,10 @@ internal class LearningAnimalEncounter(
 
     private fun animalScale(key: String): Double = when (key) {
         "elephant", "whale" -> 1.55
-        "boar", "stag", "cow" -> 1.08
+        "boar", "stag", "cow", "bull" -> 1.08
+        "white_horse" -> 1.16
+        "donkey", "alpaca" -> 0.96
+        "husky", "shiba_inu" -> 0.78
         "lion", "tiger", "zebra", "yak", "camel", "giraffe" -> 1.18
         "rabbit", "frog", "bird", "falcon" -> 0.72
         else -> 0.92
@@ -225,6 +229,11 @@ internal class LearningAnimalEncounter(
             "tiger", "fox" -> floatArrayOf(0.78f, 0.28f, 0.10f)
             "zebra" -> floatArrayOf(0.72f, 0.72f, 0.68f)
             "bear", "yak" -> floatArrayOf(0.20f, 0.14f, 0.10f)
+            "bull", "cow" -> floatArrayOf(0.34f, 0.22f, 0.12f)
+            "white_horse" -> floatArrayOf(0.88f, 0.86f, 0.80f)
+            "donkey", "alpaca" -> floatArrayOf(0.58f, 0.48f, 0.36f)
+            "husky" -> floatArrayOf(0.48f, 0.54f, 0.62f)
+            "shiba_inu" -> floatArrayOf(0.78f, 0.38f, 0.16f)
             "rabbit" -> floatArrayOf(0.74f, 0.62f, 0.58f)
             "parrot", "bird", "falcon" -> floatArrayOf(0.16f, 0.50f, 0.24f)
             "frog" -> floatArrayOf(0.16f, 0.56f, 0.18f)
