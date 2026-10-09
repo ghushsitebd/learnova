@@ -98,16 +98,14 @@ class JourneyDriveDirector(
                 requestedMotion = isDriving,
                 learningPause = state == State.LEARNING
             )
-            // The learning chapter is part of the 180-second level budget, not
-            // an extra 90 seconds added after it. After 60 seconds of driving,
-            // freeze journey elapsed time while the child completes 90 seconds of
-            // learning, then resume the remaining 30 seconds of driving.
-            if (state == State.LEARNING) {
+            if (isDriving && learningTriggered && state == State.LEARNING) {
                 learningElapsed = (learningElapsed + dt).coerceAtMost(learningWindowSeconds)
                 if (learningElapsed >= learningWindowSeconds) {
                     state = State.DRIVING
                 }
             }
+            // The 90-second learning chapter is included in the 180-second
+            // level clock: 60 seconds exploration + 90 seconds learning + 30 seconds drive.
             if (isDriving && !learningTriggered && elapsed >= 60.0) {
                 learningTriggered = true
                 learningElapsed = 0.0
