@@ -31,6 +31,12 @@ SOURCES = {
         "Buggy",
         "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Buggy/glTF-Binary/Buggy.glb",
     ),
+    # CarConcept is a distinct full vehicle model from Khronos glTF Sample Assets.
+    # Upstream license: CC-BY-4.0; attribution is retained here for release compliance.
+    "vehicle_100_2050_vision": (
+        "CarConcept (CC-BY-4.0)",
+        "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/CarConcept/glTF-Binary/CarConcept.glb",
+    ),
 }
 
 
@@ -136,7 +142,7 @@ def main() -> None:
         target = ROOT / f"{key}.glb"
         fetch_with_retry(url, target)
         print(f"OK vehicle {label}: {target} ({target.stat().st_size} bytes)")
-    print(f"Fetched and validated {len(SOURCES)} real vehicle GLBs.")
+    print(f"Fetched and validated {len(SOURCES)} dedicated vehicle GLBs.")
 
 
 if __name__ == "__main__":
