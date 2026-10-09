@@ -2774,14 +2774,18 @@ class MainActivity : AppCompatActivity() {
             currentRoadsideSign = null
             prefs.edit().putBoolean("learning_completed_level_$level", true).apply()
 
-            // Resume the same journey from the same world position. The level still
-            // has the remaining time before its 180-second completion point.
-            running = true
-            threeDWorld.setDriveHeld(true)
-            natureAudio.start()
-            voice.speakCharacter(currentFriendName(), "Wonderful! Let's keep exploring!")
+            // Learning completion must not bypass the child's hold-to-drive control.
+            // Leave the vehicle stopped; the remaining journey clock resumes only when
+            // the child presses and holds the road again.
+            running = false
+            threeDWorld.setDriveHeld(false)
+            natureAudio.stop()
+            voice.speakCharacter(
+                currentFriendName(),
+                "Wonderful! You learned so much. Hold the road to keep exploring!"
+            )
             saveProgress()
-            postInvalidateOnAnimation()
+            invalidate()
         }
 
         private fun nextLesson() {
