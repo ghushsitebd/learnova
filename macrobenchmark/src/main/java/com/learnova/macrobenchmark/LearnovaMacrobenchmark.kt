@@ -60,8 +60,12 @@ class LearnovaMacrobenchmark {
             startActivityAndWait()
         }
     ) {
-        device.click(device.displayWidth / 2, device.displayHeight / 2)
-        Thread.sleep(2_000)
-        device.click(device.displayWidth / 2, device.displayHeight / 2)
+        // The gameplay contract is press-and-hold, not tap-to-toggle. Inject a
+        // continuous touch in the central drive area for 2.5 seconds; the input
+        // command's UP event then exercises the release/coast path as well.
+        val x = device.displayWidth / 2
+        val y = (device.displayHeight * 0.42f).toInt()
+        device.executeShellCommand("input touchscreen swipe $x $y $x $y 2500")
+        Thread.sleep(500)
     }
 }
