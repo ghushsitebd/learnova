@@ -548,6 +548,20 @@ class MainActivity : AppCompatActivity() {
 
             if (learningSessionActive) {
                 val now = System.currentTimeMillis()
+                // Learning time is part of the same 180-second level clock. The vehicle
+                // is stopped for the 90-second lesson, but level progress must continue
+                // so the child only needs the final 30 seconds of driving afterwards.
+                val gameplayDelta = if (lastGameplayTickMs == 0L) 0L
+                    else (now - lastGameplayTickMs).coerceIn(0L, 1000L)
+                lastGameplayTickMs = now
+                if (!levelComplete) {
+                    levelElapsedMs = (levelElapsedMs + gameplayDelta).coerceAtMost(minimumLevelDurationMs)
+                }
+                if (now - lastProgressSaveMs >= 1000L) {
+                    lastProgressSaveMs = now
+                    saveProgress()
+                }
+
                 val delta = if (lastLearningActivityMs == 0L) 0L
                     else (now - lastLearningActivityMs).coerceIn(0L, 1000L)
                 lastLearningActivityMs = now
