@@ -9,6 +9,8 @@ for the near-field runtime.
 from pathlib import Path
 import subprocess
 import tempfile
+import time
+import urllib.error
 import urllib.request
 
 ROOT = Path("app/src/main/assets/creatures")
@@ -25,9 +27,9 @@ SOURCES = {
         "main/client/assets/models/quaternius/animals/fox.glb",
     ),
     "horse": (
-        "Horse",
-        "https://raw.githubusercontent.com/fayipon/racehorse/"
-        "6dff4c0b42d232c0fc7c817cad992dcaff0b0553/godot/assets/quaternius/horse.glb",
+        "Horse (Quaternius CC0)",
+        # Stable Poly Pizza asset URL for the CC0 Quaternius animated horse.
+        "https://static.poly.pizza/d37dbc87-ca61-4b2c-a2da-d2f0c4240bef.glb",
     ),
     "wolf": (
         "Wolf",
@@ -58,20 +60,36 @@ SOURCES = {
 
 
 def download_source(url: str, target: Path) -> None:
-    request = urllib.request.Request(
-        url,
-        headers={"User-Agent": "Learnova-CI/1.0"},
-    )
-    with urllib.request.urlopen(request, timeout=120) as response:
-        with target.open("wb") as output:
-            while True:
-                chunk = response.read(1024 * 1024)
-                if not chunk:
-                    break
-                output.write(chunk)
+    """Download to a fresh staging file and retry transient network failures."""
+    last_error = None
+    for attempt in range(1, 4):
+        try:
+            target.unlink(missing_ok=True)
+            request = urllib.request.Request(
+                url,
+                headers={"User-Agent": "Learnova-CI/1.0"},
+            )
+            with urllib.request.urlopen(request, timeout=120) as response:
+                if response.status != 200:
+                    raise RuntimeError(f"HTTP {response.status} while downloading {url}")
+                with target.open("wb") as output:
+                    while True:
+                        chunk = response.read(1024 * 1024)
+                        if not chunk:
+                            break
+                        output.write(chunk)
 
-    if not target.is_file() or target.stat().st_size < 32:
-        raise RuntimeError(f"Downloaded asset is missing or too small: {url}")
+            if not target.is_file() or target.stat().st_size < 32:
+                raise RuntimeError(f"Downloaded asset is missing or too small: {url}")
+            return
+        except (OSError, urllib.error.URLError, TimeoutError, RuntimeError) as exc:
+            last_error = exc
+            target.unlink(missing_ok=True)
+            if attempt < 3:
+                delay = 2 * attempt
+                print(f"Retry {attempt}/2 downloading creature after {type(exc).__name__}: {exc}; waiting {delay}s")
+                time.sleep(delay)
+    raise RuntimeError(f"Could not download creature after 3 attempts: {last_error}") from last_error
 
 
 def validate_glb(path: Path, display_name: str) -> None:
