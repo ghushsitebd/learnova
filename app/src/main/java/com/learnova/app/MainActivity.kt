@@ -65,7 +65,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onPause() {
-        if (::gameView.isInitialized) gameView.persistForLifecycle()
+        // Never leave propulsion held across app switching, screen lock, or an incoming
+        // system interruption. Release first, then persist the paused journey state.
+        if (::gameView.isInitialized) {
+            gameView.stopDriveForLifecycle()
+            gameView.persistForLifecycle()
+        }
         super.onPause()
     }
 
@@ -368,6 +373,16 @@ class MainActivity : AppCompatActivity() {
             }
             invalidate()
             return true
+        }
+
+        fun stopDriveForLifecycle() {
+            if (driveTouchHeld || running) {
+                driveTouchHeld = false
+                running = threeDWorld.setDriveHeld(false)
+                natureAudio.stop()
+                lastGameplayTickMs = 0L
+                invalidate()
+            }
         }
 
         fun persistForLifecycle() {
