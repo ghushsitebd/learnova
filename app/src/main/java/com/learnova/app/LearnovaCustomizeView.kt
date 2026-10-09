@@ -123,7 +123,7 @@ internal class LearnovaCustomizeView(
             }
         }
         drawButton(c, 18f, h - 60f, 110f, 42f, "BACK", false)
-        drawButton(c, w / 2f - 48f, h - 60f, 96f, 42f, if (tab == 0) "NEXT" else "CAR", false)
+        drawButton(c, w / 2f - 48f, h - 60f, 96f, 42f, if (tab == 0) "MORE" else "CAR", false)
         drawButton(c, w - 138f, h - 60f, 120f, 42f, "APPLY", true)
     }
 
@@ -149,7 +149,15 @@ internal class LearnovaCustomizeView(
                     onEnvironmentSelected(selectedEnvironment)
                     onClosed()
                 }
-                else -> { tab = 1 - tab; invalidate() }
+                else -> {
+                    if (tab == 0) {
+                        val pageCount = kotlin.math.ceil(VehicleCatalog.all.size / pageSize.toDouble()).toInt().coerceAtLeast(1)
+                        page = (page + 1) % pageCount
+                    } else {
+                        tab = 0
+                    }
+                    invalidate()
+                }
             }
             return true
         }
