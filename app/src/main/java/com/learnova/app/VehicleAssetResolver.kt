@@ -47,15 +47,9 @@ internal class VehicleAssetResolver(private val context: Context) {
                     } else {
                         input.readBytes()
                     }
-                    // A GLB must begin with the binary glTF magic "glTF".
-                    // Reject corrupt/placeholder payloads before they reach Filament.
-                    if (bytes.size < 20 ||
-                        bytes[0] != 0x67.toByte() ||
-                        bytes[1] != 0x6C.toByte() ||
-                        bytes[2] != 0x54.toByte() ||
-                        bytes[3] != 0x46.toByte()) {
-                        continue
-                    }
+                    // Reject malformed GLB headers and chunk boundaries before
+                    // native Filament parsing; release CI performs the deeper asset audit.
+                    if (!GlbContainerValidator.isValid(bytes)) continue
                     return bytes
                 }
             } catch (_: FileNotFoundException) {
