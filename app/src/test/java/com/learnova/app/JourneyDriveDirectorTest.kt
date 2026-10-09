@@ -33,6 +33,26 @@ class JourneyDriveDirectorTest {
         assertEquals(JourneyDriveDirector.State.DRIVING, d.snapshot().state)
     }
 
+    @Test fun releasingDuringLearningPausesBothClocksAndResumesLearning() {
+        val d = JourneyDriveDirector()
+        assertTrue(d.setDriveHeld(true))
+        repeat(240) { d.update(0.25) }
+        assertEquals(JourneyDriveDirector.State.LEARNING, d.snapshot().state)
+
+        assertFalse(d.setDriveHeld(false))
+        val elapsedAtRelease = d.snapshot().elapsedSeconds
+        val learningAtRelease = d.snapshot().learningElapsedSeconds
+        repeat(120) { d.update(0.25) }
+
+        assertEquals(elapsedAtRelease, d.snapshot().elapsedSeconds, 0.01)
+        assertEquals(learningAtRelease, d.snapshot().learningElapsedSeconds, 0.01)
+        assertTrue(d.setDriveHeld(true))
+        assertEquals(JourneyDriveDirector.State.LEARNING, d.snapshot().state)
+        repeat(4) { d.update(0.25) }
+        assertTrue(d.snapshot().learningElapsedSeconds > learningAtRelease)
+        assertEquals(JourneyDriveDirector.State.LEARNING, d.snapshot().state)
+    }
+
     @Test fun completionAndNextLevelContract() {
         val d = JourneyDriveDirector()
         d.setDriveHeld(true)
