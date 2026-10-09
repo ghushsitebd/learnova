@@ -426,8 +426,7 @@ class MainActivity : AppCompatActivity() {
 
                 // Vehicle dynamics: acceleration, road-following steering, lateral
                 // inertia and suspension are derived from the same road curve used by
-                // the renderer. The player still has only one control: tap to drive,
-                // tap again to stop.
+                // the renderer. The child has one control: hold to move; release to coast.
                 val roadNow = roadCenterAt(vehicleProgress.coerceIn(0f, 1f), w, worldSceneId)
                 val roadAhead = roadCenterAt((vehicleProgress + 0.055f).coerceAtMost(1f), w, worldSceneId)
                 val roadFar = roadCenterAt((vehicleProgress + 0.14f).coerceAtMost(1f), w, worldSceneId)
@@ -448,9 +447,8 @@ class MainActivity : AppCompatActivity() {
                 distance += speed
                 levelProgress += speed / LearnovaUnlimitedWorld.level(level).targetDistance * 0.006f
                 levelProgress = levelProgress.coerceAtMost(1f)
-                // The three-minute phase is driving/adventure only. Learning never
-                // interrupts the journey. After the driving target is reached, the
-                // separate 90-second learning phase starts automatically.
+                // Exploration occupies the first 60 seconds. The integrated learning
+                // chapter then uses 90 seconds of the same 180-second level clock.
                 // The Magic Learning Point is a physical roadside encounter inside
                 // the driving journey. It stops the vehicle safely, presents the real
                 // roadside sign, and lets the child answer by voice before driving on.
@@ -519,8 +517,8 @@ class MainActivity : AppCompatActivity() {
                 vehicleProgress += speed * 0.16f
                 if (vehicleProgress > 1f) vehicleProgress = 0.70f
             } else {
-                // Tap-to-stop uses natural braking/coasting rather than an instant
-                // freeze, while steering and suspension settle smoothly.
+                // Releasing the finger pauses the level clock but must not freeze the
+                // vehicle instantly. Keep rendering while speed and suspension settle.
                 speed *= 0.91f
                 steering *= 0.88f
                 vehicleHeading *= 0.90f
@@ -528,6 +526,14 @@ class MainActivity : AppCompatActivity() {
                 laneOffset += (-laneOffset) * 0.06f
                 suspensionVelocity *= 0.70f
                 suspensionOffset *= 0.78f
+                wheelSpin = (wheelSpin + speed * 900f) % 360f
+                vehicleProgress += speed * 0.16f
+                if (vehicleProgress > 1f) vehicleProgress = 0.70f
+                if (speed > 0.0004f || steering > 0.001f || steering < -0.001f ||
+                    lateralVelocity > 0.001f || lateralVelocity < -0.001f ||
+                    suspensionOffset > 0.05f || suspensionOffset < -0.05f) {
+                    postInvalidateOnAnimation()
+                }
             }
 
             // The level advances only after the mandatory 90-second learning phase.
