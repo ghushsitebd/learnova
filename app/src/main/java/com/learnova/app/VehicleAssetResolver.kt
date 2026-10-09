@@ -16,54 +16,20 @@ import java.util.zip.GZIPInputStream
  */
 internal class VehicleAssetResolver(private val context: Context) {
 
+    fun load(definition: VehicleDefinition): ByteArray? =
+        load(definition.assetKey, definition.type)
+
     fun load(assetKey: String): ByteArray? {
+        val definition = VehicleCatalog.all.firstOrNull { it.assetKey == assetKey }
+        return load(assetKey, definition?.type.orEmpty())
+    }
+
+    private fun load(assetKey: String, vehicleType: String): ByteArray? {
         // Prefer the dedicated model. For the remaining 500-slot catalog, use
         // a deterministic class fallback among the verified real GLBs already
         // shipped with the app. This keeps every selection renderable while the
         // larger authored-asset library is expanded incrementally.
-        val fallbackKey = when {
-            // Heavy vehicles keep a distinct silhouette from passenger cars.
-            assetKey.contains("truck") ||
-                assetKey.contains("bus") ||
-                assetKey.contains("construction") ||
-                assetKey.contains("emergency") ||
-                assetKey.contains("commercial") ||
-                assetKey.contains("service") ||
-                assetKey.contains("airport") ||
-                assetKey.contains("farm") ||
-                assetKey.contains("tractor") ->
-                "vehicle_040_box_truck"
-
-            // Small, rugged and two-wheel vehicle families use the compact buggy
-            // silhouette rather than incorrectly displaying a sedan.
-            assetKey.contains("motorcycle") ||
-                assetKey.contains("cycle") ||
-                assetKey.contains("buggy") ||
-                assetKey.contains("offroad") ||
-                assetKey.contains("three_wheeler") ||
-                assetKey.contains("suv") ||
-                assetKey.contains("pickup") ||
-                assetKey.contains("safari") ||
-                assetKey.contains("dune") ||
-                assetKey.contains("jeep") ->
-                "vehicle_068_buggy"
-
-            // Futuristic, electric, luxury and performance cars use the authored
-            // CarConcept GLB; this is a class fallback, not a unique model per slot.
-            assetKey.contains("concept") ||
-                assetKey.contains("2050") ||
-                assetKey.contains("electric") ||
-                assetKey.contains("hydrogen") ||
-                assetKey.contains("sport") ||
-                assetKey.contains("luxury") ||
-                assetKey.contains("hypercar") ||
-                assetKey.contains("supercar") ||
-                assetKey.contains("roadster") ||
-                assetKey.contains("coupe") ->
-                "vehicle_100_2050_vision"
-
-            else -> "vehicle_001_city_car"
-        }
+        val fallbackKey = VehicleFallbackSelector.fallbackKey(vehicleType, assetKey)
 
         val keys = listOf(assetKey, fallbackKey).distinct()
         val candidates = keys.flatMap { key ->
@@ -99,5 +65,46 @@ internal class VehicleAssetResolver(private val context: Context) {
             }
         }
         return null
+    }
+}
+
+
+/**
+ * Chooses the closest available verified class model for an unprovisioned slot.
+ * This is deliberately explicit: a 500-entry catalog is not 500 unique GLBs.
+ */
+internal object VehicleFallbackSelector {
+    fun fallbackKey(vehicleType: String, assetKey: String): String {
+        val type = vehicleType.lowercase()
+        val key = assetKey.lowercase()
+
+        return when {
+            key.contains("scooter") || key.contains("motorcycle") ||
+                key.contains("bicycle") || key.contains("tricycle") ||
+                type in setOf("motorcycle", "cycle", "three_wheeler") ->
+                "vehicle_068_buggy"
+
+            type in setOf("truck", "bus", "construction", "emergency", "commercial", "airport", "farm", "van") ||
+                key.contains("truck") || key.contains("bus") ||
+                key.contains("construction") || key.contains("ambulance") ||
+                key.contains("tractor") || key.contains("farm") ->
+                "vehicle_040_box_truck"
+
+            type in setOf("offroad", "suv", "pickup", "safari") ||
+                key.contains("buggy") || key.contains("offroad") ||
+                key.contains("suv") || key.contains("pickup") ||
+                key.contains("safari") || key.contains("dune") || key.contains("jeep") ->
+                "vehicle_068_buggy"
+
+            type in setOf("concept", "luxury", "sport") ||
+                key.contains("concept") || key.contains("2050") ||
+                key.contains("electric") || key.contains("hydrogen") ||
+                key.contains("sport") || key.contains("luxury") ||
+                key.contains("hypercar") || key.contains("supercar") ||
+                key.contains("roadster") || key.contains("coupe") ->
+                "vehicle_100_2050_vision"
+
+            else -> "vehicle_001_city_car"
+        }
     }
 }

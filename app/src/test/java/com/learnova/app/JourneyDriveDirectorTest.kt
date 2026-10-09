@@ -104,6 +104,17 @@ class JourneyDriveDirectorTest {
         assertTrue(dynamics.isStable())
     }
 
+    @Test fun vehicleFallbackSelectionContract() {
+        assertEquals("vehicle_040_box_truck", VehicleFallbackSelector.fallbackKey("truck", "vehicle_039_small_truck"))
+        assertEquals("vehicle_040_box_truck", VehicleFallbackSelector.fallbackKey("van", "vehicle_026_minivan"))
+        assertEquals("vehicle_068_buggy", VehicleFallbackSelector.fallbackKey("motorcycle", "vehicle_051_motorcycle"))
+        assertEquals("vehicle_068_buggy", VehicleFallbackSelector.fallbackKey("electric", "vehicle_053_electric_scooter"))
+        assertEquals("vehicle_068_buggy", VehicleFallbackSelector.fallbackKey("suv", "vehicle_020_compact_suv"))
+        assertEquals("vehicle_100_2050_vision", VehicleFallbackSelector.fallbackKey("concept", "vehicle_091_aero_taxi"))
+        assertEquals("vehicle_100_2050_vision", VehicleFallbackSelector.fallbackKey("electric", "vehicle_006_electric_sedan"))
+        assertEquals("vehicle_001_city_car", VehicleFallbackSelector.fallbackKey("service", "vehicle_031_taxi"))
+    }
+
     @Test fun vehicleSelectionContract() {
         val d = JourneyDriveDirector()
         assertTrue(d.setVehicle(VehicleCatalog.byId(184)))

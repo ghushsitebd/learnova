@@ -697,7 +697,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         // File I/O and GZIP decompression run off the UI thread. Filament
         // ModelViewer mutation is returned to the main thread.
         assetIoExecutor.execute {
-            val requested = vehicleAssetResolver.load(definition.assetKey)
+            val requested = vehicleAssetResolver.load(definition)
             val requestedKey = if (requested != null) definition.assetKey else "base"
             val bytes = requested ?: decodeModel()
 
