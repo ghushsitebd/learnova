@@ -146,7 +146,7 @@ internal class LearnovaCustomizeView(
                 e.x > w - 155f -> {
                     // Apply both current choices so changing tabs never discards a selection.
                     onVehicleSelected(VehicleCatalog.all[selectedVehicleId - 1])
-                    if (tab == 1) onEnvironmentSelected(selectedEnvironment)
+                    onEnvironmentSelected(selectedEnvironment)
                     onClosed()
                 }
                 else -> { tab = 1 - tab; invalidate() }
