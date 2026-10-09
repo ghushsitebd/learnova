@@ -18,6 +18,14 @@ near-field path.
 | `boar.glb` | Boar | CI-defined source |
 | `rabbit.glb` | Rabbit | CI-defined source |
 | `stag.glb` | Stag | CI-defined source |
+| `alpaca.glb` | Alpaca | Pinned Quaternius animated-animal pack |
+| `bull.glb` | Bull | Pinned Quaternius animated-animal pack |
+| `donkey.glb` | Donkey | Pinned Quaternius animated-animal pack |
+| `husky.glb` | Husky | Pinned Quaternius animated-animal pack |
+| `shiba_inu.glb` | Shiba Inu | Pinned Quaternius animated-animal pack |
+| `white_horse.glb` | White horse | Pinned Quaternius animated-animal pack |
 
 The fetch/validation pipeline verifies GLB v2 structure, meshes, skins and
-non-zero skeletal animation tracks before the assets are accepted by CI.
+non-zero skeletal animation tracks before the assets are accepted by CI. The
+additional animal sources are pinned to commit `f50f3ee5b04c1a34f8c30a338db51003aca1b8b0`
+so the downloaded content does not drift with upstream changes.
