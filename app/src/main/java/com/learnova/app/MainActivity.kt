@@ -407,7 +407,9 @@ class MainActivity : AppCompatActivity() {
             val h = height.toFloat()
             if (w <= 0f || h <= 0f) return
 
-            if (running) {
+            // The automatic lesson must keep rendering even though propulsion is released.
+            // Otherwise its 90-second activity clock can stall after the first frame.
+            if (running || learningSessionActive) {
                 frame++
                 val gameplayNow = System.currentTimeMillis()
                 if (lastGameplayTickMs == 0L) lastGameplayTickMs = gameplayNow
@@ -557,17 +559,6 @@ class MainActivity : AppCompatActivity() {
                 // Learning time is part of the same 180-second level clock. The vehicle
                 // is stopped for the 90-second lesson, but level progress must continue
                 // so the child only needs the final 30 seconds of driving afterwards.
-                val gameplayDelta = if (lastGameplayTickMs == 0L) 0L
-                    else (now - lastGameplayTickMs).coerceIn(0L, 1000L)
-                lastGameplayTickMs = now
-                if (!levelComplete) {
-                    levelElapsedMs = (levelElapsedMs + gameplayDelta).coerceAtMost(minimumLevelDurationMs)
-                }
-                if (now - lastProgressSaveMs >= 1000L) {
-                    lastProgressSaveMs = now
-                    saveProgress()
-                }
-
                 val delta = if (lastLearningActivityMs == 0L) 0L
                     else (now - lastLearningActivityMs).coerceIn(0L, 1000L)
                 lastLearningActivityMs = now
