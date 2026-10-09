@@ -22,20 +22,45 @@ internal class VehicleAssetResolver(private val context: Context) {
         // shipped with the app. This keeps every selection renderable while the
         // larger authored-asset library is expanded incrementally.
         val fallbackKey = when {
+            // Heavy vehicles keep a distinct silhouette from passenger cars.
             assetKey.contains("truck") ||
                 assetKey.contains("bus") ||
                 assetKey.contains("construction") ||
                 assetKey.contains("emergency") ||
                 assetKey.contains("commercial") ||
-                assetKey.contains("service") ->
+                assetKey.contains("service") ||
+                assetKey.contains("airport") ||
+                assetKey.contains("farm") ||
+                assetKey.contains("tractor") ->
                 "vehicle_040_box_truck"
 
+            // Small, rugged and two-wheel vehicle families use the compact buggy
+            // silhouette rather than incorrectly displaying a sedan.
             assetKey.contains("motorcycle") ||
                 assetKey.contains("cycle") ||
                 assetKey.contains("buggy") ||
                 assetKey.contains("offroad") ||
-                assetKey.contains("three_wheeler") ->
+                assetKey.contains("three_wheeler") ||
+                assetKey.contains("suv") ||
+                assetKey.contains("pickup") ||
+                assetKey.contains("safari") ||
+                assetKey.contains("dune") ||
+                assetKey.contains("jeep") ->
                 "vehicle_068_buggy"
+
+            // Futuristic, electric, luxury and performance cars use the authored
+            // CarConcept GLB; this is a class fallback, not a unique model per slot.
+            assetKey.contains("concept") ||
+                assetKey.contains("2050") ||
+                assetKey.contains("electric") ||
+                assetKey.contains("hydrogen") ||
+                assetKey.contains("sport") ||
+                assetKey.contains("luxury") ||
+                assetKey.contains("hypercar") ||
+                assetKey.contains("supercar") ||
+                assetKey.contains("roadster") ||
+                assetKey.contains("coupe") ->
+                "vehicle_100_2050_vision"
 
             else -> "vehicle_001_city_car"
         }
