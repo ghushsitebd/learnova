@@ -46,6 +46,11 @@ internal class LearnovaCustomizeView(
         invalidate()
     }
 
+    fun setSelectedEnvironment(name: String?) {
+        selectedEnvironment = environments.firstOrNull { it.first.equals(name, ignoreCase = true) }?.first ?: "Forest"
+        invalidate()
+    }
+
     override fun onDraw(c: Canvas) {
         super.onDraw(c)
         val w = width.toFloat()
@@ -139,8 +144,9 @@ internal class LearnovaCustomizeView(
             when {
                 e.x < 150f -> onClosed()
                 e.x > w - 155f -> {
-                    if (tab == 0) onVehicleSelected(VehicleCatalog.all[selectedVehicleId - 1])
-                    else onEnvironmentSelected(selectedEnvironment)
+                    // Apply both current choices so changing tabs never discards a selection.
+                    onVehicleSelected(VehicleCatalog.all[selectedVehicleId - 1])
+                    if (tab == 1) onEnvironmentSelected(selectedEnvironment)
                     onClosed()
                 }
                 else -> { tab = 1 - tab; invalidate() }
