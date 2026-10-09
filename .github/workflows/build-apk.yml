@@ -133,6 +133,7 @@ jobs:
           test -s app/src/main/assets/vehicles/vehicle_001_city_car.glb
           test -s app/src/main/assets/vehicles/vehicle_040_box_truck.glb
           test -s app/src/main/assets/vehicles/vehicle_068_buggy.glb
+          test -s app/src/main/assets/vehicles/vehicle_100_2050_vision.glb
 
       - name: Validate vehicle asset contracts
         run: |
