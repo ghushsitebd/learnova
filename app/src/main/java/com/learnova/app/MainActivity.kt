@@ -20,7 +20,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var gameView: LearnovaGameView
     private lateinit var voice: LearnovaVoice
     private lateinit var threeDWorld: Learnova3DView
-    private lateinit var garageView: VehicleGarageView
+    private lateinit var garageView: LearnovaCustomizeView
     private lateinit var rootLayout: FrameLayout
     private val natureAudio = LearnovaNatureAudio()
 
@@ -34,9 +34,10 @@ class MainActivity : AppCompatActivity() {
         rootLayout = FrameLayout(this)
         rootLayout.addView(threeDWorld, FrameLayout.LayoutParams(-1, -1))
         rootLayout.addView(gameView, FrameLayout.LayoutParams(-1, -1))
-        garageView = VehicleGarageView(
+        garageView = LearnovaCustomizeView(
             this,
-            onSelected = { definition -> gameView.selectVehicleFromGarage(definition) },
+            onVehicleSelected = { definition -> gameView.selectVehicleFromGarage(definition) },
+            onEnvironmentSelected = { environment -> gameView.selectEnvironmentFromMenu(environment) },
             onClosed = { closeGarage() }
         ).apply { visibility = View.GONE }
         rootLayout.addView(garageView, FrameLayout.LayoutParams(-1, -1))
@@ -46,7 +47,7 @@ class MainActivity : AppCompatActivity() {
     private fun openGarage() {
         if (::gameView.isInitialized && ::garageView.isInitialized) {
             gameView.setDrivingFromGarage(false)
-            garageView.setSelected(getSharedPreferences("learnova_progress", MODE_PRIVATE)
+            garageView.setSelectedVehicle(getSharedPreferences("learnova_progress", MODE_PRIVATE)
                 .getInt("garage_vehicle_id", 1))
             garageView.visibility = View.VISIBLE
         }
@@ -164,6 +165,7 @@ class MainActivity : AppCompatActivity() {
             level = prefs.getInt("level", 1).coerceIn(LEARNOVA_MIN_LEVEL, LEARNOVA_MAX_LEVEL)
             vehicle = prefs.getInt("vehicle", 0).coerceIn(0, LearnovaUnlimitedWorld.vehicles.lastIndex)
             worldSceneId = prefs.getInt("worldSceneId", 1).coerceAtLeast(1)
+            WorldDirector.selectEnvironment(prefs.getString("environment_preset", null))
             levelProgress = prefs.getFloat("levelProgress", 0f).coerceIn(0f, 1f)
             journeyEventDirector.resetForLevel(level)
             levelElapsedMs = prefs.getLong("levelElapsedMs", 0L).coerceIn(0L, minimumLevelDurationMs)
@@ -187,6 +189,13 @@ class MainActivity : AppCompatActivity() {
                 false
             }
             driveTouchHeld = false
+            invalidate()
+        }
+
+        fun selectEnvironmentFromMenu(environment: String) {
+            // The same selected biome drives the 3D world systems and is saved across launches.
+            WorldDirector.selectEnvironment(environment)
+            prefs.edit().putString("environment_preset", environment).apply()
             invalidate()
         }
 
@@ -2519,28 +2528,31 @@ class MainActivity : AppCompatActivity() {
         }
 
         private fun drawTopBar(c: Canvas, w: Float, h: Float, world: SmartScene) {
-            paint.color = Color.argb(190,20,65,55)
-            c.drawRoundRect(RectF(14f,14f,w-14f,70f),22f,22f,paint)
+            // Minimal HUD: readable level and elapsed time; all customization lives in one button.
+            paint.color = Color.argb(205, 20, 55, 50)
+            c.drawRoundRect(RectF(14f, 14f, w - 14f, 72f), 20f, 20f, paint)
 
             text.textAlign = Paint.Align.LEFT
             text.color = Color.WHITE
-            text.textSize = 20f
-            c.drawText("LEARNOVA",30f,48f,text)
+            text.textSize = 19f
+            c.drawText("LEVEL " + level, 28f, 39f, text)
+            text.textSize = 15f
+            val elapsedSeconds = (levelElapsedMs / 1000L).coerceAtMost(180L)
+            val clock = String.format(java.util.Locale.US, "%02d:%02d", elapsedSeconds / 60L, elapsedSeconds % 60L)
+            c.drawText(clock, 28f, 59f, text)
 
             text.textAlign = Paint.Align.CENTER
-            text.textSize = 13f
-            val info = LearnovaUnlimitedWorld.level(level)
-            c.drawText("LEVEL " + level,w*.53f,37f,text)
-            c.drawText(if (levelComplete) "✓ COMPLETE" else if (running) "● DRIVING" else "● READY",w*.53f,56f,text)
-            text.textSize = 9f
-            c.drawText(info.difficulty.uppercase(),w*.53f,67f,text)
+            text.textSize = 14f
+            text.color = Color.WHITE
+            c.drawText(if (levelComplete) "✓ DONE" else if (running) "DRIVING" else "READY", w * .52f, 48f, text)
 
-            text.textSize = 11f
-            c.drawText("WORLD " + world.id,w*.70f,35f,text)
-            c.drawText(world.region,w*.70f,54f,text)
-            text.textSize = 11f
-            c.drawText("VEHICLE",w*.88f,35f,text)
-            c.drawText(LearnovaUnlimitedWorld.vehicles[vehicle].name,w*.88f,54f,text)
+            val button = RectF(w - 126f, 22f, w - 22f, 62f)
+            paint.color = Color.rgb(0, 145, 100)
+            c.drawRoundRect(button, 14f, 14f, paint)
+            text.textAlign = Paint.Align.CENTER
+            text.textSize = 13f
+            text.color = Color.WHITE
+            c.drawText("CUSTOMIZE", button.centerX(), button.centerY() + 5f, text)
         }
 
         private fun drawLearningCard(c: Canvas, w: Float, h: Float, world: SmartScene) {
