@@ -52,7 +52,7 @@ data class VehicleDefinition(
 )
 
 internal object VehicleCatalog {
-    // 200 garage definitions: real-world classes first, then fictional 2050 concepts.
+    // 500 garage definitions: real-world classes first, then fictional 2050 concepts.
     val all: List<VehicleDefinition> = listOf(
         VehicleDefinition(1, "City Car", "car", "vehicle_001_city_car"),
         VehicleDefinition(2, "Family Sedan", "car", "vehicle_002_family_sedan"),
