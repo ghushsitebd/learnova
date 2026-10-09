@@ -15,7 +15,9 @@ class JourneyDriveDirectorTest {
         assertTrue(d.snapshot().vehicleSpeedMetersPerSecond > 0.0)
         assertFalse(d.setDriveHeld(false))
         assertEquals(JourneyDriveDirector.State.STOPPED, d.snapshot().state)
+        val elapsedAtRelease = d.snapshot().elapsedSeconds
         repeat(80) { d.update(0.25) }
+        assertEquals("level timer must pause while released", elapsedAtRelease, d.snapshot().elapsedSeconds, 0.01)
         assertEquals(0.0, d.snapshot().vehicleSpeedMetersPerSecond, 0.05)
     }
 
@@ -49,6 +51,8 @@ class JourneyDriveDirectorTest {
     @Test fun vehicleCatalogContract() {
         assertEquals(500, VehicleCatalog.all.size)
         assertEquals(500, VehicleCatalog.all.map { it.id }.distinct().size)
+        assertEquals(1, VehicleCatalog.all.first().id)
+        assertEquals(500, VehicleCatalog.all.last().id)
         assertEquals(500, VehicleCatalog.all.map { it.assetKey }.distinct().size)
         assertTrue(VehicleCatalog.all.all { it.availableFromStart })
         assertEquals(VehicleCatalog.all.first(), VehicleCatalog.byId(0))
