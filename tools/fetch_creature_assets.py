@@ -28,8 +28,10 @@ SOURCES = {
     ),
     "horse": (
         "Horse (Quaternius CC0)",
-        # Stable Poly Pizza asset URL for the CC0 Quaternius animated horse.
-        "https://static.poly.pizza/d37dbc87-ca61-4b2c-a2da-d2f0c4240bef.glb",
+        # Immutable GitHub raw URL for the CC0 Quaternius animated horse.
+        "https://raw.githubusercontent.com/VitexSoftware/ishtaria-client/"
+        "f50f3ee5b04c1a34f8c30a338db51003aca1b8b0/"
+        "assets/quaternius/animated-animal-pack/Models/horse.glb",
     ),
     "wolf": (
         "Wolf",
@@ -53,8 +55,10 @@ SOURCES = {
     ),
     "cow": (
         "Cow",
-        "https://raw.githubusercontent.com/webgrid/glbtest/"
-        "main/Cow_anim.glb",
+        # Quaternius animated cow, pinned to an immutable public commit.
+        "https://raw.githubusercontent.com/VitexSoftware/ishtaria-client/"
+        "f50f3ee5b04c1a34f8c30a338db51003aca1b8b0/"
+        "assets/quaternius/animated-animal-pack/Models/cow.glb",
     ),
 }
 
