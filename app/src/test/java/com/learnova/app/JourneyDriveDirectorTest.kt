@@ -125,4 +125,39 @@ class JourneyDriveDirectorTest {
         repeat(40) { d.update(0.25) }
         assertTrue(d.setVehicle(VehicleCatalog.byId(1)))
     }
+
+    @Test fun all500VehicleFallbacksResolveToVerifiedAssetFamilies() {
+        val verifiedFallbacks = setOf(
+            "vehicle_001_city_car",
+            "vehicle_040_box_truck",
+            "vehicle_068_buggy",
+            "vehicle_100_2050_vision"
+        )
+        assertEquals(500, VehicleCatalog.all.size)
+        VehicleCatalog.all.forEach { vehicle ->
+            val fallback = VehicleFallbackSelector.fallbackKey(vehicle.type, vehicle.assetKey)
+            assertTrue(
+                "Vehicle ${vehicle.id} (${vehicle.name}) has unverified fallback: $fallback",
+                fallback in verifiedFallbacks
+            )
+        }
+    }
+
+    @Test fun fallbackPriorityKeepsSpecializedVehiclesOutOfGenericCarFallback() {
+        val truckTypes = setOf("truck", "bus", "construction", "emergency", "commercial", "airport", "farm", "van")
+        VehicleCatalog.all.filter { it.type in truckTypes }.forEach { vehicle ->
+            assertEquals(
+                "Vehicle ${vehicle.id} (${vehicle.name}) must use the truck-family model",
+                "vehicle_040_box_truck",
+                VehicleFallbackSelector.fallbackKey(vehicle.type, vehicle.assetKey)
+            )
+        }
+        VehicleCatalog.all.filter { it.type in setOf("motorcycle", "cycle", "three_wheeler") }.forEach { vehicle ->
+            assertEquals(
+                "Vehicle ${vehicle.id} (${vehicle.name}) must use the compact/off-road family model",
+                "vehicle_068_buggy",
+                VehicleFallbackSelector.fallbackKey(vehicle.type, vehicle.assetKey)
+            )
+        }
+    }
 }
