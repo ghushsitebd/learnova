@@ -17,7 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "app/src/main/java/com/learnova/app/VehicleCatalog.kt"
 OUT = ROOT / "app/src/main/assets/vehicles"
-FIRST_BATCH = 500
+FIRST_BATCH = 100
 JSON_CHUNK = 0x4E4F534A
 BIN_CHUNK = 0x004E4942
 
