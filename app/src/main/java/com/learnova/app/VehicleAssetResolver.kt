@@ -109,7 +109,7 @@ internal object VehicleFallbackSelector {
         // This keeps the garage selection useful instead of showing a buggy for
         // every bike or a box truck for buses, farm machinery, and vans.
         return when {
-            type == "cycle" || key.contains("bicycle") || key.contains("tricycle") ->
+            type == "cycle" || (type != "three_wheeler" && (key.contains("bicycle") || key.contains("tricycle"))) ->
                 if (key.contains("tricycle")) "vehicle_058_tricycle" else "vehicle_059_bicycle"
 
             type == "motorcycle" || key.contains("motorcycle") ||
@@ -135,10 +135,10 @@ internal object VehicleFallbackSelector {
             type == "bus" || key.contains("bus") || key.contains("shuttle") ->
                 if (key.contains("school")) "vehicle_048_school_bus" else "vehicle_046_city_bus"
 
-            type == "farm" || key.contains("tractor") || key.contains("farm") ->
+            type == "farm" || (type != "truck" && (key.contains("tractor") || key.contains("farm"))) ->
                 "vehicle_077_small_tractor"
 
-            type == "construction" || key.contains("loader") || key.contains("hauler") ->
+            type == "construction" || (type != "truck" && (key.contains("loader") || key.contains("hauler"))) ->
                 "vehicle_078_loader"
 
             type == "truck" || key.contains("truck") ->
