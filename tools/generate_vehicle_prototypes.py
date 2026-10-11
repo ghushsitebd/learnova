@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate scale-aware, distinct low-poly GLB prototypes for the first 200 garage slots.
+"""Generate scale-aware, distinct low-poly GLB prototypes for the all 500 garage slots.
 
 Four authored upstream GLBs are fetched first and are never overwritten. This
 script fills only missing slots with original procedural prototypes. Dimensions
@@ -17,7 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "app/src/main/java/com/learnova/app/VehicleCatalog.kt"
 OUT = ROOT / "app/src/main/assets/vehicles"
-FIRST_BATCH = 200
+FIRST_BATCH = 500
 JSON_CHUNK = 0x4E4F534A
 BIN_CHUNK = 0x004E4942
 
