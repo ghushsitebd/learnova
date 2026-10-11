@@ -1,0 +1,223 @@
+#!/usr/bin/env python3
+"""Generate scale-aware, distinct low-poly GLB prototypes for the first 100 garage slots.
+
+Four authored upstream GLBs are fetched first and are never overwritten. This
+script fills only missing slots with original procedural prototypes. Dimensions
+are expressed in meters; these are prototype models, not claims of photorealism
+or exact replicas of trademarked vehicles.
+"""
+from __future__ import annotations
+
+import json
+import math
+import re
+import struct
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+CATALOG = ROOT / "app/src/main/java/com/learnova/app/VehicleCatalog.kt"
+OUT = ROOT / "app/src/main/assets/vehicles"
+FIRST_BATCH = 100
+JSON_CHUNK = 0x4E4F534A
+BIN_CHUNK = 0x004E4942
+
+PALETTE = [
+    (0.80, 0.12, 0.10, 1.0), (0.08, 0.28, 0.72, 1.0),
+    (0.06, 0.48, 0.34, 1.0), (0.92, 0.52, 0.08, 1.0),
+    (0.62, 0.12, 0.68, 1.0), (0.08, 0.56, 0.68, 1.0),
+    (0.78, 0.78, 0.78, 1.0), (0.16, 0.18, 0.21, 1.0),
+    (0.82, 0.72, 0.48, 1.0), (0.72, 0.18, 0.35, 1.0),
+]
+GLASS = (0.12, 0.30, 0.38, 1.0)
+RUBBER = (0.035, 0.04, 0.045, 1.0)
+TRIM = (0.68, 0.72, 0.75, 1.0)
+LIGHT = (1.0, 0.83, 0.48, 1.0)
+RE = re.compile(r'VehicleDefinition\(\s*(\d+)\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"')
+
+
+def dims(kind: str, name: str, vehicle_id: int):
+    n = name.lower()
+    if kind == "bus" or "bus" in n:
+        length, width, height, wheel = 10.2, 2.50, 3.15, 0.48
+    elif kind == "truck" or kind in {"commercial", "construction", "farm", "airport"}:
+        length, width, height, wheel = 6.4, 2.35, 2.75, 0.48
+        if "tractor" in n or "loader" in n or "hauler" in n:
+            length, height = 5.2, 3.0
+    elif kind in {"motorcycle", "cycle"} or any(x in n for x in ("bike", "bicycle", "tricycle", "scooter")):
+        length, width, height, wheel = (2.05, 0.78, 1.35, 0.34) if kind != "cycle" else (1.82, 0.62, 1.18, 0.36)
+    elif kind == "three_wheeler":
+        length, width, height, wheel = 2.75, 1.34, 1.82, 0.34
+    elif kind in {"concept", "electric", "luxury", "sport"}:
+        length, width, height, wheel = 4.65, 1.92, 1.42, 0.36
+    elif kind in {"offroad", "suv", "pickup", "safari", "rescue"}:
+        length, width, height, wheel = 4.85, 2.02, 1.95, 0.42
+    elif kind in {"van", "service", "emergency", "micro"}:
+        length, width, height, wheel = 4.45, 1.88, 1.90, 0.36
+    else:
+        length, width, height, wheel = 4.25, 1.82, 1.48, 0.34
+    # Small deterministic proportions differentiate each prototype while
+    # keeping each class inside plausible real-world dimensions.
+    length *= 0.94 + ((vehicle_id * 7) % 13) * 0.01
+    width *= 0.96 + ((vehicle_id * 5) % 7) * 0.01
+    height *= 0.95 + ((vehicle_id * 3) % 9) * 0.012
+    return length, width, height, wheel
+
+
+def cube(cx, cy, cz, sx, sy, sz):
+    x0, x1 = cx - sx / 2, cx + sx / 2
+    y0, y1 = cy - sy / 2, cy + sy / 2
+    z0, z1 = cz - sz / 2, cz + sz / 2
+    faces = [
+        (((x0,y0,z1),(x1,y0,z1),(x1,y1,z1),(x0,y1,z1)), (0,0,1)),
+        (((x1,y0,z0),(x0,y0,z0),(x0,y1,z0),(x1,y1,z0)), (0,0,-1)),
+        (((x1,y0,z1),(x1,y0,z0),(x1,y1,z0),(x1,y1,z1)), (1,0,0)),
+        (((x0,y0,z0),(x0,y0,z1),(x0,y1,z1),(x0,y1,z0)), (-1,0,0)),
+        (((x0,y1,z1),(x1,y1,z1),(x1,y1,z0),(x0,y1,z0)), (0,1,0)),
+        (((x0,y0,z0),(x1,y0,z0),(x1,y0,z1),(x0,y0,z1)), (0,-1,0)),
+    ]
+    p, n, ix = [], [], []
+    for corners, normal in faces:
+        base = len(p) // 3
+        for v in corners:
+            p.extend(v); n.extend(normal)
+        ix.extend((base,base+1,base+2,base,base+2,base+3))
+    return p, n, ix
+
+
+def wheel(cx, cy, cz, radius, depth, segments=12):
+    p, n, ix = [], [], []
+    # Cylinder axis is Z, so the wheel face points out from the vehicle sides.
+    for i in range(segments):
+        a0 = 2 * math.pi * i / segments
+        a1 = 2 * math.pi * (i + 1) / segments
+        base = len(p) // 3
+        for z, a in ((cz-depth/2,a0),(cz+depth/2,a0),(cz+depth/2,a1),(cz-depth/2,a1)):
+            p.extend((cx + radius*math.cos(a), cy + radius*math.sin(a), z))
+            n.extend((math.cos(a), math.sin(a), 0))
+        ix.extend((base,base+1,base+2,base,base+2,base+3))
+    return p, n, ix
+
+
+def make_glb(path: Path, vehicle_id: int, name: str, kind: str):
+    length, width, height, radius = dims(kind, name, vehicle_id)
+    body_y = radius * 1.15 + max(0.28, height * 0.22)
+    body_h = max(0.42, height * 0.38)
+    body_len = length * (0.78 if kind not in {"bus", "truck"} else 0.88)
+    body_w = width * 0.94
+    paint = PALETTE[(vehicle_id * 3 + vehicle_id // 7) % len(PALETTE)]
+    parts = []
+
+    def add(shape, material):
+        p, n, ix = shape
+        parts.append((p, n, ix, material))
+
+    add(cube(0, body_y, 0, body_len, body_h, body_w), 0)
+    # A bus/truck cargo body is taller; passenger vehicles get a sloped-looking
+    # smaller cabin placed on the chassis. Low-poly forms keep mobile draw cost low.
+    cabin_h = max(0.42, height - (body_y + body_h * 0.52) - radius * 0.65)
+    cabin_len = length * (0.38 if kind in {"bus", "truck", "commercial", "airport"} else 0.42)
+    cabin_w = width * (0.86 if kind in {"bus", "truck"} else 0.78)
+    cabin_x = -length * 0.04 if kind in {"bus", "truck", "van"} else -length * 0.02
+    cabin_y = body_y + body_h * 0.48 + cabin_h * 0.5
+    add(cube(cabin_x, cabin_y, 0, cabin_len, cabin_h, cabin_w), 1)
+    # Large side glazing and a front windscreen read clearly from the driving camera.
+    glass_y = cabin_y + cabin_h * 0.06
+    glass_h = max(0.16, cabin_h * 0.48)
+    glass_len = cabin_len * 0.72
+    for side in (-1, 1):
+        add(cube(cabin_x, glass_y, side * (cabin_w/2 + 0.008), glass_len, glass_h, 0.018), 2)
+    add(cube(length * 0.19, glass_y, 0, max(0.12, cabin_len*0.18), glass_h*0.78, cabin_w*0.88), 2)
+    # Wheels, with class-appropriate wheelbase and track.
+    if kind in {"motorcycle", "cycle"} or "bike" in name.lower() or "bicycle" in name.lower():
+        wheel_xs = (-length * 0.36, length * 0.36)
+        wheel_radius = radius
+    else:
+        wheel_xs = (-length * 0.32, length * 0.32)
+        wheel_radius = radius
+    for x in wheel_xs:
+        for z in (-width * 0.46, width * 0.46):
+            add(wheel(x, wheel_radius, z, wheel_radius, max(0.12, width*0.095)), 3)
+            add(wheel(x, wheel_radius, z + (0.008 if z > 0 else -0.008), wheel_radius*0.48,
+                      max(0.125, width*0.098)), 4)
+    # Front and rear light blocks.
+    for z in (-width*0.32, width*0.32):
+        add(cube(length*0.455, body_y + body_h*0.18, z, 0.08, 0.10, 0.12), 5)
+        add(cube(-length*0.455, body_y + body_h*0.18, z, 0.07, 0.10, 0.12), 6)
+
+    materials = [
+        {"name":"paint", "pbrMetallicRoughness":{"baseColorFactor":paint,"metallicFactor":0.28,"roughnessFactor":0.32}},
+        {"name":"roof", "pbrMetallicRoughness":{"baseColorFactor":[paint[0]*0.82,paint[1]*0.82,paint[2]*0.82,1],"metallicFactor":0.2,"roughnessFactor":0.4}},
+        {"name":"glass", "pbrMetallicRoughness":{"baseColorFactor":GLASS,"metallicFactor":0.15,"roughnessFactor":0.18}},
+        {"name":"rubber", "pbrMetallicRoughness":{"baseColorFactor":RUBBER,"metallicFactor":0.0,"roughnessFactor":0.92}},
+        {"name":"wheel_hub", "pbrMetallicRoughness":{"baseColorFactor":TRIM,"metallicFactor":0.72,"roughnessFactor":0.28}},
+        {"name":"headlight", "pbrMetallicRoughness":{"baseColorFactor":LIGHT,"metallicFactor":0.05,"roughnessFactor":0.2}},
+        {"name":"tail_light", "pbrMetallicRoughness":{"baseColorFactor":[0.85,0.025,0.02,1],"metallicFactor":0.0,"roughnessFactor":0.25}},
+    ]
+    binary = bytearray()
+    views, accessors, meshes, nodes = [], [], [], []
+
+    def align4():
+        while len(binary) % 4:
+            binary.append(0)
+
+    for idx, (positions, normals, indices, material) in enumerate(parts):
+        align4(); pos_offset = len(binary)
+        binary.extend(struct.pack("<" + "f"*len(positions), *positions))
+        pos_length = len(binary)-pos_offset
+        align4(); norm_offset = len(binary)
+        binary.extend(struct.pack("<" + "f"*len(normals), *normals))
+        norm_length = len(binary)-norm_offset
+        align4(); ind_offset = len(binary)
+        binary.extend(struct.pack("<" + "H"*len(indices), *indices))
+        ind_length = len(binary)-ind_offset
+        pv = len(views); views.append({"buffer":0,"byteOffset":pos_offset,"byteLength":pos_length,"target":34962})
+        nv = len(views); views.append({"buffer":0,"byteOffset":norm_offset,"byteLength":norm_length,"target":34962})
+        iv = len(views); views.append({"buffer":0,"byteOffset":ind_offset,"byteLength":ind_length,"target":34963})
+        xyz = list(zip(positions[0::3], positions[1::3], positions[2::3]))
+        pa = len(accessors); accessors.append({"bufferView":pv,"componentType":5126,"count":len(positions)//3,"type":"VEC3","min":[min(v[i] for v in xyz) for i in range(3)],"max":[max(v[i] for v in xyz) for i in range(3)]})
+        na = len(accessors); accessors.append({"bufferView":nv,"componentType":5126,"count":len(normals)//3,"type":"VEC3"})
+        ia = len(accessors); accessors.append({"bufferView":iv,"componentType":5123,"count":len(indices),"type":"SCALAR","min":[min(indices)],"max":[max(indices)]})
+        meshes.append({"name":f"{name}_part_{idx}","primitives":[{"attributes":{"POSITION":pa,"NORMAL":na},"indices":ia,"material":material,"mode":4}]})
+        nodes.append({"name":f"{name}_part_{idx}","mesh":idx})
+
+    align4()
+    document = {
+        "asset":{"version":"2.0","generator":"Learnova scale-aware vehicle prototype generator"},
+        "scene":0,"scenes":[{"nodes":list(range(len(nodes)))}],
+        "nodes":nodes,"meshes":meshes,"materials":materials,
+        "buffers":[{"byteLength":len(binary)}],"bufferViews":views,"accessors":accessors,
+    }
+    json_bytes = json.dumps(document,separators=(",",":"),ensure_ascii=False).encode("utf-8")
+    json_bytes += b" " * ((4 - len(json_bytes) % 4) % 4)
+    binary_bytes = bytes(binary)
+    binary_bytes += b"\0" * ((4 - len(binary_bytes) % 4) % 4)
+    total = 12 + 8 + len(json_bytes) + 8 + len(binary_bytes)
+    glb = (b"glTF" + struct.pack("<II",2,total) +
+           struct.pack("<II",len(json_bytes),JSON_CHUNK) + json_bytes +
+           struct.pack("<II",len(binary_bytes),BIN_CHUNK) + binary_bytes)
+    path.write_bytes(glb)
+    return length, width, height, len(glb)
+
+
+def main():
+    OUT.mkdir(parents=True, exist_ok=True)
+    catalog = CATALOG.read_text(encoding="utf-8")
+    entries = [(int(i), name, kind, key) for i,name,kind,key in RE.findall(catalog) if int(i) <= FIRST_BATCH]
+    if len(entries) != FIRST_BATCH:
+        raise SystemExit(f"Expected {FIRST_BATCH} catalog entries, found {len(entries)}")
+    made, preserved = 0, 0
+    for vehicle_id, name, kind, key in entries:
+        target = OUT / f"{key}.glb"
+        if target.is_file() and target.stat().st_size > 20:
+            preserved += 1
+            continue
+        length, width, height, size = make_glb(target, vehicle_id, name, kind)
+        print(f"GENERATED {vehicle_id:03d} {key}: {length:.2f}m x {width:.2f}m x {height:.2f}m ({size} bytes)")
+        made += 1
+    print(f"Vehicle prototype batch complete: generated={made}, preserved_upstream={preserved}, slots={FIRST_BATCH}")
+    if made + preserved != FIRST_BATCH:
+        raise SystemExit("Vehicle prototype batch count mismatch")
+
+
+if __name__ == "__main__":
+    main()
