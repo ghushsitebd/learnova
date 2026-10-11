@@ -149,7 +149,7 @@ if not ASSETS.is_dir():
 
 errors = []
 found = 0
-first_100_hashes = {}
+first_200_hashes = {}
 for vehicle_id, key in keys:
     glb = ASSETS / f"{key}.glb"
     gz = ASSETS / f"{key}.glb.gz"
@@ -184,12 +184,12 @@ for vehicle_id, key in keys:
 
     found += 1
     numeric_id = int(vehicle_id)
-    if numeric_id <= 100:
+    if numeric_id <= 200:
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
-        if digest in first_100_hashes.values():
-            previous_id = next(k for k, value in first_100_hashes.items() if value == digest)
+        if digest in first_200_hashes.values():
+            previous_id = next(k for k, value in first_200_hashes.items() if value == digest)
             errors.append(f"Vehicles {previous_id:03d} and {numeric_id:03d} have identical GLB files.")
-        first_100_hashes[numeric_id] = digest
+        first_200_hashes[numeric_id] = digest
     print(f"OK vehicle {numeric_id:03d}: {path.relative_to(ROOT)}")
 
 dedicated_ids = {
@@ -197,22 +197,22 @@ dedicated_ids = {
     for vehicle_id, key in keys
     if (ASSETS / f"{key}.glb").is_file() or (ASSETS / f"{key}.glb.gz").is_file()
 }
-first_100_missing = [
+first_200_missing = [
     (int(vehicle_id), key)
     for vehicle_id, key in keys
     if int(vehicle_id) <= 200
     and not (ASSETS / f"{key}.glb").is_file()
     and not (ASSETS / f"{key}.glb.gz").is_file()
 ]
-if first_100_missing:
+if first_200_missing:
     errors.extend(
         f"First-200 model batch missing vehicle {vehicle_id:03d} ({key})."
-        for vehicle_id, key in first_100_missing
+        for vehicle_id, key in first_200_missing
     )
-if len(dedicated_ids.intersection(set(range(1, 201)))) != 100:
+if len(dedicated_ids.intersection(set(range(1, 201)))) != 200:
     errors.append(
         "The first 200 garage slots must each have a dedicated GLB model; "
-        f"found {len(dedicated_ids.intersection(set(range(1, 101))))}/100."
+        f"found {len(dedicated_ids.intersection(set(range(1, 201))))}/200."
     )
 fallback_ids = [int(vehicle_id) for vehicle_id, _ in keys if int(vehicle_id) not in dedicated_ids]
 required_fallbacks = {
