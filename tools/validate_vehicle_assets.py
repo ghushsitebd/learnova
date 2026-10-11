@@ -200,18 +200,18 @@ dedicated_ids = {
 first_100_missing = [
     (int(vehicle_id), key)
     for vehicle_id, key in keys
-    if int(vehicle_id) <= 100
+    if int(vehicle_id) <= 200
     and not (ASSETS / f"{key}.glb").is_file()
     and not (ASSETS / f"{key}.glb.gz").is_file()
 ]
 if first_100_missing:
     errors.extend(
-        f"First-100 model batch missing vehicle {vehicle_id:03d} ({key})."
+        f"First-200 model batch missing vehicle {vehicle_id:03d} ({key})."
         for vehicle_id, key in first_100_missing
     )
-if len(dedicated_ids.intersection(set(range(1, 101)))) != 100:
+if len(dedicated_ids.intersection(set(range(1, 201)))) != 100:
     errors.append(
-        "The first 100 garage slots must each have a dedicated GLB model; "
+        "The first 200 garage slots must each have a dedicated GLB model; "
         f"found {len(dedicated_ids.intersection(set(range(1, 101))))}/100."
     )
 fallback_ids = [int(vehicle_id) for vehicle_id, _ in keys if int(vehicle_id) not in dedicated_ids]
