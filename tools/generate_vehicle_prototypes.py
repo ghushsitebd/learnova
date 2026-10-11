@@ -120,29 +120,62 @@ def make_glb(path: Path, vehicle_id: int, name: str, kind: str):
     cabin_x = -length * 0.04 if kind in {"bus", "truck", "van"} else -length * 0.02
     cabin_y = body_y + body_h * 0.48 + cabin_h * 0.5
     add(cube(cabin_x, cabin_y, 0, cabin_len, cabin_h, cabin_w), 1)
-    # Large side glazing and a front windscreen read clearly from the driving camera.
+    # Individual glazing panes and pillars make vehicle classes readable at game distance.
     glass_y = cabin_y + cabin_h * 0.06
-    glass_h = max(0.16, cabin_h * 0.48)
-    glass_len = cabin_len * 0.72
+    glass_h = max(0.16, cabin_h * 0.46)
+    pane_count = 6 if kind == "bus" or "bus" in name.lower() else (4 if kind in {"van", "commercial"} else 2)
+    pane_gap = min(0.055, cabin_len * 0.035)
+    pane_len = (cabin_len * 0.76 - pane_gap * (pane_count - 1)) / pane_count
+    pane_start = cabin_x - (pane_len * pane_count + pane_gap * (pane_count - 1)) / 2 + pane_len / 2
     for side in (-1, 1):
-        add(cube(cabin_x, glass_y, side * (cabin_w/2 + 0.008), glass_len, glass_h, 0.018), 2)
-    add(cube(length * 0.19, glass_y, 0, max(0.12, cabin_len*0.18), glass_h*0.78, cabin_w*0.88), 2)
-    # Wheels, with class-appropriate wheelbase and track.
-    if kind in {"motorcycle", "cycle"} or "bike" in name.lower() or "bicycle" in name.lower():
-        wheel_xs = (-length * 0.36, length * 0.36)
-        wheel_radius = radius
-    else:
-        wheel_xs = (-length * 0.32, length * 0.32)
-        wheel_radius = radius
+        for pane in range(pane_count):
+            px = pane_start + pane * (pane_len + pane_gap)
+            add(cube(px, glass_y, side * (cabin_w/2 + 0.012), pane_len, glass_h, 0.022), 2)
+    # Broad angled-looking front windscreen, rear glass, and front/rear bumpers.
+    add(cube(length * 0.19, glass_y, 0, max(0.16, cabin_len*0.20), glass_h*0.82, cabin_w*0.90), 2)
+    add(cube(-length * 0.22, glass_y, 0, max(0.12, cabin_len*0.12), glass_h*0.70, cabin_w*0.84), 2)
+    add(cube(length*0.465, body_y - body_h*0.18, 0, 0.13, 0.13, width*0.98), 4)
+    add(cube(-length*0.465, body_y - body_h*0.18, 0, 0.12, 0.12, width*0.98), 4)
+
+    # Wheels: two inline wheels for bikes; four road wheels for cars and utility vehicles.
+    is_bike = kind in {"motorcycle", "cycle"} or any(x in name.lower() for x in ("bike", "bicycle", "tricycle", "scooter"))
+    wheel_xs = (-length * 0.36, length * 0.36) if is_bike else (-length * 0.32, length * 0.32)
+    wheel_radius = radius
+    wheel_tracks = (0,) if is_bike else (-width * 0.46, width * 0.46)
     for x in wheel_xs:
-        for z in (-width * 0.46, width * 0.46):
+        for z in wheel_tracks:
             add(wheel(x, wheel_radius, z, wheel_radius, max(0.12, width*0.095)), 3)
-            add(wheel(x, wheel_radius, z + (0.008 if z > 0 else -0.008), wheel_radius*0.48,
+            add(wheel(x, wheel_radius, z + (0.008 if z >= 0 else -0.008), wheel_radius*0.48,
                       max(0.125, width*0.098)), 4)
-    # Front and rear light blocks.
-    for z in (-width*0.32, width*0.32):
-        add(cube(length*0.455, body_y + body_h*0.18, z, 0.08, 0.10, 0.12), 5)
-        add(cube(-length*0.455, body_y + body_h*0.18, z, 0.07, 0.10, 0.12), 6)
+
+    # Grille, layered lamp clusters, mirrors, door handles, side sill and trim.
+    add(cube(length*0.462, body_y + body_h*0.02, 0, 0.035, body_h*0.30, width*0.28), 4)
+    for side in (-1, 1):
+        add(cube(cabin_x + cabin_len*0.24, cabin_y - cabin_h*0.02,
+                 side*(cabin_w/2 + 0.075), 0.16, 0.075, 0.13), 4)
+        add(cube(cabin_x + cabin_len*0.22, cabin_y + cabin_h*0.02,
+                 side*(cabin_w/2 + 0.14), 0.10, 0.075, 0.10), 2)
+        if not is_bike:
+            add(cube(0, body_y - body_h*0.36, side*(width*0.475), body_len*0.72, 0.055, 0.035), 4)
+            # Door handles provide a small but useful realism cue in close-up views.
+            for door_x in (-length*0.08, length*0.12):
+                add(cube(door_x, body_y + body_h*0.22, side*(body_w*0.475 + 0.012), 0.12, 0.025, 0.018), 4)
+
+    # Distinct utility silhouettes: pickup bed, roof rails, and tall commercial fronts.
+    if "pickup" in name.lower() or "farm" in name.lower():
+        add(cube(-length*0.25, body_y + body_h*0.62, 0, length*0.27, 0.10, body_w*0.80), 1)
+        for side in (-1, 1):
+            add(cube(-length*0.25, body_y + body_h*0.83, side*body_w*0.39,
+                     length*0.28, 0.34, 0.055), 0)
+    if kind in {"suv", "offroad", "rescue", "safari"} or any(x in name.lower() for x in ("jeep", "safari", "rescue")):
+        for side in (-1, 1):
+            add(cube(cabin_x, cabin_y + cabin_h*0.52, side*cabin_w*0.43,
+                     cabin_len*0.92, 0.045, 0.045), 4)
+    # Headlights, rear lamps and indicator blocks.
+    for z in (-width*0.34, width*0.34):
+        add(cube(length*0.458, body_y + body_h*0.18, z, 0.075, 0.12, 0.14), 5)
+        add(cube(length*0.462, body_y + body_h*0.05, z, 0.035, 0.055, 0.09), 4)
+        add(cube(-length*0.458, body_y + body_h*0.18, z, 0.07, 0.11, 0.13), 6)
 
     materials = [
         {"name":"paint", "pbrMetallicRoughness":{"baseColorFactor":paint,"metallicFactor":0.28,"roughnessFactor":0.32}},
