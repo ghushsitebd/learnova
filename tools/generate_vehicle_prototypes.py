@@ -84,6 +84,48 @@ def cube(cx, cy, cz, sx, sy, sz):
     return p, n, ix
 
 
+
+def tapered_box(cx, cy, cz, sx, sy, sz, top_sx_ratio=0.92, top_sz_ratio=0.94):
+    """Flat-shaded beveled/tapered body prism for less toy-like silhouettes."""
+    bottom = [
+        (cx-sx/2, cy-sy/2, cz-sz/2), (cx+sx/2, cy-sy/2, cz-sz/2),
+        (cx+sx/2, cy-sy/2, cz+sz/2), (cx-sx/2, cy-sy/2, cz+sz/2),
+    ]
+    top_sx, top_sz = sx*top_sx_ratio, sz*top_sz_ratio
+    top = [
+        (cx-top_sx/2, cy+sy/2, cz-top_sz/2), (cx+top_sx/2, cy+sy/2, cz-top_sz/2),
+        (cx+top_sx/2, cy+sy/2, cz+top_sz/2), (cx-top_sx/2, cy+sy/2, cz+top_sz/2),
+    ]
+    faces = [
+        [bottom[0], bottom[3], bottom[2], bottom[1]],
+        [top[0], top[1], top[2], top[3]],
+        [bottom[0], bottom[1], top[1], top[0]],
+        [bottom[1], bottom[2], top[2], top[1]],
+        [bottom[2], bottom[3], top[3], top[2]],
+        [bottom[3], bottom[0], top[0], top[3]],
+    ]
+    p, n, ix = [], [], []
+    center = (cx, cy, cz)
+    for corners in faces:
+        a, b, d = corners[0], corners[1], corners[2]
+        u = (b[0]-a[0], b[1]-a[1], b[2]-a[2])
+        v = (d[0]-a[0], d[1]-a[1], d[2]-a[2])
+        normal = (u[1]*v[2]-u[2]*v[1], u[2]*v[0]-u[0]*v[2], u[0]*v[1]-u[1]*v[0])
+        face_center = tuple(sum(point[i] for point in corners)/4 for i in range(3))
+        outward = tuple(face_center[i]-center[i] for i in range(3))
+        if sum(normal[i]*outward[i] for i in range(3)) < 0:
+            corners = list(reversed(corners))
+            normal = tuple(-value for value in normal)
+        magnitude = math.sqrt(sum(value*value for value in normal)) or 1.0
+        normal = tuple(value/magnitude for value in normal)
+        base = len(p)//3
+        for point in corners:
+            p.extend(point)
+            n.extend(normal)
+        ix.extend((base, base+1, base+2, base, base+2, base+3))
+    return p, n, ix
+
+
 def wheel(cx, cy, cz, radius, depth, segments=12):
     p, n, ix = [], [], []
     # Cylinder axis is Z, so the wheel face points out from the vehicle sides.
@@ -111,7 +153,7 @@ def make_glb(path: Path, vehicle_id: int, name: str, kind: str):
         p, n, ix = shape
         parts.append((p, n, ix, material))
 
-    add(cube(0, body_y, 0, body_len, body_h, body_w), 0)
+    add(tapered_box(0, body_y, 0, body_len, body_h, body_w, 0.97, 0.96), 0)
     # A bus/truck cargo body is taller; passenger vehicles get a sloped-looking
     # smaller cabin placed on the chassis. Low-poly forms keep mobile draw cost low.
     cabin_h = max(0.42, height - (body_y + body_h * 0.52) - radius * 0.65)
@@ -119,7 +161,7 @@ def make_glb(path: Path, vehicle_id: int, name: str, kind: str):
     cabin_w = width * (0.86 if kind in {"bus", "truck"} else 0.78)
     cabin_x = -length * 0.04 if kind in {"bus", "truck", "van"} else -length * 0.02
     cabin_y = body_y + body_h * 0.48 + cabin_h * 0.5
-    add(cube(cabin_x, cabin_y, 0, cabin_len, cabin_h, cabin_w), 1)
+    add(tapered_box(cabin_x, cabin_y, 0, cabin_len, cabin_h, cabin_w, 0.78, 0.86), 1)
     # Individual glazing panes and pillars make vehicle classes readable at game distance.
     glass_y = cabin_y + cabin_h * 0.06
     glass_h = max(0.16, cabin_h * 0.46)
