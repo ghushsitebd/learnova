@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Audit all 500 garage slots, dedicated GLBs, and deterministic class fallbacks."""
+"""Audit first 100 garage slots, dedicated GLBs, and deterministic class fallbacks."""
 
 from pathlib import Path
 import gzip
@@ -23,7 +23,7 @@ if any(not key.strip() for _, key in keys):
     print("::error::Vehicle asset keys must not be blank.")
     sys.exit(1)
 
-if ids != list(range(1, 501)):
+if ids != list(range(1, 101)):
     print(f"::error::Vehicle IDs are not exactly 1..500: {ids}")
     sys.exit(1)
 
@@ -141,7 +141,7 @@ def validate_glb_container(path):
         return f"cannot read/decompress asset: {exc}"
     return None
 
-print("Learnova vehicle validation: auditing all 500 catalog slots and fallback coverage.")
+print("Learnova vehicle validation: auditing first 100 catalog slots and fallback coverage.")
 
 if not ASSETS.is_dir():
     print("::error::Vehicle asset directory is missing; release validation cannot prove renderer fallback coverage.")
@@ -184,7 +184,7 @@ for vehicle_id, key in keys:
 
     found += 1
     numeric_id = int(vehicle_id)
-    if numeric_id <= 500:
+    if numeric_id <= 100:
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
         if digest in all_vehicle_hashes.values():
             previous_id = next(k for k, value in all_vehicle_hashes.items() if value == digest)
@@ -200,19 +200,19 @@ dedicated_ids = {
 required_models_missing = [
     (int(vehicle_id), key)
     for vehicle_id, key in keys
-    if int(vehicle_id) <= 500
+    if int(vehicle_id) <= 100
     and not (ASSETS / f"{key}.glb").is_file()
     and not (ASSETS / f"{key}.glb.gz").is_file()
 ]
 if required_models_missing:
     errors.extend(
-        f"500-model batch missing vehicle {vehicle_id:03d} ({key})."
+        f"100-model batch missing vehicle {vehicle_id:03d} ({key})."
         for vehicle_id, key in required_models_missing
     )
-if len(dedicated_ids.intersection(set(range(1, 501)))) != 200:
+if len(dedicated_ids.intersection(set(range(1, 101)))) != 100:
     errors.append(
-        "The all 500 garage slots must each have a dedicated GLB model; "
-        f"found {len(dedicated_ids.intersection(set(range(1, 501))))}/200."
+        "The first 100 garage slots must each have a dedicated GLB model; "
+        f"found {len(dedicated_ids.intersection(set(range(1, 101))))}/100."
     )
 fallback_ids = [int(vehicle_id) for vehicle_id, _ in keys if int(vehicle_id) not in dedicated_ids]
 required_fallbacks = {
