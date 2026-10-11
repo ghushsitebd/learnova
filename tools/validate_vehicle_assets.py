@@ -3,6 +3,7 @@
 
 from pathlib import Path
 import gzip
+import hashlib
 import re
 import sys
 
@@ -148,6 +149,7 @@ if not ASSETS.is_dir():
 
 errors = []
 found = 0
+first_100_hashes = {}
 for vehicle_id, key in keys:
     glb = ASSETS / f"{key}.glb"
     gz = ASSETS / f"{key}.glb.gz"
@@ -181,7 +183,14 @@ for vehicle_id, key in keys:
         continue
 
     found += 1
-    print(f"OK vehicle {int(vehicle_id):03d}: {path.relative_to(ROOT)}")
+    numeric_id = int(vehicle_id)
+    if numeric_id <= 100:
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        if digest in first_100_hashes.values():
+            previous_id = next(k for k, value in first_100_hashes.items() if value == digest)
+            errors.append(f"Vehicles {previous_id:03d} and {numeric_id:03d} have identical GLB files.")
+        first_100_hashes[numeric_id] = digest
+    print(f"OK vehicle {numeric_id:03d}: {path.relative_to(ROOT)}")
 
 dedicated_ids = {
     int(vehicle_id)
