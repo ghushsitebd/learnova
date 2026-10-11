@@ -128,7 +128,7 @@ internal object VehicleFallbackSelector {
             type == "construction" || key.contains("loader") || key.contains("hauler") ->
                 "vehicle_078_loader"
 
-            type == "truck" || key.contains("truck") || key.contains("cargo") ->
+            type == "truck" || key.contains("truck") ->
                 "vehicle_040_box_truck"
 
             type == "van" || type == "commercial" || key.contains("van") ->
