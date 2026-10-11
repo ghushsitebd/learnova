@@ -186,9 +186,16 @@ def make_glb(path: Path, vehicle_id: int, name: str, kind: str):
     wheel_tracks = (0,) if is_bike else (-width * 0.46, width * 0.46)
     for x in wheel_xs:
         for z in wheel_tracks:
-            add(wheel(x, wheel_radius, z, wheel_radius, max(0.12, width*0.095)), 3)
-            add(wheel(x, wheel_radius, z + (0.008 if z >= 0 else -0.008), wheel_radius*0.48,
-                      max(0.125, width*0.098)), 4)
+            # Farm tractors use visibly larger rear drive wheels; heavy vehicles
+            # get a little more tire mass without changing their catalog scale.
+            tire_radius = wheel_radius
+            if kind == "farm" and x < 0:
+                tire_radius *= 1.32
+            elif kind in {"truck", "bus", "construction"}:
+                tire_radius *= 1.06
+            add(wheel(x, tire_radius, z, tire_radius, max(0.12, width*0.095), segments=20), 3)
+            add(wheel(x, tire_radius, z + (0.008 if z >= 0 else -0.008), tire_radius*0.48,
+                      max(0.125, width*0.098), segments=20), 4)
 
     # Grille, layered lamp clusters, mirrors, door handles, side sill and trim.
     add(cube(length*0.462, body_y + body_h*0.02, 0, 0.035, body_h*0.30, width*0.28), 4)
@@ -213,6 +220,23 @@ def make_glb(path: Path, vehicle_id: int, name: str, kind: str):
         for side in (-1, 1):
             add(cube(cabin_x, cabin_y + cabin_h*0.52, side*cabin_w*0.43,
                      cabin_len*0.92, 0.045, 0.045), 4)
+    # Functional class cues: emergency beacons/stripes, taxi roof sign,
+    # bus entrance doors, and exposed utility exhausts improve silhouette reads.
+    lower_name = name.lower()
+    if kind == "emergency" or any(word in lower_name for word in ("ambulance", "police", "fire", "rescue")):
+        beacon_color = 5 if ("ambulance" in lower_name or "police" in lower_name) else 6
+        add(cube(cabin_x, cabin_y + cabin_h*0.56, 0, cabin_len*0.42, 0.075, cabin_w*0.48), beacon_color)
+        for side in (-1, 1):
+            add(cube(length*0.02, body_y + body_h*0.04, side*(body_w*0.49),
+                     body_len*0.48, 0.11, 0.025), 5 if "police" in lower_name else 6)
+    if "taxi" in lower_name:
+        add(tapered_box(cabin_x, cabin_y + cabin_h*0.60, 0, 0.28, 0.11, 0.22, 0.92, 0.92), 5)
+    if kind == "bus" or "bus" in lower_name:
+        add(cube(length*0.12, body_y + body_h*0.05, width*0.478, 0.075, body_h*0.72, 0.025), 4)
+    if kind in {"farm", "construction"} or any(word in lower_name for word in ("tractor", "loader", "hauler")):
+        add(cube(-length*0.16, cabin_y + cabin_h*0.40, -width*0.30, 0.075, cabin_h*0.95, 0.075), 4)
+        add(cube(-length*0.18, cabin_y + cabin_h*0.88, -width*0.30, 0.28, 0.07, 0.07), 4)
+
     # Headlights, rear lamps and indicator blocks.
     for z in (-width*0.34, width*0.34):
         add(cube(length*0.458, body_y + body_h*0.18, z, 0.075, 0.12, 0.14), 5)
