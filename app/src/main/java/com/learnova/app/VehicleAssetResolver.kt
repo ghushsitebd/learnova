@@ -105,17 +105,45 @@ internal object VehicleFallbackSelector {
         val type = vehicleType.lowercase()
         val key = assetKey.lowercase()
 
+        // Prefer a same-class model when a 101–500 slot has no dedicated GLB.
+        // This keeps the garage selection useful instead of showing a buggy for
+        // every bike or a box truck for buses, farm machinery, and vans.
         return when {
-            key.contains("scooter") || key.contains("motorcycle") ||
-                key.contains("bicycle") || key.contains("tricycle") ||
-                type in setOf("motorcycle", "cycle", "three_wheeler") ->
-                "vehicle_068_buggy"
+            type == "cycle" || key.contains("bicycle") || key.contains("tricycle") ->
+                if (key.contains("tricycle")) "vehicle_058_tricycle" else "vehicle_059_bicycle"
 
-            type in setOf("truck", "bus", "construction", "emergency", "commercial", "airport", "farm", "van") ||
-                key.contains("truck") || key.contains("bus") ||
-                key.contains("construction") || key.contains("ambulance") ||
-                key.contains("tractor") || key.contains("farm") ->
+            type == "motorcycle" || key.contains("motorcycle") ||
+                key.contains("scooter") || key.contains("bike") ->
+                if (key.contains("scooter")) "vehicle_052_scooter" else "vehicle_051_motorcycle"
+
+            type == "three_wheeler" || key.contains("rickshaw") ->
+                "vehicle_061_auto_rickshaw"
+
+            type == "bus" || key.contains("bus") || key.contains("shuttle") ->
+                if (key.contains("school")) "vehicle_048_school_bus" else "vehicle_046_city_bus"
+
+            type == "farm" || key.contains("tractor") || key.contains("farm") ->
+                "vehicle_077_small_tractor"
+
+            type == "construction" || key.contains("loader") || key.contains("hauler") ->
+                "vehicle_078_loader"
+
+            type == "truck" || key.contains("truck") || key.contains("cargo") ->
                 "vehicle_040_box_truck"
+
+            type == "van" || type == "commercial" || key.contains("van") ->
+                "vehicle_026_minivan"
+
+            type == "airport" || key.contains("airport") ->
+                "vehicle_082_airport_shuttle"
+
+            type == "emergency" || key.contains("ambulance") || key.contains("fire") ||
+                key.contains("rescue") || key.contains("police") ->
+                when {
+                    key.contains("ambulance") -> "vehicle_035_ambulance"
+                    key.contains("fire") -> "vehicle_044_fire_truck"
+                    else -> "vehicle_033_police"
+                }
 
             type in setOf("offroad", "suv", "pickup", "safari") ||
                 key.contains("buggy") || key.contains("offroad") ||
