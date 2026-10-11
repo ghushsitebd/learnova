@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate scale-aware, distinct low-poly GLB prototypes for the all 500 garage slots.
+"""Generate scale-aware, distinct mobile-friendly GLB models for all 500 garage slots.
 
 Four authored upstream GLBs are fetched first and are never overwritten. This
 script fills only missing slots with original procedural prototypes. Dimensions
@@ -17,7 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "app/src/main/java/com/learnova/app/VehicleCatalog.kt"
 OUT = ROOT / "app/src/main/assets/vehicles"
-FIRST_BATCH = 100
+VEHICLE_COUNT = 500
 JSON_CHUNK = 0x4E4F534A
 BIN_CHUNK = 0x004E4942
 
@@ -126,7 +126,7 @@ def tapered_box(cx, cy, cz, sx, sy, sz, top_sx_ratio=0.92, top_sz_ratio=0.94):
     return p, n, ix
 
 
-def wheel(cx, cy, cz, radius, depth, segments=12):
+def wheel(cx, cy, cz, radius, depth, segments=20):
     p, n, ix = [], [], []
     # Cylinder axis is Z, so the wheel face points out from the vehicle sides.
     for i in range(segments):
@@ -277,9 +277,9 @@ def make_glb(path: Path, vehicle_id: int, name: str, kind: str):
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     catalog = CATALOG.read_text(encoding="utf-8")
-    entries = [(int(i), name, kind, key) for i,name,kind,key in RE.findall(catalog) if int(i) <= FIRST_BATCH]
-    if len(entries) != FIRST_BATCH:
-        raise SystemExit(f"Expected {FIRST_BATCH} catalog entries, found {len(entries)}")
+    entries = [(int(i), name, kind, key) for i,name,kind,key in RE.findall(catalog) if int(i) <= VEHICLE_COUNT]
+    if len(entries) != VEHICLE_COUNT:
+        raise SystemExit(f"Expected {VEHICLE_COUNT} catalog entries, found {len(entries)}")
     made, preserved = 0, 0
     for vehicle_id, name, kind, key in entries:
         target = OUT / f"{key}.glb"
@@ -289,9 +289,9 @@ def main():
         length, width, height, size = make_glb(target, vehicle_id, name, kind)
         print(f"GENERATED {vehicle_id:03d} {key}: {length:.2f}m x {width:.2f}m x {height:.2f}m ({size} bytes)")
         made += 1
-    print(f"Vehicle prototype batch complete: generated={made}, preserved_upstream={preserved}, slots={FIRST_BATCH}")
-    if made + preserved != FIRST_BATCH:
-        raise SystemExit("Vehicle prototype batch count mismatch")
+    print(f"Vehicle model batch complete: generated={made}, preserved_upstream={preserved}, slots={VEHICLE_COUNT}")
+    if made + preserved != VEHICLE_COUNT:
+        raise SystemExit("Vehicle model batch count mismatch")
 
 
 if __name__ == "__main__":
