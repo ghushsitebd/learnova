@@ -119,6 +119,19 @@ internal object VehicleFallbackSelector {
             type == "three_wheeler" || key.contains("rickshaw") ->
                 "vehicle_061_auto_rickshaw"
 
+            // Keep dedicated airport and emergency classes ahead of broad
+            // substring matches such as "van" or "truck" in their asset keys.
+            type == "airport" || key.contains("airport") ->
+                "vehicle_082_airport_shuttle"
+
+            type == "emergency" || key.contains("ambulance") || key.contains("fire") ||
+                key.contains("rescue") || key.contains("police") ->
+                when {
+                    key.contains("ambulance") -> "vehicle_035_ambulance"
+                    key.contains("fire") -> "vehicle_044_fire_truck"
+                    else -> "vehicle_033_police"
+                }
+
             type == "bus" || key.contains("bus") || key.contains("shuttle") ->
                 if (key.contains("school")) "vehicle_048_school_bus" else "vehicle_046_city_bus"
 
@@ -133,17 +146,6 @@ internal object VehicleFallbackSelector {
 
             type == "van" || type == "commercial" || key.contains("van") ->
                 "vehicle_026_minivan"
-
-            type == "airport" || key.contains("airport") ->
-                "vehicle_082_airport_shuttle"
-
-            type == "emergency" || key.contains("ambulance") || key.contains("fire") ||
-                key.contains("rescue") || key.contains("police") ->
-                when {
-                    key.contains("ambulance") -> "vehicle_035_ambulance"
-                    key.contains("fire") -> "vehicle_044_fire_truck"
-                    else -> "vehicle_033_police"
-                }
 
             type in setOf("offroad", "suv", "pickup", "safari") ||
                 key.contains("buggy") || key.contains("offroad") ||
