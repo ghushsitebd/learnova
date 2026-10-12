@@ -135,6 +135,7 @@ jobs:
           test -s app/src/main/assets/vehicles/vehicle_068_buggy.glb
           test -s app/src/main/assets/vehicles/vehicle_100_2050_vision.glb
 
+      # The launch batch is intentionally 100 dedicated models; the remaining catalog uses verified class fallbacks.
       - name: Generate dedicated vehicle models for first 100 launch vehicles
         run: |
           set -euo pipefail
