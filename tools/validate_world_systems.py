@@ -22,6 +22,7 @@ FILES = {
     "drive": APP / "VehicleDriveDynamics.kt",
     "creatures": APP / "NearFieldCreatureWorld.kt",
     "creature_controller": APP / "CreatureGlbController.kt",
+    "learning_encounter": APP / "LearningAnimalEncounter.kt",
     "railway": APP / "DistantRailwayWorld.kt",
 }
 
@@ -67,6 +68,13 @@ require("creature_controller", r"engine\.transformManager\.setTransform\(transfo
 require("creature_controller", r"fun animate\(\)", "creature skeletal animation must have a render-cadence update path")
 require("creatures", r"creatures\[index\]\.animate\(\).*?if \(now - lastUpdateNanos < UPDATE_NANOS\) return", "animate wildlife every render update while throttling world placement", flags=re.S)
 require("railway", r"class DistantRailwayWorld", "distant railway world layer missing")
+require("learning_encounter", r"animalVertexScratch\s*=\s*ByteBuffer\.allocate\(40\s*\*\s*36\)", "fallback animal vertex buffer must be reused")
+require("learning_encounter", r"animalIndexScratch\s*=\s*ByteBuffer\.allocate\(180\s*\*\s*2\)", "fallback animal index buffer must be reused")
+require("learning_encounter", r"val supportedAnimals\s*=\s*LearnovaWorldCatalog\.animals", "all catalog species must be eligible for learning encounters")
+require("learning_encounter", r"if \(key !in supportedAnimals\) return", "unknown species must be rejected safely")
+require("learning_encounter", r"private val aquaticAnimals\s*=\s*setOf", "aquatic species movement family missing")
+require("learning_encounter", r"private val flyingAnimals\s*=\s*setOf", "flying species movement family missing")
+require("learning_encounter", r"val v = animalVertexScratch\s*val i = animalIndexScratch\s*v\.clear\(\)\s*i\.clear\(\)", "animal fallback geometry must reuse scratch buffers", flags=re.S)
 
 if errors:
     for error in errors:
