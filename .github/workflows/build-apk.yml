@@ -218,6 +218,11 @@ jobs:
           set -euo pipefail
           python3 tools/validate_near_field_presentation.py
 
+      - name: Validate streamed 3D world systems
+        run: |
+          set -euo pipefail
+          python3 tools/validate_world_systems.py
+
       - name: Build Release APK and AAB
         run: |
           set -euo pipefail
