@@ -34,6 +34,9 @@ internal class CreatureGlbController(
     private var activeAnimationIndex = 0
     private var animationDurations = FloatArray(0)
     private var animationCycleDuration = 0.0
+    // Reuse the transform matrix; allocating one FloatArray per moving animal per
+    // update can create avoidable garbage on low-memory Android devices.
+    private val transformMatrix = FloatArray(16)
 
     fun show(species: String, x: Double, y: Double, z: Double, yaw: Double, scale: Double): Boolean {
         val bytes = resolver.load(species) ?: return false
@@ -119,12 +122,23 @@ internal class CreatureGlbController(
             val c = kotlin.math.cos(yaw).toFloat()
             val s = kotlin.math.sin(yaw).toFloat()
             val sc = scale.toFloat()
-            val matrix = floatArrayOf(
-                c * sc, 0f, -s * sc, 0f,
-                0f, sc, 0f, 0f,
-                s * sc, 0f, c * sc, 0f,
-                x.toFloat(), y.toFloat(), z.toFloat(), 1f
-            )
+            val matrix = transformMatrix
+            matrix[0] = c * sc
+            matrix[1] = 0f
+            matrix[2] = s * sc
+            matrix[3] = 0f
+            matrix[4] = 0f
+            matrix[5] = sc
+            matrix[6] = 0f
+            matrix[7] = 0f
+            matrix[8] = -s * sc
+            matrix[9] = 0f
+            matrix[10] = c * sc
+            matrix[11] = 0f
+            matrix[12] = x.toFloat()
+            matrix[13] = y.toFloat()
+            matrix[14] = z.toFloat()
+            matrix[15] = 1f
             engine.transformManager.setTransform(transform, matrix)
         }
     }
