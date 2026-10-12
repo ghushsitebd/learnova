@@ -104,9 +104,8 @@ class JourneyDriveDirector(
                     state = State.DRIVING
                 }
             }
-            // Match the production gameplay contract: the mandatory 90-second
-            // learning chapter begins after the first 60 seconds of the 180-second
-            // journey, leaving a continuous 30-second drive finish.
+            // The 90-second learning chapter is included in the 180-second
+            // level clock: 60 seconds exploration + 90 seconds learning + 30 seconds drive.
             if (isDriving && !learningTriggered && elapsed >= 60.0) {
                 learningTriggered = true
                 learningElapsed = 0.0

@@ -1,5 +1,7 @@
 package com.learnova.macrobenchmark
 
+import android.os.Build
+
 import androidx.benchmark.macro.CompilationMode
 import androidx.benchmark.macro.ExperimentalMetricApi
 import androidx.benchmark.macro.FrameTimingMetric
@@ -43,29 +45,38 @@ class LearnovaMacrobenchmark {
     }
 
     @Test
-    fun drivingFrameTiming() = benchmarkRule.measureRepeated(
-        packageName = "com.learnova.app",
-        metrics = listOf(
-            FrameTimingMetric(),
+    fun drivingFrameTiming() {
+        val traceMetrics = listOf(
             TraceSectionMetric("Learnova.scene", TraceSectionMetric.Mode.Sum),
             TraceSectionMetric("Learnova.vehicle", TraceSectionMetric.Mode.Sum),
             TraceSectionMetric("Learnova.filamentRender", TraceSectionMetric.Mode.Sum),
             TraceSectionMetric("Learnova.adaptiveQuality", TraceSectionMetric.Mode.Sum)
-        ),
-        compilationMode = CompilationMode.DEFAULT,
-        iterations = 5,
-        startupMode = StartupMode.WARM,
-        setupBlock = {
-            pressHome()
-            startActivityAndWait()
+        )
+        // Hosted API-35 emulators can produce invalid software-renderer
+        // ColorBuffers, leaving FrameTimingMetric without frame slices.
+        // Keep runtime trace validation on CI and collect frame timing on
+        // physical devices, where frame slices are available.
+        val runtimeMetrics = if (Build.FINGERPRINT.startsWith("generic")) {
+            traceMetrics
+        } else {
+            listOf(FrameTimingMetric()) + traceMetrics
         }
-    ) {
-        // The gameplay contract is press-and-hold, not tap-to-toggle. Inject a
-        // continuous touch in the central drive area for 2.5 seconds; the input
-        // command's UP event then exercises the release/coast path as well.
-        val x = device.displayWidth / 2
-        val y = (device.displayHeight * 0.42f).toInt()
-        device.executeShellCommand("input touchscreen swipe $x $y $x $y 2500")
-        Thread.sleep(500)
+        benchmarkRule.measureRepeated(
+            packageName = "com.learnova.app",
+            metrics = runtimeMetrics,
+            compilationMode = CompilationMode.DEFAULT,
+            iterations = 5,
+            startupMode = StartupMode.WARM,
+            setupBlock = {
+                pressHome()
+                startActivityAndWait()
+            }
+        ) {
+            // Hold the drive area for 2.5 seconds; UP tests release/coast.
+            val x = device.displayWidth / 2
+            val y = (device.displayHeight * 0.42f).toInt()
+            device.executeShellCommand("input touchscreen swipe $x $y $x $y 2500")
+            Thread.sleep(500)
+        }
     }
 }

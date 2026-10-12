@@ -53,6 +53,42 @@ SOURCES = {
         "https://raw.githubusercontent.com/StateDev08/War-of-the-Kindom-Mobile/"
         "main/client/assets/models/quaternius/animals/stag.glb",
     ),
+    "alpaca": (
+        "Alpaca (Quaternius CC0)",
+        "https://raw.githubusercontent.com/VitexSoftware/ishtaria-client/"
+        "f50f3ee5b04c1a34f8c30a338db51003aca1b8b0/"
+        "assets/quaternius/animated-animal-pack/Models/alpaca.glb",
+    ),
+    "bull": (
+        "Bull (Quaternius CC0)",
+        "https://raw.githubusercontent.com/VitexSoftware/ishtaria-client/"
+        "f50f3ee5b04c1a34f8c30a338db51003aca1b8b0/"
+        "assets/quaternius/animated-animal-pack/Models/bull.glb",
+    ),
+    "donkey": (
+        "Donkey (Quaternius CC0)",
+        "https://raw.githubusercontent.com/VitexSoftware/ishtaria-client/"
+        "f50f3ee5b04c1a34f8c30a338db51003aca1b8b0/"
+        "assets/quaternius/animated-animal-pack/Models/donkey.glb",
+    ),
+    "husky": (
+        "Husky (Quaternius CC0)",
+        "https://raw.githubusercontent.com/VitexSoftware/ishtaria-client/"
+        "f50f3ee5b04c1a34f8c30a338db51003aca1b8b0/"
+        "assets/quaternius/animated-animal-pack/Models/husky.glb",
+    ),
+    "shiba_inu": (
+        "Shiba Inu (Quaternius CC0)",
+        "https://raw.githubusercontent.com/VitexSoftware/ishtaria-client/"
+        "f50f3ee5b04c1a34f8c30a338db51003aca1b8b0/"
+        "assets/quaternius/animated-animal-pack/Models/shiba_inu.glb",
+    ),
+    "white_horse": (
+        "White Horse (Quaternius CC0)",
+        "https://raw.githubusercontent.com/VitexSoftware/ishtaria-client/"
+        "f50f3ee5b04c1a34f8c30a338db51003aca1b8b0/"
+        "assets/quaternius/animated-animal-pack/Models/white_horse.glb",
+    ),
     "cow": (
         "Cow",
         # Quaternius animated cow, pinned to an immutable public commit.

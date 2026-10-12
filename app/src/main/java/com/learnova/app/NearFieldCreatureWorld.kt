@@ -37,7 +37,7 @@ internal class NearFieldCreatureWorld(
             "parrot", "falcon", "owl", "peacock", "ostrich", "buffalo", "gazelle", "stag",
             "boar", "frog", "snake", "crab", "shark", "whale", "seal", "penguin",
             "dolphin", "turtle", "fish", "duck", "horse", "donkey", "goat", "sheep",
-            "cow", "chicken", "deer", "fox", "rabbit", "wolf", "camel"
+            "cow", "chicken", "deer", "fox", "rabbit", "wolf", "camel", "alpaca", "bull", "husky", "shiba_inu", "white_horse"
         )
     }
 
@@ -133,7 +133,7 @@ internal class NearFieldCreatureWorld(
         val phase = stablePhase(seed, slot, species)
         val elapsedSeconds = nowNanos * 1e-9
         val motionSpeed = when (species) {
-            "horse" -> 0.34
+            "horse", "white_horse", "donkey", "alpaca" -> 0.34
             "deer" -> 0.28
             "cow" -> 0.16
             "wolf" -> 0.24
@@ -148,7 +148,9 @@ internal class NearFieldCreatureWorld(
             centerDistance
         )
         val lateral = when (species) {
-            "horse" -> 13.0
+            "horse", "white_horse", "donkey" -> 13.0
+            "alpaca", "bull" -> 15.0
+            "husky", "shiba_inu" -> 10.5
             "wolf" -> 12.0
             "fox" -> 11.0
             "deer" -> 14.0
@@ -169,6 +171,11 @@ internal class NearFieldCreatureWorld(
             if (side > 0.0) -1.5708 else 1.5708
         val scale = when (species) {
             "horse" -> 1.18
+            "white_horse" -> 1.16
+            "donkey" -> 0.94
+            "alpaca" -> 0.92
+            "bull" -> 1.20
+            "husky", "shiba_inu" -> 0.78
             "wolf" -> 1.10
             "fox" -> 0.92
             "deer" -> 1.05
@@ -186,14 +193,14 @@ internal class NearFieldCreatureWorld(
     }
 
     private fun speciesPool(biome: WorldDirector.Biome): List<String> = when (biome) {
-        WorldDirector.Biome.FOREST -> listOf("lion", "tiger", "leopard", "bear", "monkey", "wolf", "fox", "deer", "boar", "stag", "rabbit")
+        WorldDirector.Biome.FOREST -> listOf("lion", "tiger", "leopard", "bear", "monkey", "wolf", "husky", "shiba_inu", "fox", "deer", "boar", "stag", "rabbit")
         WorldDirector.Biome.MOUNTAIN -> listOf("eagle", "falcon", "bear", "wolf", "horse", "stag", "goat")
         WorldDirector.Biome.PLATEAU -> listOf("giraffe", "zebra", "deer", "horse", "stag", "rabbit", "ostrich")
-        WorldDirector.Biome.VILLAGE -> listOf("horse", "cow", "goat", "sheep", "chicken", "donkey", "rabbit", "buffalo")
+        WorldDirector.Biome.VILLAGE -> listOf("horse", "white_horse", "cow", "bull", "alpaca", "goat", "sheep", "chicken", "donkey", "rabbit", "buffalo")
         WorldDirector.Biome.DESERT -> listOf("camel", "gazelle", "ostrich", "fox")
         WorldDirector.Biome.RIVER -> listOf("dolphin", "turtle", "duck", "fish", "frog")
         WorldDirector.Biome.COAST -> listOf("dolphin", "whale", "seal", "shark", "turtle", "crab")
-        WorldDirector.Biome.MARKET -> listOf("horse", "donkey", "goat", "cow", "chicken")
+        WorldDirector.Biome.MARKET -> listOf("horse", "white_horse", "donkey", "alpaca", "goat", "cow", "bull", "chicken", "shiba_inu")
         else -> listOf("deer", "fox", "rabbit", "bird")
     }
 

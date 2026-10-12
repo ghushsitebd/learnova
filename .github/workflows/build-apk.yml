@@ -194,6 +194,11 @@ jobs:
           echo "- physical roadside learning sign"
           echo "- authored real-animal GLB encounter path"
 
+      - name: Validate launch garage and environment customization
+        run: |
+          set -euo pipefail
+          python3 tools/validate_customization_menu.py
+
       - name: Fetch CC0 real-animal GLB assets
         run: |
           set -euo pipefail
@@ -381,6 +386,10 @@ jobs:
           emulator-boot-timeout: 900
           disable-linux-hw-accel: false
           disable-animations: true
+          # Use deterministic software graphics for Macrobenchmark frame tracing.
+          # The host GPU path intermittently loses emulator ColorBuffers and then
+          # FrameTimingMetric fails with "Observed no expect/actual slices in trace".
+          emulator-options: -gpu swiftshader_indirect -no-snapshot -no-boot-anim
           script: bash .github/scripts/emulator_smoke.sh
 
       - name: Generate SHA-256

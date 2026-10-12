@@ -20,7 +20,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var gameView: LearnovaGameView
     private lateinit var voice: LearnovaVoice
     private lateinit var threeDWorld: Learnova3DView
-    private lateinit var garageView: VehicleGarageView
+    private lateinit var garageView: LearnovaCustomizeView
     private lateinit var rootLayout: FrameLayout
     private val natureAudio = LearnovaNatureAudio()
 
@@ -34,9 +34,10 @@ class MainActivity : AppCompatActivity() {
         rootLayout = FrameLayout(this)
         rootLayout.addView(threeDWorld, FrameLayout.LayoutParams(-1, -1))
         rootLayout.addView(gameView, FrameLayout.LayoutParams(-1, -1))
-        garageView = VehicleGarageView(
+        garageView = LearnovaCustomizeView(
             this,
-            onSelected = { definition -> gameView.selectVehicleFromGarage(definition) },
+            onVehicleSelected = { definition -> gameView.selectVehicleFromGarage(definition) },
+            onEnvironmentSelected = { environment -> gameView.selectEnvironmentFromMenu(environment) },
             onClosed = { closeGarage() }
         ).apply { visibility = View.GONE }
         rootLayout.addView(garageView, FrameLayout.LayoutParams(-1, -1))
@@ -46,8 +47,9 @@ class MainActivity : AppCompatActivity() {
     private fun openGarage() {
         if (::gameView.isInitialized && ::garageView.isInitialized) {
             gameView.setDrivingFromGarage(false)
-            garageView.setSelected(getSharedPreferences("learnova_progress", MODE_PRIVATE)
-                .getInt("garage_vehicle_id", 1))
+            val progress = getSharedPreferences("learnova_progress", MODE_PRIVATE)
+            garageView.setSelectedVehicle(progress.getInt("garage_vehicle_id", 1))
+            garageView.setSelectedEnvironment(progress.getString("environment_preset", "Forest"))
             garageView.visibility = View.VISIBLE
         }
     }
@@ -164,6 +166,7 @@ class MainActivity : AppCompatActivity() {
             level = prefs.getInt("level", 1).coerceIn(LEARNOVA_MIN_LEVEL, LEARNOVA_MAX_LEVEL)
             vehicle = prefs.getInt("vehicle", 0).coerceIn(0, LearnovaUnlimitedWorld.vehicles.lastIndex)
             worldSceneId = prefs.getInt("worldSceneId", 1).coerceAtLeast(1)
+            WorldDirector.selectEnvironment(prefs.getString("environment_preset", null))
             levelProgress = prefs.getFloat("levelProgress", 0f).coerceIn(0f, 1f)
             journeyEventDirector.resetForLevel(level)
             levelElapsedMs = prefs.getLong("levelElapsedMs", 0L).coerceIn(0L, minimumLevelDurationMs)
@@ -187,6 +190,13 @@ class MainActivity : AppCompatActivity() {
                 false
             }
             driveTouchHeld = false
+            invalidate()
+        }
+
+        fun selectEnvironmentFromMenu(environment: String) {
+            // The same selected biome drives the 3D world systems and is saved across launches.
+            WorldDirector.selectEnvironment(environment)
+            prefs.edit().putString("environment_preset", environment).apply()
             invalidate()
         }
 
@@ -397,7 +407,9 @@ class MainActivity : AppCompatActivity() {
             val h = height.toFloat()
             if (w <= 0f || h <= 0f) return
 
-            if (running) {
+            // The automatic lesson must keep rendering even though propulsion is released.
+            // Otherwise its 90-second activity clock can stall after the first frame.
+            if (running || learningSessionActive) {
                 frame++
                 val gameplayNow = System.currentTimeMillis()
                 if (lastGameplayTickMs == 0L) lastGameplayTickMs = gameplayNow
@@ -416,8 +428,7 @@ class MainActivity : AppCompatActivity() {
 
                 // Vehicle dynamics: acceleration, road-following steering, lateral
                 // inertia and suspension are derived from the same road curve used by
-                // the renderer. The player still has only one control: tap to drive,
-                // tap again to stop.
+                // the renderer. The child has one control: hold to move; release to coast.
                 val roadNow = roadCenterAt(vehicleProgress.coerceIn(0f, 1f), w, worldSceneId)
                 val roadAhead = roadCenterAt((vehicleProgress + 0.055f).coerceAtMost(1f), w, worldSceneId)
                 val roadFar = roadCenterAt((vehicleProgress + 0.14f).coerceAtMost(1f), w, worldSceneId)
@@ -438,9 +449,8 @@ class MainActivity : AppCompatActivity() {
                 distance += speed
                 levelProgress += speed / LearnovaUnlimitedWorld.level(level).targetDistance * 0.006f
                 levelProgress = levelProgress.coerceAtMost(1f)
-                // The three-minute phase is driving/adventure only. Learning never
-                // interrupts the journey. After the driving target is reached, the
-                // separate 90-second learning phase starts automatically.
+                // Exploration occupies the first 60 seconds. The integrated learning
+                // chapter then uses 90 seconds of the same 180-second level clock.
                 // The Magic Learning Point is a physical roadside encounter inside
                 // the driving journey. It stops the vehicle safely, presents the real
                 // roadside sign, and lets the child answer by voice before driving on.
@@ -509,8 +519,8 @@ class MainActivity : AppCompatActivity() {
                 vehicleProgress += speed * 0.16f
                 if (vehicleProgress > 1f) vehicleProgress = 0.70f
             } else {
-                // Tap-to-stop uses natural braking/coasting rather than an instant
-                // freeze, while steering and suspension settle smoothly.
+                // Releasing the finger pauses the level clock but must not freeze the
+                // vehicle instantly. Keep rendering while speed and suspension settle.
                 speed *= 0.91f
                 steering *= 0.88f
                 vehicleHeading *= 0.90f
@@ -518,6 +528,14 @@ class MainActivity : AppCompatActivity() {
                 laneOffset += (-laneOffset) * 0.06f
                 suspensionVelocity *= 0.70f
                 suspensionOffset *= 0.78f
+                wheelSpin = (wheelSpin + speed * 900f) % 360f
+                vehicleProgress += speed * 0.16f
+                if (vehicleProgress > 1f) vehicleProgress = 0.70f
+                if (speed > 0.0004f || steering > 0.001f || steering < -0.001f ||
+                    lateralVelocity > 0.001f || lateralVelocity < -0.001f ||
+                    suspensionOffset > 0.05f || suspensionOffset < -0.05f) {
+                    postInvalidateOnAnimation()
+                }
             }
 
             // The level advances only after the mandatory 90-second learning phase.
@@ -538,6 +556,9 @@ class MainActivity : AppCompatActivity() {
 
             if (learningSessionActive) {
                 val now = System.currentTimeMillis()
+                // Learning time is part of the same 180-second level clock. The vehicle
+                // is stopped for the 90-second lesson, but level progress must continue
+                // so the child only needs the final 30 seconds of driving afterwards.
                 val delta = if (lastLearningActivityMs == 0L) 0L
                     else (now - lastLearningActivityMs).coerceIn(0L, 1000L)
                 lastLearningActivityMs = now
@@ -2519,28 +2540,45 @@ class MainActivity : AppCompatActivity() {
         }
 
         private fun drawTopBar(c: Canvas, w: Float, h: Float, world: SmartScene) {
-            paint.color = Color.argb(190,20,65,55)
-            c.drawRoundRect(RectF(14f,14f,w-14f,70f),22f,22f,paint)
+            // Minimal HUD: readable level and elapsed time; all customization lives in one button.
+            paint.color = Color.argb(205, 20, 55, 50)
+            c.drawRoundRect(RectF(14f, 14f, w - 14f, 72f), 20f, 20f, paint)
 
             text.textAlign = Paint.Align.LEFT
             text.color = Color.WHITE
-            text.textSize = 20f
-            c.drawText("LEARNOVA",30f,48f,text)
+            text.textSize = 19f
+            c.drawText("LEVEL " + level, 28f, 39f, text)
+            text.textSize = 15f
+            val elapsedSeconds = (levelElapsedMs / 1000L).coerceAtMost(180L)
+            val clock = String.format(java.util.Locale.US, "%02d:%02d", elapsedSeconds / 60L, elapsedSeconds % 60L)
+            c.drawText(clock, 28f, 59f, text)
 
             text.textAlign = Paint.Align.CENTER
-            text.textSize = 13f
-            val info = LearnovaUnlimitedWorld.level(level)
-            c.drawText("LEVEL " + level,w*.53f,37f,text)
-            c.drawText(if (levelComplete) "✓ COMPLETE" else if (running) "● DRIVING" else "● READY",w*.53f,56f,text)
-            text.textSize = 9f
-            c.drawText(info.difficulty.uppercase(),w*.53f,67f,text)
+            text.textSize = 14f
+            text.color = Color.WHITE
+            c.drawText(if (levelComplete) "✓ DONE" else if (running) "DRIVING" else "READY", w * .52f, 48f, text)
 
-            text.textSize = 11f
-            c.drawText("WORLD " + world.id,w*.70f,35f,text)
-            c.drawText(world.region,w*.70f,54f,text)
-            text.textSize = 11f
-            c.drawText("VEHICLE",w*.88f,35f,text)
-            c.drawText(LearnovaUnlimitedWorld.vehicles[vehicle].name,w*.88f,54f,text)
+            val button = RectF(w - 126f, 22f, w - 22f, 62f)
+            paint.color = Color.rgb(0, 145, 100)
+            c.drawRoundRect(button, 14f, 14f, paint)
+            text.textAlign = Paint.Align.CENTER
+            text.textSize = 13f
+            text.color = Color.WHITE
+            c.drawText("CUSTOMIZE", button.centerX(), button.centerY() + 5f, text)
+
+            // Turn the clock into useful feedback: this bar advances with the same
+            // persisted 3-minute journey clock, not with render-frame count.
+            val progressTrack = RectF(18f, 76f, w - 18f, 81f)
+            paint.color = Color.argb(145, 20, 55, 50)
+            c.drawRoundRect(progressTrack, 3f, 3f, paint)
+            val progressFraction = (levelElapsedMs / 180_000f).coerceIn(0f, 1f)
+            if (progressFraction > 0f) {
+                paint.color = if (levelComplete) Color.rgb(255, 205, 70) else Color.rgb(0, 205, 135)
+                c.drawRoundRect(
+                    RectF(progressTrack.left, progressTrack.top, progressTrack.left + progressTrack.width() * progressFraction, progressTrack.bottom),
+                    3f, 3f, paint
+                )
+            }
         }
 
         private fun drawLearningCard(c: Canvas, w: Float, h: Float, world: SmartScene) {
@@ -2750,14 +2788,18 @@ class MainActivity : AppCompatActivity() {
             currentRoadsideSign = null
             prefs.edit().putBoolean("learning_completed_level_$level", true).apply()
 
-            // Resume the same journey from the same world position. The level still
-            // has the remaining time before its 180-second completion point.
-            running = true
-            threeDWorld.setDriveHeld(true)
-            natureAudio.start()
-            voice.speakCharacter(currentFriendName(), "Wonderful! Let's keep exploring!")
+            // Learning completion must not bypass the child's hold-to-drive control.
+            // Leave the vehicle stopped; the remaining journey clock resumes only when
+            // the child presses and holds the road again.
+            running = false
+            threeDWorld.setDriveHeld(false)
+            natureAudio.stop()
+            voice.speakCharacter(
+                currentFriendName(),
+                "Wonderful! You learned so much. Hold the road to keep exploring!"
+            )
             saveProgress()
-            postInvalidateOnAnimation()
+            invalidate()
         }
 
         private fun nextLesson() {
@@ -3400,21 +3442,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         private fun drawHint(c: Canvas, w: Float, h: Float) {
-            // Keep the centre of the display completely free for the world.
-            // Guidance is voice-first; only a tiny edge hint remains when stopped.
+            // Keep the centre and bottom edge free of tiny duplicate timer text.
+            // Time and actual level progress are now represented together in the HUD.
             if (running || isQuranLevel()) return
-
-            text.textAlign = Paint.Align.CENTER
-            text.color = Color.WHITE
-            text.textSize = 12f
-            text.setShadowLayer(4f, 0f, 1f, Color.DKGRAY)
-
-            val elapsedSeconds = (levelElapsedMs / 1000L).coerceAtMost(180L)
-            val remainingSeconds = (180L - elapsedSeconds).coerceAtLeast(0L)
-            val secondsText = remainingSeconds % 60L
-            val timerText = if (levelComplete) "✓ JOURNEY COMPLETE" else "TIME " + (remainingSeconds / 60L) + ":" + (if (secondsText < 10L) "0" else "") + secondsText
-            c.drawText(timerText, w / 2f, h * .965f, text)
-            text.clearShadowLayer()
         }
 }
 }
