@@ -556,3 +556,67 @@ if HAULER.is_file():
 else:
     print("::error::Launch Construction Hauler GLB missing; cannot validate multi-axle geometry.")
     sys.exit(1)
+
+
+# Audit rendered wheel meshes for every generated launch prototype. Metadata alone
+# is insufficient: count named tire meshes in the GLB scene and compare them with
+# the expected topology for the vehicle class.
+if ASSETS.exists():
+    generated_count = 0
+    for candidate in sorted(ASSETS.iterdir()):
+        if not candidate.is_file() or candidate.suffix != ".glb":
+            continue
+        try:
+            payload = _read_glb_payload(candidate)
+            json_length = _glb_struct.unpack_from("<I", payload, 12)[0]
+            document = _glb_json.loads(
+                payload[20:20 + json_length].decode("utf-8").rstrip(" \t\r\n\0")
+            )
+            asset = document.get("asset", {})
+            if asset.get("generator") != "Learnova scale-aware vehicle prototype generator":
+                continue
+            extras = asset.get("extras", {})
+            name = str(extras.get("vehicleName", ""))
+            kind = str(extras.get("vehicleType", ""))
+            lower_name = name.lower()
+            if kind == "dinosaur_mount":
+                class_expected = 0
+            elif kind == "three_wheeler" or any(word in lower_name for word in ("tricycle", "rickshaw")):
+                class_expected = 3
+            elif kind in {"motorcycle", "cycle"} or any(word in lower_name for word in ("bike", "bicycle", "scooter")):
+                class_expected = 2
+            elif kind in {"bus", "truck"} or any(word in lower_name for word in ("truck", "bus", "hauler", "long haul", "six wheel")):
+                class_expected = 6
+            else:
+                class_expected = 4
+
+            meshes = document.get("meshes", [])
+            actual_tires = sum(
+                1 for mesh in meshes
+                if "_wheel_tire_" in str(mesh.get("name", ""))
+            )
+            actual_hubs = sum(
+                1 for mesh in meshes
+                if "_wheel_hub_" in str(mesh.get("name", ""))
+            )
+            declared = extras.get("expectedWheelCount")
+            declared_mesh_count = extras.get("wheelMeshCount")
+            if declared != class_expected:
+                raise ValueError(
+                    f"class {kind!r} expects {class_expected} wheels, metadata declares {declared!r}"
+                )
+            if actual_tires != class_expected or actual_hubs != class_expected:
+                raise ValueError(
+                    f"class {kind!r} expects {class_expected} tire/hub pairs, "
+                    f"found {actual_tires} tires and {actual_hubs} hubs"
+                )
+            if declared_mesh_count != actual_tires:
+                raise ValueError(
+                    f"wheelMeshCount metadata {declared_mesh_count!r} does not match {actual_tires} tire meshes"
+                )
+            generated_count += 1
+        except (OSError, EOFError, ValueError, gzip.BadGzipFile, UnicodeDecodeError,
+                _glb_json.JSONDecodeError, _glb_struct.error) as exc:
+            print(f"::error::Vehicle wheel geometry audit failed for {candidate.name}: {exc}")
+            sys.exit(1)
+    print(f"Vehicle wheel geometry audit passed for {generated_count} generated GLBs: class topology and actual tire/hub mesh counts agree.")
