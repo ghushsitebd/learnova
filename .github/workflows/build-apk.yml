@@ -223,6 +223,11 @@ jobs:
           set -euo pipefail
           python3 tools/validate_world_systems.py
 
+      - name: Validate wildlife and world catalog integrity
+        run: |
+          set -euo pipefail
+          python3 tools/validate_world_catalog.py
+
       - name: Build Release APK and AAB
         run: |
           set -euo pipefail
