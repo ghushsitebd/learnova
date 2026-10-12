@@ -18,6 +18,10 @@ require("launchVehicles.size / pageSize.toDouble()" in ui,
         "pagination must use launch batch size")
 require("index in launchVehicles.indices" in ui,
         "taps must not select unverified catalog entries")
+require(ui.count("val rows = pageSize / cols") == 2,
+        "drawing and touch handling must share responsive grid row count")
+require("row in 0 until rows" in ui,
+        "tablet taps must stay inside the rendered vehicle rows")
 require("onVehicleSelected(launchVehicles[selectedVehicleId - 1])" in ui,
         "apply must return a vehicle from the launch batch")
 require('onEnvironmentSelected(selectedEnvironment)' in ui,
