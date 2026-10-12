@@ -72,6 +72,11 @@ internal class CreatureGlbController(
         activeAnimationIndex = 0
         animationDurations = FloatArray(0)
         animationCycleDuration = 0.0
+        // A roadside slot can remain empty for a long time. Release its loader
+        // now instead of retaining decoded GLB resources until another animal
+        // happens to reuse this slot or the whole world is destroyed.
+        runCatching { resourceLoader?.destroy() }
+        resourceLoader = null
     }
 
     fun move(x: Double, y: Double, z: Double, yaw: Double, scale: Double) {
