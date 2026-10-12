@@ -109,6 +109,11 @@ internal object VehicleFallbackSelector {
         // This keeps the garage selection useful instead of showing a buggy for
         // every bike or a box truck for buses, farm machinery, and vans.
         return when {
+            type == "dinosaur_mount" || key.contains("dinosaur") || key.contains("trex") ||
+                key.contains("triceratops") || key.contains("stegosaurus") ||
+                key.contains("parasaurolophus") ->
+                "vehicle_097_trex_mount"
+
             type == "cycle" || (type != "three_wheeler" && (key.contains("bicycle") || key.contains("tricycle"))) ->
                 if (key.contains("tricycle")) "vehicle_058_tricycle" else "vehicle_059_bicycle"
 
