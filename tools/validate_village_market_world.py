@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Release-time source contracts for Learnova's streamed village and market world."""
 from pathlib import Path
-import re
 
 ROOT = Path(__file__).resolve().parents[1]
 world_path = ROOT / "app/src/main/java/com/learnova/app/VillageMarketWorld.kt"
@@ -25,9 +24,9 @@ require("paired window frames" in world, "house facade details")
 require("fun destroy()" in world, "render resources have a cleanup path")
 require("VillageMarketWorld(viewer.engine, viewer.scene, asset).also { it.build() }" in view,
         "world is built during 3D scene initialization")
-require(re.search(r"villageMarketWorld\\?\\.update\\(vehicleDistance\\)", view) is not None,
+require("villageMarketWorld?.update(vehicleDistance)" in view,
         "world streams with authoritative vehicle distance")
-require(re.search(r"villageMarketWorld\\?\\.destroy\\(\\)", view) is not None,
+require("villageMarketWorld?.destroy()" in view,
         "world resources are released during renderer cleanup")
 
 print("Village/market world contracts verified.")
