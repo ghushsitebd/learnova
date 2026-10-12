@@ -174,10 +174,12 @@ def make_glb(path: Path, vehicle_id: int, name: str, kind: str):
     paint = PALETTE[(vehicle_id * 3 + vehicle_id // 7) % len(PALETTE)]
     parts = []
 
-    def add(shape, material):
+    def add(shape, material, part_label="detail"):
         p, n, ix = shape
-        parts.append((p, n, ix, material))
+        parts.append((p, n, ix, material, part_label))
 
+    wheel_positions = []
+    expected_wheels = 0
     if kind == "dinosaur_mount":
         # Distinct prehistoric mounts: body, four legs, tail, head, saddle and seated rider.
         lower_name = name.lower()
@@ -254,33 +256,64 @@ def make_glb(path: Path, vehicle_id: int, name: str, kind: str):
         add(cube(length*0.465, body_y - body_h*0.18, 0, 0.13, 0.13, width*0.98), 4)
         add(cube(-length*0.465, body_y - body_h*0.18, 0, 0.12, 0.12, width*0.98), 4)
     
-        # Wheels: two inline wheels for bikes; four road wheels for cars and utility vehicles.
+        # Wheel topology follows the vehicle class instead of treating every
+        # non-bike as a four-wheel car. The front wheel of a tricycle/rickshaw
+        # sits on the centerline; heavy trucks and buses receive three axles.
         lower_name = name.lower()
-        is_bike = kind in {"motorcycle", "cycle"} or any(x in lower_name for x in ("bike", "bicycle", "tricycle", "scooter"))
-        # Heavy haulers need a real multi-axle silhouette: three axles on both
-        # sides (six wheels), instead of the four-wheel placeholder used by cars.
-        is_six_wheel_hauler = not is_bike and (
-            "hauler" in lower_name or "long haul" in lower_name or "six wheel" in lower_name
+        is_tricycle = kind == "three_wheeler" or any(x in lower_name for x in ("tricycle", "rickshaw"))
+        is_bike = not is_tricycle and (
+            kind in {"motorcycle", "cycle"} or any(x in lower_name for x in ("bike", "bicycle", "scooter"))
         )
-        wheel_xs = (
-            (-length * 0.36, length * 0.36) if is_bike else
-            (-length * 0.34, 0.0, length * 0.34) if is_six_wheel_hauler else
-            (-length * 0.32, length * 0.32)
+        is_multi_axle = not is_tricycle and not is_bike and (
+            kind in {"bus", "truck", "commercial", "construction", "airport"}
+            or any(x in lower_name for x in ("truck", "bus", "hauler", "long haul", "six wheel"))
         )
-        wheel_radius = radius
-        wheel_tracks = (0,) if is_bike else (-width * 0.46, width * 0.46)
-        for x in wheel_xs:
-            for z in wheel_tracks:
-                # Farm tractors use visibly larger rear drive wheels; heavy vehicles
-                # get a little more tire mass without changing their catalog scale.
-                tire_radius = wheel_radius
-                if kind == "farm" and x < 0:
-                    tire_radius *= 1.32
-                elif kind in {"truck", "bus", "construction"}:
-                    tire_radius *= 1.06
-                add(wheel(x, tire_radius, z, tire_radius, max(0.12, width*0.095), segments=20), 3)
-                add(wheel(x, tire_radius, z + (0.008 if z >= 0 else -0.008), tire_radius*0.48,
-                          max(0.125, width*0.098), segments=20), 4)
+        if is_tricycle:
+            wheel_positions = [
+                (-length * 0.30, -width * 0.42),
+                (-length * 0.30, width * 0.42),
+                (length * 0.32, 0.0),
+            ]
+        elif is_bike:
+            wheel_positions = [(-length * 0.36, 0.0), (length * 0.36, 0.0)]
+        elif is_multi_axle:
+            wheel_positions = [
+                (x, z)
+                for x in (-length * 0.34, 0.0, length * 0.34)
+                for z in (-width * 0.46, width * 0.46)
+            ]
+        else:
+            wheel_positions = [
+                (x, z)
+                for x in (-length * 0.32, length * 0.32)
+                for z in (-width * 0.46, width * 0.46)
+            ]
+        expected_wheels = len(wheel_positions)
+        for wheel_index, (x, z) in enumerate(wheel_positions, start=1):
+            # Farm tractors use visibly larger rear drive wheels; heavy vehicles
+            # get a little more tire mass without changing their catalog scale.
+            tire_radius = radius
+            if kind == "farm" and x < 0:
+                tire_radius *= 1.32
+            elif is_multi_axle:
+                tire_radius *= 1.06
+            add(
+                wheel(x, tire_radius, z, tire_radius, max(0.12, width * 0.095), segments=20),
+                3,
+                f"wheel_tire_{wheel_index}",
+            )
+            add(
+                wheel(
+                    x,
+                    tire_radius,
+                    z + (0.008 if z >= 0 else -0.008),
+                    tire_radius * 0.48,
+                    max(0.125, width * 0.098),
+                    segments=20,
+                ),
+                4,
+                f"wheel_hub_{wheel_index}",
+            )
     
         # Grille, layered lamp clusters, mirrors, door handles, side sill and trim.
         add(cube(length*0.462, body_y + body_h*0.02, 0, 0.035, body_h*0.30, width*0.28), 4)
@@ -348,7 +381,7 @@ def make_glb(path: Path, vehicle_id: int, name: str, kind: str):
         while len(binary) % 4:
             binary.append(0)
 
-    for idx, (positions, normals, indices, material) in enumerate(parts):
+    for idx, (positions, normals, indices, material, part_label) in enumerate(parts):
         align4(); pos_offset = len(binary)
         binary.extend(struct.pack("<" + "f"*len(positions), *positions))
         pos_length = len(binary)-pos_offset
@@ -365,23 +398,22 @@ def make_glb(path: Path, vehicle_id: int, name: str, kind: str):
         pa = len(accessors); accessors.append({"bufferView":pv,"componentType":5126,"count":len(positions)//3,"type":"VEC3","min":[min(v[i] for v in xyz) for i in range(3)],"max":[max(v[i] for v in xyz) for i in range(3)]})
         na = len(accessors); accessors.append({"bufferView":nv,"componentType":5126,"count":len(normals)//3,"type":"VEC3"})
         ia = len(accessors); accessors.append({"bufferView":iv,"componentType":5123,"count":len(indices),"type":"SCALAR","min":[min(indices)],"max":[max(indices)]})
-        meshes.append({"name":f"{name}_part_{idx}","primitives":[{"attributes":{"POSITION":pa,"NORMAL":na},"indices":ia,"material":material,"mode":4}]})
-        nodes.append({"name":f"{name}_part_{idx}","mesh":idx})
+        mesh_name = f"{name}_{part_label}_{idx}"
+        meshes.append({"name":mesh_name,"primitives":[{"attributes":{"POSITION":pa,"NORMAL":na},"indices":ia,"material":material,"mode":4}]})
+        nodes.append({"name":mesh_name,"mesh":idx})
 
     # Put every generated part beneath one named root. The runtime applies the
     # authoritative road/chassis transform to VehicleRoot; a flat scene would leave
     # these procedural prototypes stationary while the world moves around them.
     part_node_count = len(nodes)
     nodes.append({"name":"VehicleRoot","children":list(range(part_node_count))})
-    expected_wheels = 0 if kind == "dinosaur_mount" else (
-        2 if kind in {"motorcycle", "cycle"} or any(x in name.lower() for x in ("bike", "bicycle", "tricycle", "scooter")) else
-        6 if any(x in name.lower() for x in ("hauler", "long haul", "six wheel")) else 4
-    )
+    # This count comes from the generated wheel geometry itself, avoiding a
+    # separate name-based guess that can drift away from the rendered model.
     document = {
         "asset":{
             "version":"2.0",
             "generator":"Learnova scale-aware vehicle prototype generator",
-            "extras":{"vehicleId":vehicle_id,"vehicleName":name,"vehicleType":kind,"expectedWheelCount":expected_wheels}
+            "extras":{"vehicleId":vehicle_id,"vehicleName":name,"vehicleType":kind,"expectedWheelCount":expected_wheels,"wheelMeshCount":expected_wheels}
         },
         "scene":0,"scenes":[{"nodes":[part_node_count]}],
         "nodes":nodes,"meshes":meshes,"materials":materials,
