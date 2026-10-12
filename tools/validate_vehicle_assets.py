@@ -36,6 +36,18 @@ if len(set(ids)) != len(ids):
     sys.exit(1)
 
 asset_keys = [key for _, key in keys]
+
+expected_dinosaur_mounts = {
+    97: ("T-Rex Explorer Mount", "dinosaur_mount", "vehicle_097_trex_mount"),
+    98: ("Triceratops Trail Mount", "dinosaur_mount", "vehicle_098_triceratops_mount"),
+    99: ("Stegosaurus Forest Mount", "dinosaur_mount", "vehicle_099_stegosaurus_mount"),
+    100: ("Parasaurolophus Adventure Mount", "dinosaur_mount", "vehicle_100_parasaurolophus_mount"),
+}
+for mount_id, (mount_name, mount_type, mount_key) in expected_dinosaur_mounts.items():
+    pattern = rf'VehicleDefinition\(\s*{mount_id}\s*,\s*"{re.escape(mount_name)}"\s*,\s*"{mount_type}"\s*,\s*"{mount_key}"'
+    if not re.search(pattern, text):
+        print(f"::error::Dinosaur mount catalog entry {mount_id} is missing or malformed.")
+        sys.exit(1)
 if len(set(asset_keys)) != len(asset_keys):
     print("::error::Vehicle asset keys must be unique.")
     sys.exit(1)
