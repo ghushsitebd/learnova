@@ -36,6 +36,17 @@ if len(set(ids)) != len(ids):
     sys.exit(1)
 
 asset_keys = [key for _, key in keys]
+expected_dinosaur_mounts = {
+    97: ("T-Rex Explorer Mount", "dinosaur_mount", "vehicle_097_trex_mount"),
+    98: ("Triceratops Trail Mount", "dinosaur_mount", "vehicle_098_triceratops_mount"),
+    99: ("Stegosaurus Forest Mount", "dinosaur_mount", "vehicle_099_stegosaurus_mount"),
+    100: ("Parasaurolophus Adventure Mount", "dinosaur_mount", "vehicle_100_parasaurolophus_mount"),
+}
+for mount_id, (mount_name, mount_type, mount_key) in expected_dinosaur_mounts.items():
+    pattern = rf'VehicleDefinition\(\s*{mount_id}\s*,\s*"{re.escape(mount_name)}"\s*,\s*"{mount_type}"\s*,\s*"{mount_key}"'
+    if not re.search(pattern, text):
+        print(f"::error::Dinosaur mount catalog entry {mount_id} is missing or malformed.")
+        sys.exit(1)
 
 expected_dinosaur_mounts = {
     97: ("T-Rex Explorer Mount", "dinosaur_mount", "vehicle_097_trex_mount"),
@@ -153,7 +164,7 @@ def validate_glb_container(path):
         return f"cannot read/decompress asset: {exc}"
     return None
 
-print("Learnova vehicle validation: auditing all 500 dedicated catalog models and fallback coverage.")
+print("Learnova vehicle validation: auditing 100 dedicated launch models and 500-slot fallback coverage.")
 
 if not ASSETS.is_dir():
     print("::error::Vehicle asset directory is missing; release validation cannot prove renderer fallback coverage.")
@@ -196,7 +207,7 @@ for vehicle_id, key in keys:
 
     found += 1
     numeric_id = int(vehicle_id)
-    if numeric_id <= 500:
+    if numeric_id <= 100:
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
         if digest in all_vehicle_hashes.values():
             previous_id = next(k for k, value in all_vehicle_hashes.items() if value == digest)
@@ -212,32 +223,32 @@ dedicated_ids = {
 required_models_missing = [
     (int(vehicle_id), key)
     for vehicle_id, key in keys
-    if int(vehicle_id) <= 500
+    if int(vehicle_id) <= 100
     and not (ASSETS / f"{key}.glb").is_file()
     and not (ASSETS / f"{key}.glb.gz").is_file()
 ]
 if required_models_missing:
     errors.extend(
-        f"100-model batch missing vehicle {vehicle_id:03d} ({key})."
+        f"Launch batch missing dedicated vehicle {vehicle_id:03d} ({key})."
         for vehicle_id, key in required_models_missing
     )
-if len(dedicated_ids.intersection(set(range(1, 501)))) != 500:
+if len(dedicated_ids.intersection(set(range(1, 101)))) != 100:
     errors.append(
-        "All 500 garage slots must each have a dedicated GLB model; "
-        f"found {len(dedicated_ids.intersection(set(range(1, 501))))}/500."
+        "The first 100 garage slots must each have a dedicated GLB model; "
+        f"found {len(dedicated_ids.intersection(set(range(1, 101))))}/100."
     )
 fallback_ids = [int(vehicle_id) for vehicle_id, _ in keys if int(vehicle_id) not in dedicated_ids]
 required_fallbacks = {
     "vehicle_001_city_car": "general fallback",
     "vehicle_040_box_truck": "truck/bus/construction/emergency fallback",
     "vehicle_068_buggy": "motorcycle/cycle/buggy/off-road fallback",
-    "vehicle_100_2050_vision": "electric/sport/luxury/2050 concept fallback",
+    "vehicle_097_trex_mount": "dinosaur mount fallback for prehistoric ride slots",
 }
 for filename, purpose in required_fallbacks.items():
     if not (ASSETS / f"{filename}.glb").is_file() and not (ASSETS / f"{filename}.glb.gz").is_file():
         errors.append(f"Required fallback asset missing: {filename} ({purpose}).")
 
-print(f"Dedicated GLB models validated: {len(dedicated_ids)}/500 catalog slots.")
+print(f"Dedicated GLB models validated: {len(dedicated_ids.intersection(set(range(1, 101))))}/100 launch-priority slots.")
 print(f"Slots currently using class fallback: {len(fallback_ids)}/500.")
 print("Fallback map: general=city car; truck/bus/construction/emergency=box truck; "
       "motorcycle/cycle/buggy/off-road=buggy.")
