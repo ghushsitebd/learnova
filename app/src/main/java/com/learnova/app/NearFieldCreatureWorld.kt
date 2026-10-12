@@ -35,7 +35,7 @@ internal class NearFieldCreatureWorld(
         val SUPPORTED = setOf(
             "lion", "tiger", "elephant", "leopard", "bear", "monkey", "giraffe", "zebra",
             "parrot", "falcon", "owl", "peacock", "ostrich", "buffalo", "gazelle", "stag",
-            "boar", "frog", "snake", "crab", "shark", "whale", "seal", "penguin",
+            "boar", "alpaca", "bull", "donkey", "husky", "shiba_inu", "white_horse", "frog", "snake", "crab", "shark", "whale", "seal", "penguin",
             "dolphin", "turtle", "fish", "duck", "horse", "donkey", "goat", "sheep",
             "cow", "chicken", "deer", "fox", "rabbit", "wolf", "camel"
         )
@@ -186,14 +186,14 @@ internal class NearFieldCreatureWorld(
     }
 
     private fun speciesPool(biome: WorldDirector.Biome): List<String> = when (biome) {
-        WorldDirector.Biome.FOREST -> listOf("lion", "tiger", "leopard", "bear", "monkey", "wolf", "fox", "deer", "boar", "stag", "rabbit")
+        WorldDirector.Biome.FOREST -> listOf("lion", "tiger", "leopard", "bear", "monkey", "wolf", "husky", "shiba_inu", "fox", "deer", "boar", "stag", "rabbit")
         WorldDirector.Biome.MOUNTAIN -> listOf("eagle", "falcon", "bear", "wolf", "horse", "stag", "goat")
         WorldDirector.Biome.PLATEAU -> listOf("giraffe", "zebra", "deer", "horse", "stag", "rabbit", "ostrich")
-        WorldDirector.Biome.VILLAGE -> listOf("horse", "cow", "goat", "sheep", "chicken", "donkey", "rabbit", "buffalo")
+        WorldDirector.Biome.VILLAGE -> listOf("horse", "white_horse", "cow", "bull", "alpaca", "goat", "sheep", "chicken", "donkey", "rabbit", "buffalo")
         WorldDirector.Biome.DESERT -> listOf("camel", "gazelle", "ostrich", "fox")
         WorldDirector.Biome.RIVER -> listOf("dolphin", "turtle", "duck", "fish", "frog")
         WorldDirector.Biome.COAST -> listOf("dolphin", "whale", "seal", "shark", "turtle", "crab")
-        WorldDirector.Biome.MARKET -> listOf("horse", "donkey", "goat", "cow", "chicken")
+        WorldDirector.Biome.MARKET -> listOf("horse", "white_horse", "donkey", "goat", "cow", "bull", "alpaca", "chicken")
         else -> listOf("deer", "fox", "rabbit", "bird")
     }
 
