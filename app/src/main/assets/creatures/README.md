@@ -21,3 +21,19 @@ near-field path.
 
 The fetch/validation pipeline verifies GLB v2 structure, meshes, skins and
 non-zero skeletal animation tracks before the assets are accepted by CI.
+
+
+## Additional animated animals
+
+The CI asset pipeline also fetches six additional animated Quaternius GLBs from an immutable upstream commit:
+
+| File | Animal |
+|---|---|
+| `alpaca.glb` | Alpaca |
+| `bull.glb` | Bull |
+| `donkey.glb` | Donkey |
+| `husky.glb` | Husky |
+| `shiba_inu.glb` | Shiba Inu |
+| `white_horse.glb` | White horse |
+
+Quaternius lists the pack as CC0. These are additional animated animal models, not a claim that every catalog species already has its own model. CI validates each model's GLB structure, mesh, skin and animation tracks before release.

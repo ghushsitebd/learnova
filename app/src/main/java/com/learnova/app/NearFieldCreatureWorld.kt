@@ -35,7 +35,7 @@ internal class NearFieldCreatureWorld(
         val SUPPORTED = setOf(
             "lion", "tiger", "elephant", "leopard", "bear", "monkey", "giraffe", "zebra",
             "parrot", "falcon", "owl", "peacock", "ostrich", "buffalo", "gazelle", "stag",
-            "boar", "frog", "snake", "crab", "shark", "whale", "seal", "penguin",
+            "boar", "alpaca", "bull", "donkey", "husky", "shiba_inu", "white_horse", "frog", "snake", "crab", "shark", "whale", "seal", "penguin",
             "dolphin", "turtle", "fish", "duck", "horse", "donkey", "goat", "sheep",
             "cow", "chicken", "deer", "fox", "rabbit", "wolf", "camel"
         )
@@ -45,6 +45,11 @@ internal class NearFieldCreatureWorld(
 
     fun update(centerDistance: Double) {
         val now = System.nanoTime()
+        // Animation sampling follows the render loop; world-space placement is
+        // throttled separately below to reduce per-frame CPU work.
+        for (index in 0 until SLOT_COUNT) {
+            if (activeSpecies[index] != null) creatures[index].animate()
+        }
         if (now - lastUpdateNanos < UPDATE_NANOS) return
         lastUpdateNanos = now
 
@@ -164,9 +169,13 @@ internal class NearFieldCreatureWorld(
         val x = sample.x + cos(sample.yaw) * roadsideOffset
         val z = sample.z - sin(sample.yaw) * roadsideOffset
         val travelSign = cos(elapsedSeconds * motionSpeed + phase)
-        val facing = sample.yaw +
-            if (travelSign >= 0.0) 0.0 else kotlin.math.PI +
-            if (side > 0.0) -1.5708 else 1.5708
+        // Keep the heading calculation unambiguous: reverse the walk direction
+        // first, then turn toward the road from either roadside. Parentheses are
+        // important here because Kotlin's if-expression precedence can otherwise
+        // apply the roadside turn only while travelling backward.
+        val travelYaw = if (travelSign >= 0.0) 0.0 else kotlin.math.PI
+        val roadsideYaw = if (side > 0.0) -kotlin.math.PI / 2.0 else kotlin.math.PI / 2.0
+        val facing = sample.yaw + travelYaw + roadsideYaw
         val scale = when (species) {
             "horse" -> 1.18
             "wolf" -> 1.10
@@ -186,14 +195,14 @@ internal class NearFieldCreatureWorld(
     }
 
     private fun speciesPool(biome: WorldDirector.Biome): List<String> = when (biome) {
-        WorldDirector.Biome.FOREST -> listOf("lion", "tiger", "leopard", "bear", "monkey", "wolf", "fox", "deer", "boar", "stag", "rabbit")
+        WorldDirector.Biome.FOREST -> listOf("lion", "tiger", "leopard", "bear", "monkey", "wolf", "husky", "shiba_inu", "fox", "deer", "boar", "stag", "rabbit")
         WorldDirector.Biome.MOUNTAIN -> listOf("eagle", "falcon", "bear", "wolf", "horse", "stag", "goat")
         WorldDirector.Biome.PLATEAU -> listOf("giraffe", "zebra", "deer", "horse", "stag", "rabbit", "ostrich")
-        WorldDirector.Biome.VILLAGE -> listOf("horse", "cow", "goat", "sheep", "chicken", "donkey", "rabbit", "buffalo")
+        WorldDirector.Biome.VILLAGE -> listOf("horse", "white_horse", "cow", "bull", "alpaca", "goat", "sheep", "chicken", "donkey", "rabbit", "buffalo")
         WorldDirector.Biome.DESERT -> listOf("camel", "gazelle", "ostrich", "fox")
         WorldDirector.Biome.RIVER -> listOf("dolphin", "turtle", "duck", "fish", "frog")
         WorldDirector.Biome.COAST -> listOf("dolphin", "whale", "seal", "shark", "turtle", "crab")
-        WorldDirector.Biome.MARKET -> listOf("horse", "donkey", "goat", "cow", "chicken")
+        WorldDirector.Biome.MARKET -> listOf("horse", "white_horse", "donkey", "goat", "cow", "bull", "alpaca", "chicken")
         else -> listOf("deer", "fox", "rabbit", "bird")
     }
 
