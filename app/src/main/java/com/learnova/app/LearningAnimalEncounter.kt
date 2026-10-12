@@ -27,6 +27,26 @@ internal class LearningAnimalEncounter(
     private var center = 0.0
     private var lastNow = 0L
 
+    // Reuse the fixed-size fallback mesh buffers. Allocating two ByteBuffers
+    // for every animal update (up to 45 times per second) creates avoidable GC
+    // pressure on entry-level Android devices.
+    private val animalVertexScratch = ByteBuffer.allocate(40 * 36).order(ByteOrder.nativeOrder())
+    private val animalIndexScratch = ByteBuffer.allocate(180 * 2).order(ByteOrder.nativeOrder())
+    private val aquaticAnimals = setOf(
+        "fish", "whale", "dolphin", "shark", "octopus", "turtle", "seal", "walrus",
+        "stingray", "swordfish", "salmon", "seahorse", "jellyfish", "crab", "lobster"
+    )
+    private val flyingAnimals = setOf(
+        "bird", "parrot", "falcon", "eagle", "owl", "swan", "flamingo", "ostrich",
+        "sparrow", "pigeon", "kingfisher", "woodpecker", "hummingbird", "duck", "goose",
+        "pelican", "heron", "toucan", "canary", "robin", "magpie", "bat", "butterfly",
+        "bee", "dragonfly", "ladybird"
+    )
+    private val supportedAnimals = LearnovaWorldCatalog.animals
+        .asSequence()
+        .map { it.name.trim().lowercase() }
+        .toSet() + setOf("cat", "dog", "fish", "bird", "boar", "stag", "gazelle")
+
     fun build(): Boolean {
         if (entity != 0) return true
         val source = findMaterial() ?: return false
@@ -56,13 +76,10 @@ internal class LearningAnimalEncounter(
     fun trigger(animal: String, worldDistance: Double) {
         if (entity == 0) return
         val key = animal.trim().lowercase()
-        val supported = setOf(
-            "cat", "dog", "elephant", "fish", "lion", "tiger",
-            "rabbit", "parrot", "whale", "yak", "zebra",
-            "fox", "deer", "horse", "wolf", "boar", "stag", "cow", "camel", "bear", "giraffe", "frog", "bird",
-            "gazelle", "falcon"
-        )
-        if (key !in supported) return
+        // Any catalog species can trigger a learning encounter. A packaged GLB
+        // is preferred automatically; unbundled species use the bounded fallback
+        // mesh so catalog growth never creates a missing-model crash or dead lesson.
+        if (key !in supportedAnimals) return
         // Every encounter gets a fresh authored-GLB lifecycle so a completed
         // animal cannot block the next real asset from appearing.
         authoredGlb.hide()
@@ -90,8 +107,8 @@ internal class LearningAnimalEncounter(
         }
 
         val road = RoadSpline.sampleRelative(center, worldDistance)
-        val isFlying = activeAnimal in setOf("bird", "parrot", "falcon")
-        val isAquatic = activeAnimal in setOf("fish", "whale")
+        val isFlying = activeAnimal in flyingAnimals
+        val isAquatic = activeAnimal in aquaticAnimals
         // Three-part encounter: approach from the roadside, pause briefly for
         // recognition, then return. The pause gives the child a readable learning moment
         // without freezing the whole driving world.
@@ -157,27 +174,29 @@ internal class LearningAnimalEncounter(
     }
 
     private fun drawAnimal(x: Double, y: Double, z: Double, yaw: Double, scale: Double) {
-        val v = ByteBuffer.allocate(40 * 36).order(ByteOrder.nativeOrder())
-        val i = ByteBuffer.allocate(180 * 2).order(ByteOrder.nativeOrder())
+        val v = animalVertexScratch
+        val i = animalIndexScratch
+        v.clear()
+        i.clear()
         // Species-aware silhouette: keep the fixed 40-vertex budget, but vary
         // proportions so each learning animal reads differently at a distance.
-        val aquatic = activeAnimal in setOf("fish", "whale")
-        val flying = activeAnimal in setOf("bird", "parrot", "falcon")
+        val aquatic = activeAnimal in aquaticAnimals
+        val flying = activeAnimal in flyingAnimals
         val bodyW = when (activeAnimal) {
-            "elephant", "bear", "yak" -> 0.40
-            "rabbit", "frog" -> 0.23
-            "fish", "whale" -> 0.34
+            "elephant", "bear", "yak", "bison", "hippopotamus", "rhinoceros", "mammoth" -> 0.40
+            "rabbit", "frog", "hedgehog", "meerkat" -> 0.23
+            in aquaticAnimals -> 0.34
             else -> 0.30
         } * scale
         val bodyH = when (activeAnimal) {
-            "giraffe" -> 0.56
-            "elephant", "bear", "yak" -> 0.48
-            "fish", "whale" -> 0.24
+            "giraffe", "brachiosaurus" -> 0.56
+            "elephant", "bear", "yak", "bison", "hippopotamus", "rhinoceros", "mammoth" -> 0.48
+            in aquaticAnimals -> 0.24
             else -> 0.38
         } * scale
         val bodyD = when (activeAnimal) {
-            "fish", "whale" -> 0.92
-            "elephant", "bear", "yak" -> 0.82
+            in aquaticAnimals -> 0.92
+            "elephant", "bear", "yak", "bison", "hippopotamus", "rhinoceros", "mammoth" -> 0.82
             else -> 0.72
         } * scale
         box(v,i,x,y+bodyH,z,yaw,bodyW,bodyH,bodyD)
@@ -188,19 +207,19 @@ internal class LearningAnimalEncounter(
         // Ears/horns/crest are represented by the third volume where appropriate.
         val headTop = when (activeAnimal) {
             "elephant" -> 0.92
-            "giraffe" -> 1.32
-            "rabbit" -> 1.02
-            "tiger", "lion", "bear", "fox" -> 0.96
+            "giraffe", "brachiosaurus" -> 1.32
+            "rabbit", "kangaroo" -> 1.02
+            "tiger", "lion", "bear", "fox", "wolf", "hyena", "leopard", "cheetah" -> 0.96
             else -> 0.90
         }
         val headDetailW = when (activeAnimal) {
-            "elephant", "rabbit" -> 0.16
-            "giraffe" -> 0.10
+            "elephant", "rabbit", "kangaroo" -> 0.16
+            "giraffe", "brachiosaurus" -> 0.10
             else -> 0.08
         } * scale
         box(v,i,x+cos(yaw)*0.77*scale,y+headTop*scale,z-sin(yaw)*0.77*scale,
             yaw,headDetailW,0.12*scale,0.10*scale)
-        val tailYaw = if (activeAnimal in setOf("fish","whale")) yaw else yaw + 0.45
+        val tailYaw = if (aquatic) yaw else yaw + 0.45
         box(v,i,x+cos(tailYaw)*-0.48*scale,y+0.55*scale,z-sin(tailYaw)*-0.48*scale,
             tailYaw,0.055*scale,0.055*scale,0.55*scale)
         while (v.position() < 40 * 36) { v.putFloat(0f); v.putFloat(-5000f); v.putFloat(0f); repeat(6) { v.putFloat(0f) } }
@@ -219,8 +238,8 @@ internal class LearningAnimalEncounter(
 
     private fun applyAnimalStyle(key: String) {
         val rgb = when (key) {
-            "elephant" -> floatArrayOf(0.42f, 0.46f, 0.50f)
-            "fish", "whale" -> floatArrayOf(0.12f, 0.42f, 0.72f)
+            "elephant", "rhinoceros" -> floatArrayOf(0.42f, 0.46f, 0.50f)
+            in aquaticAnimals -> floatArrayOf(0.12f, 0.42f, 0.72f)
             "lion", "giraffe", "camel", "gazelle" -> floatArrayOf(0.72f, 0.50f, 0.20f)
             "tiger", "fox" -> floatArrayOf(0.78f, 0.28f, 0.10f)
             "zebra" -> floatArrayOf(0.72f, 0.72f, 0.68f)
