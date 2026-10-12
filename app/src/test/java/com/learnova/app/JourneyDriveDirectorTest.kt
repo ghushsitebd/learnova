@@ -171,6 +171,22 @@ class JourneyDriveDirectorTest {
         }
     }
 
+    @Test fun dinosaurMountSlotsUseDedicatedMountDefinitionsWithoutWheelAnimation() {
+        val mounts = listOf(97, 98, 99, 100).map(VehicleCatalog::byId)
+        assertEquals(
+            listOf(
+                "T-Rex Explorer Mount",
+                "Triceratops Trail Mount",
+                "Stegosaurus Forest Mount",
+                "Parasaurolophus Adventure Mount"
+            ),
+            mounts.map { it.name }
+        )
+        assertTrue(mounts.all { it.type == "dinosaur_mount" })
+        assertTrue(mounts.all { it.targetSpeed in 2.0..18.0 })
+        assertFalse(VehicleRenderProfile.forType("dinosaur_mount").enableWheelAnimation)
+    }
+
     @Test fun fallbackPriorityKeepsSpecializedVehiclesOutOfGenericCarFallback() {
         val expectedByType = mapOf(
             "truck" to "vehicle_040_box_truck",
