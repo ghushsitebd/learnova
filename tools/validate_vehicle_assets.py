@@ -4,6 +4,7 @@
 from pathlib import Path
 import gzip
 import hashlib
+import json
 import re
 import sys
 
@@ -48,17 +49,6 @@ for mount_id, (mount_name, mount_type, mount_key) in expected_dinosaur_mounts.it
         print(f"::error::Dinosaur mount catalog entry {mount_id} is missing or malformed.")
         sys.exit(1)
 
-expected_dinosaur_mounts = {
-    97: ("T-Rex Explorer Mount", "dinosaur_mount", "vehicle_097_trex_mount"),
-    98: ("Triceratops Trail Mount", "dinosaur_mount", "vehicle_098_triceratops_mount"),
-    99: ("Stegosaurus Forest Mount", "dinosaur_mount", "vehicle_099_stegosaurus_mount"),
-    100: ("Parasaurolophus Adventure Mount", "dinosaur_mount", "vehicle_100_parasaurolophus_mount"),
-}
-for mount_id, (mount_name, mount_type, mount_key) in expected_dinosaur_mounts.items():
-    pattern = rf'VehicleDefinition\(\s*{mount_id}\s*,\s*"{re.escape(mount_name)}"\s*,\s*"{mount_type}"\s*,\s*"{mount_key}"'
-    if not re.search(pattern, text):
-        print(f"::error::Dinosaur mount catalog entry {mount_id} is missing or malformed.")
-        sys.exit(1)
 if len(set(asset_keys)) != len(asset_keys):
     print("::error::Vehicle asset keys must be unique.")
     sys.exit(1)
@@ -127,6 +117,45 @@ if ASSETS.exists():
 
 
 # 3D asset hardening: validate the binary GLB container header, version and length.
+def validate_generated_scene_root(path):
+    """Generated GLBs must parent their geometry under the runtime transform root."""
+    try:
+        if path.name.endswith(".glb.gz"):
+            with gzip.open(path, "rb") as stream:
+                payload = stream.read()
+        else:
+            payload = path.read_bytes()
+        if len(payload) < 20:
+            return None
+        json_length = int.from_bytes(payload[12:16], "little")
+        json_type = int.from_bytes(payload[16:20], "little")
+        if json_type != 0x4E4F534A or 20 + json_length > len(payload):
+            return None
+        document = json.loads(payload[20:20 + json_length].decode("utf-8"))
+        asset = document.get("asset", {})
+        if asset.get("generator") != "Learnova scale-aware vehicle prototype generator":
+            return None
+        nodes = document.get("nodes", [])
+        scenes = document.get("scenes", [])
+        scene_index = document.get("scene", 0)
+        if not scenes or not isinstance(scene_index, int) or scene_index < 0 or scene_index >= len(scenes):
+            return "generated GLB has no valid active scene"
+        scene_roots = scenes[scene_index].get("nodes", [])
+        root_index = next(
+            (index for index in scene_roots if 0 <= index < len(nodes) and nodes[index].get("name") == "VehicleRoot"),
+            None,
+        )
+        if root_index is None:
+            return "generated GLB is missing the VehicleRoot scene node"
+        children = nodes[root_index].get("children", [])
+        mesh_nodes = {index for index, node in enumerate(nodes) if "mesh" in node}
+        if not mesh_nodes or set(children) != mesh_nodes:
+            return "VehicleRoot must parent every generated mesh node"
+    except (OSError, EOFError, gzip.BadGzipFile, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        return f"cannot validate generated scene hierarchy: {exc}"
+    return None
+
+
 def validate_glb_container(path):
     try:
         if path.name.endswith(".glb.gz"):
@@ -203,6 +232,11 @@ for vehicle_id, key in keys:
     container_error = validate_glb_container(path)
     if container_error:
         errors.append(f"{key}: {container_error}.")
+        continue
+
+    scene_error = validate_generated_scene_root(path)
+    if scene_error:
+        errors.append(f"{key}: {scene_error}.")
         continue
 
     found += 1
