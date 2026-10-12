@@ -126,12 +126,17 @@ class JourneyDriveDirectorTest {
 
     @Test fun vehicleFallbackSelectionContract() {
         assertEquals("vehicle_040_box_truck", VehicleFallbackSelector.fallbackKey("truck", "vehicle_039_small_truck"))
-        assertEquals("vehicle_040_box_truck", VehicleFallbackSelector.fallbackKey("van", "vehicle_026_minivan"))
-        assertEquals("vehicle_068_buggy", VehicleFallbackSelector.fallbackKey("motorcycle", "vehicle_051_motorcycle"))
-        assertEquals("vehicle_068_buggy", VehicleFallbackSelector.fallbackKey("electric", "vehicle_053_electric_scooter"))
+        assertEquals("vehicle_026_minivan", VehicleFallbackSelector.fallbackKey("van", "vehicle_027_family_van"))
+        assertEquals("vehicle_051_motorcycle", VehicleFallbackSelector.fallbackKey("motorcycle", "vehicle_054_adventure_bike"))
+        assertEquals("vehicle_052_scooter", VehicleFallbackSelector.fallbackKey("electric", "vehicle_053_electric_scooter"))
+        assertEquals("vehicle_059_bicycle", VehicleFallbackSelector.fallbackKey("cycle", "vehicle_060_cargo_bicycle"))
+        assertEquals("vehicle_061_auto_rickshaw", VehicleFallbackSelector.fallbackKey("three_wheeler", "vehicle_062_electric_rickshaw"))
+        assertEquals("vehicle_046_city_bus", VehicleFallbackSelector.fallbackKey("bus", "vehicle_049_tour_bus"))
+        assertEquals("vehicle_077_small_tractor", VehicleFallbackSelector.fallbackKey("farm", "vehicle_076_farm_utility"))
+        assertEquals("vehicle_078_loader", VehicleFallbackSelector.fallbackKey("construction", "vehicle_079_hauler"))
         assertEquals("vehicle_068_buggy", VehicleFallbackSelector.fallbackKey("suv", "vehicle_020_compact_suv"))
-        assertEquals("vehicle_100_2050_vision", VehicleFallbackSelector.fallbackKey("concept", "vehicle_091_aero_taxi"))
-        assertEquals("vehicle_100_2050_vision", VehicleFallbackSelector.fallbackKey("electric", "vehicle_006_electric_sedan"))
+        assertEquals("vehicle_091_aero_taxi", VehicleFallbackSelector.fallbackKey("concept", "vehicle_091_aero_taxi"))
+        assertEquals("vehicle_091_aero_taxi", VehicleFallbackSelector.fallbackKey("electric", "vehicle_006_electric_sedan"))
         assertEquals("vehicle_001_city_car", VehicleFallbackSelector.fallbackKey("service", "vehicle_031_taxi"))
     }
 
@@ -148,10 +153,13 @@ class JourneyDriveDirectorTest {
 
     @Test fun all500VehicleFallbacksResolveToVerifiedAssetFamilies() {
         val verifiedFallbacks = setOf(
-            "vehicle_001_city_car",
-            "vehicle_040_box_truck",
-            "vehicle_068_buggy",
-            "vehicle_100_2050_vision"
+            "vehicle_001_city_car", "vehicle_026_minivan",
+            "vehicle_033_police", "vehicle_035_ambulance", "vehicle_040_box_truck",
+            "vehicle_044_fire_truck", "vehicle_046_city_bus", "vehicle_048_school_bus",
+            "vehicle_051_motorcycle", "vehicle_052_scooter", "vehicle_058_tricycle",
+            "vehicle_059_bicycle", "vehicle_061_auto_rickshaw", "vehicle_068_buggy",
+            "vehicle_077_small_tractor", "vehicle_078_loader", "vehicle_082_airport_shuttle",
+            "vehicle_091_aero_taxi", "vehicle_097_trex_mount"
         )
         assertEquals(500, VehicleCatalog.all.size)
         VehicleCatalog.all.forEach { vehicle ->
@@ -164,18 +172,27 @@ class JourneyDriveDirectorTest {
     }
 
     @Test fun fallbackPriorityKeepsSpecializedVehiclesOutOfGenericCarFallback() {
-        val truckTypes = setOf("truck", "bus", "construction", "emergency", "commercial", "airport", "farm", "van")
-        VehicleCatalog.all.filter { it.type in truckTypes }.forEach { vehicle ->
+        val expectedByType = mapOf(
+            "truck" to "vehicle_040_box_truck",
+            "bus" to "vehicle_046_city_bus",
+            "construction" to "vehicle_078_loader",
+            "farm" to "vehicle_077_small_tractor",
+            "airport" to "vehicle_082_airport_shuttle",
+            "van" to "vehicle_026_minivan",
+            "motorcycle" to "vehicle_051_motorcycle",
+            "cycle" to "vehicle_059_bicycle",
+            "three_wheeler" to "vehicle_061_auto_rickshaw"
+        )
+        VehicleCatalog.all.filter { it.type in expectedByType.keys }.forEach { vehicle ->
+            val expected = when {
+                vehicle.type == "motorcycle" && vehicle.assetKey.contains("scooter") -> "vehicle_052_scooter"
+                vehicle.type == "cycle" && vehicle.assetKey.contains("tricycle") -> "vehicle_058_tricycle"
+                vehicle.type == "bus" && vehicle.assetKey.contains("school") -> "vehicle_048_school_bus"
+                else -> expectedByType.getValue(vehicle.type)
+            }
             assertEquals(
-                "Vehicle ${vehicle.id} (${vehicle.name}) must use the truck-family model",
-                "vehicle_040_box_truck",
-                VehicleFallbackSelector.fallbackKey(vehicle.type, vehicle.assetKey)
-            )
-        }
-        VehicleCatalog.all.filter { it.type in setOf("motorcycle", "cycle", "three_wheeler") }.forEach { vehicle ->
-            assertEquals(
-                "Vehicle ${vehicle.id} (${vehicle.name}) must use the compact/off-road family model",
-                "vehicle_068_buggy",
+                "Vehicle ${vehicle.id} (${vehicle.name}) should use a matching class fallback",
+                expected,
                 VehicleFallbackSelector.fallbackKey(vehicle.type, vehicle.assetKey)
             )
         }

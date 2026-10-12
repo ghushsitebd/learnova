@@ -135,6 +135,26 @@ jobs:
           test -s app/src/main/assets/vehicles/vehicle_068_buggy.glb
           test -s app/src/main/assets/vehicles/vehicle_100_2050_vision.glb
 
+      # The launch batch is intentionally 100 dedicated models; the remaining catalog uses verified class fallbacks.
+      - name: Generate dedicated vehicle models for first 100 launch vehicles
+        run: |
+          set -euo pipefail
+          python3 tools/generate_vehicle_prototypes.py
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          catalog = Path("app/src/main/java/com/learnova/app/VehicleCatalog.kt").read_text()
+          keys = [(int(i), key) for i, key in re.findall(r'VehicleDefinition\(\s*(\d+)\s*,\s*"[^"]+"\s*,\s*"[^"]+"\s*,\s*"([^"]+)"', catalog) if int(i) <= 100]
+          root = Path("app/src/main/assets/vehicles")
+          missing = [key for _, key in keys if not (root / f"{key}.glb").is_file()]
+          if len(keys) != 100 or missing:
+              raise SystemExit(f"100-model launch batch incomplete: catalog={len(keys)}, missing={missing}")
+          expected_mounts = ["vehicle_097_trex_mount", "vehicle_098_triceratops_mount", "vehicle_099_stegosaurus_mount", "vehicle_100_parasaurolophus_mount"]
+          if any(key not in [entry[1] for entry in keys] for key in expected_mounts):
+              raise SystemExit("Dinosaur mount slots 97–100 are missing from the launch catalog.")
+          print("Verified: first 100 models packaged, including four rideable dinosaur mounts; slots 101–500 may use class fallbacks.")
+          PY
+
       - name: Validate vehicle asset contracts
         run: |
           set -euo pipefail
