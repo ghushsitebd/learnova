@@ -64,6 +64,8 @@ require("creatures", r"val travelYaw = if \(travelSign >= 0\.0\).*?val roadsideY
 require("creature_controller", r"runCatching \{ resourceLoader\?\.destroy\(\) \}\s*resourceLoader = null", "idle creature slots must release GLB resource-loader memory", flags=re.S)
 require("creature_controller", r"private val transformMatrix = FloatArray\(16\)", "reusable transform matrix must avoid per-update allocations")
 require("creature_controller", r"engine\.transformManager\.setTransform\(transform, matrix\)", "reused creature transform must be applied")
+require("creature_controller", r"fun animate\(\)", "creature skeletal animation must have a render-cadence update path")
+require("creatures", r"creatures\[index\]\.animate\(\).*?if \(now - lastUpdateNanos < UPDATE_NANOS\) return", "animate wildlife every render update while throttling world placement", flags=re.S)
 require("railway", r"class DistantRailwayWorld", "distant railway world layer missing")
 
 if errors:
