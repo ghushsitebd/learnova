@@ -24,6 +24,8 @@ internal class LearnovaCustomizeView(
     private var page = 0
     private var selectedVehicleId = 1
     private var selectedEnvironment = "Forest"
+    // Only show launch vehicles with dedicated packaged models; later catalog entries stay hidden until verified.
+    private val launchVehicles = VehicleCatalog.all.take(100)
     private val pageSize = 12
     private val environments = listOf(
         "Forest" to "জঙ্গল",
@@ -41,7 +43,7 @@ internal class LearnovaCustomizeView(
     }
 
     fun setSelectedVehicle(id: Int) {
-        selectedVehicleId = id.coerceIn(1, VehicleCatalog.all.size)
+        selectedVehicleId = id.coerceIn(1, launchVehicles.size)
         page = (selectedVehicleId - 1) / pageSize
         invalidate()
     }
@@ -65,7 +67,7 @@ internal class LearnovaCustomizeView(
         c.drawText("CUSTOMIZE", 22f, 42f, type)
         type.textSize = min(w * .036f, 16f)
         type.color = Color.rgb(190, 215, 230)
-        c.drawText("Choose your car and world", 22f, 66f, type)
+        c.drawText("100 launch vehicles - choose your world", 22f, 66f, type)
 
         val tabY = 82f
         drawButton(c, 18f, tabY, w / 2f - 24f, 44f, "CAR", tab == 0)
@@ -75,7 +77,7 @@ internal class LearnovaCustomizeView(
             type.textAlign = Paint.Align.RIGHT
             type.color = Color.rgb(190, 215, 230)
             type.textSize = 14f
-            c.drawText("${page + 1} / ${kotlin.math.ceil(VehicleCatalog.all.size / pageSize.toDouble()).toInt()}", w - 20f, 151f, type)
+            c.drawText("${page + 1} / ${kotlin.math.ceil(launchVehicles.size / pageSize.toDouble()).toInt()}", w - 20f, 151f, type)
             val gap = 10f
             val cols = if (w >= 900f) 4 else 3
             val top = 162f
@@ -84,8 +86,8 @@ internal class LearnovaCustomizeView(
             val cardH = (h - top - bottom - gap * 3f) / 4f
             for (slot in 0 until pageSize) {
                 val index = page * pageSize + slot
-                if (index !in VehicleCatalog.all.indices) break
-                val vehicle = VehicleCatalog.all[index]
+                if (index !in launchVehicles.indices) break
+                val vehicle = launchVehicles[index]
                 val row = slot / cols
                 val col = slot % cols
                 val x = gap + col * (cardW + gap)
@@ -147,13 +149,13 @@ internal class LearnovaCustomizeView(
                 e.x < 150f -> onClosed()
                 e.x > w - 155f -> {
                     // Apply both current choices so changing tabs never discards a selection.
-                    onVehicleSelected(VehicleCatalog.all[selectedVehicleId - 1])
+                    onVehicleSelected(launchVehicles[selectedVehicleId - 1])
                     onEnvironmentSelected(selectedEnvironment)
                     onClosed()
                 }
                 else -> {
                     if (tab == 0) {
-                        val pageCount = kotlin.math.ceil(VehicleCatalog.all.size / pageSize.toDouble()).toInt().coerceAtLeast(1)
+                        val pageCount = kotlin.math.ceil(launchVehicles.size / pageSize.toDouble()).toInt().coerceAtLeast(1)
                         page = (page + 1) % pageCount
                     } else {
                         tab = 0
@@ -184,8 +186,8 @@ internal class LearnovaCustomizeView(
                 val insideCard = e.x >= cardLeft && e.x <= cardLeft + cardW &&
                     e.y >= cardTop && e.y <= cardTop + cardH
                 val index = page * pageSize + row * cols + col
-                if (insideCard && index in VehicleCatalog.all.indices) {
-                    selectedVehicleId = VehicleCatalog.all[index].id
+                if (insideCard && index in launchVehicles.indices) {
+                    selectedVehicleId = launchVehicles[index].id
                     invalidate()
                 }
             }
