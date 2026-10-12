@@ -59,6 +59,7 @@ require("drive", r"profile\.coastDeceleration", "release-to-coast slowdown missi
 require("drive", r"automaticRoadTargetSpeed", "automatic curve-aware speed control missing")
 require("creatures", r"Array\(8\)\s*\{\s*CreatureGlbController", "bounded eight-slot near-field creature pool missing")
 require("creatures", r"it in packagedSpecies", "unpackaged animals must not be promoted to authored GLB presentation")
+require("creatures", r"val travelYaw = if \(travelSign >= 0\.0\).*?val roadsideYaw = if \(side > 0\.0\).*?val facing = sample\.yaw \+ travelYaw \+ roadsideYaw", "wildlife heading must apply roadside orientation in both travel directions", flags=re.S)
 require("railway", r"class DistantRailwayWorld", "distant railway world layer missing")
 
 if errors:
