@@ -172,7 +172,7 @@ class JourneyDriveDirectorTest {
     }
 
     @Test fun dinosaurMountSlotsUseDedicatedMountDefinitionsWithoutWheelAnimation() {
-        val mounts = listOf(97, 98, 99, 100).map(VehicleCatalog::byId)
+        val mounts = listOf(97, 98, 99, 100).map { VehicleCatalog.byId(it) }
         assertEquals(
             listOf(
                 "T-Rex Explorer Mount",
