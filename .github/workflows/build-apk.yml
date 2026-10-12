@@ -145,6 +145,7 @@ jobs:
           catalog = Path("app/src/main/java/com/learnova/app/VehicleCatalog.kt").read_text()
           keys = [(int(i), key) for i, key in re.findall(r'VehicleDefinition\(\s*(\d+)\s*,\s*"[^"]+"\s*,\s*"[^"]+"\s*,\s*"([^"]+)"', catalog) if int(i) <= 500]
           root = Path("app/src/main/assets/vehicles")
+          root = Path("app/src/main/assets/vehicles")
           missing = [key for _, key in keys if not (root / f"{key}.glb").is_file()]
           if len(keys) != 500 or missing:
               raise SystemExit(f"500-model batch incomplete: catalog={len(keys)}, missing={missing}")
