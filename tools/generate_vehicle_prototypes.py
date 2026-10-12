@@ -358,10 +358,14 @@ def make_glb(path: Path, vehicle_id: int, name: str, kind: str):
         meshes.append({"name":f"{name}_part_{idx}","primitives":[{"attributes":{"POSITION":pa,"NORMAL":na},"indices":ia,"material":material,"mode":4}]})
         nodes.append({"name":f"{name}_part_{idx}","mesh":idx})
 
-    align4()
+    # Put every generated part beneath one named root. The runtime applies the
+    # authoritative road/chassis transform to VehicleRoot; a flat scene would leave
+    # these procedural prototypes stationary while the world moves around them.
+    part_node_count = len(nodes)
+    nodes.append({"name":"VehicleRoot","children":list(range(part_node_count))})
     document = {
         "asset":{"version":"2.0","generator":"Learnova scale-aware vehicle prototype generator"},
-        "scene":0,"scenes":[{"nodes":list(range(len(nodes)))}],
+        "scene":0,"scenes":[{"nodes":[part_node_count]}],
         "nodes":nodes,"meshes":meshes,"materials":materials,
         "buffers":[{"byteLength":len(binary)}],"bufferViews":views,"accessors":accessors,
     }
