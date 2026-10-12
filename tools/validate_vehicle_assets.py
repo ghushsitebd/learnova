@@ -242,6 +242,7 @@ required_fallbacks = {
     "vehicle_001_city_car": "general fallback",
     "vehicle_040_box_truck": "truck/bus/construction/emergency fallback",
     "vehicle_068_buggy": "motorcycle/cycle/buggy/off-road fallback",
+    "vehicle_091_aero_taxi": "generic concept fallback",
     "vehicle_097_trex_mount": "dinosaur mount fallback for prehistoric ride slots",
 }
 for filename, purpose in required_fallbacks.items():
