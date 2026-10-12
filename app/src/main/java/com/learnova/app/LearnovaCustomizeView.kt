@@ -83,7 +83,8 @@ internal class LearnovaCustomizeView(
             val top = 162f
             val bottom = 78f
             val cardW = (w - gap * (cols + 1)) / cols
-            val cardH = (h - top - bottom - gap * 3f) / 4f
+            val rows = pageSize / cols
+            val cardH = (h - top - bottom - gap * (rows - 1)) / rows
             for (slot in 0 until pageSize) {
                 val index = page * pageSize + slot
                 if (index !in launchVehicles.indices) break
@@ -175,12 +176,13 @@ internal class LearnovaCustomizeView(
             val cols = if (w >= 900f) 4 else 3
             val top = 162f
             val cardW = (w - gap * (cols + 1)) / cols
-            val cardH = (h - top - 78f - gap * 3f) / 4f
+            val rows = pageSize / cols
+            val cardH = (h - top - 78f - gap * (rows - 1)) / rows
             // Only taps inside a visible card select a vehicle; the gaps are not
             // accidental hit targets, which makes the catalogue easier for children.
             val col = ((e.x - gap) / (cardW + gap)).toInt()
             val row = ((e.y - top) / (cardH + gap)).toInt()
-            if (col in 0 until cols && row in 0..3) {
+            if (col in 0 until cols && row in 0 until rows) {
                 val cardLeft = gap + col * (cardW + gap)
                 val cardTop = top + row * (cardH + gap)
                 val insideCard = e.x >= cardLeft && e.x <= cardLeft + cardW &&
