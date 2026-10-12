@@ -45,6 +45,11 @@ internal class NearFieldCreatureWorld(
 
     fun update(centerDistance: Double) {
         val now = System.nanoTime()
+        // Animation sampling follows the render loop; world-space placement is
+        // throttled separately below to reduce per-frame CPU work.
+        for (index in 0 until SLOT_COUNT) {
+            if (activeSpecies[index] != null) creatures[index].animate()
+        }
         if (now - lastUpdateNanos < UPDATE_NANOS) return
         lastUpdateNanos = now
 
