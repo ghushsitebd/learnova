@@ -164,7 +164,7 @@ internal object VehicleFallbackSelector {
                 key.contains("sport") || key.contains("luxury") ||
                 key.contains("hypercar") || key.contains("supercar") ||
                 key.contains("roadster") || key.contains("coupe") ->
-                "vehicle_100_2050_vision"
+                "vehicle_091_aero_taxi"
 
             else -> "vehicle_001_city_car"
         }
