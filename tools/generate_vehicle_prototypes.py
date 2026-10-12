@@ -161,7 +161,7 @@ def ellipsoid(cx, cy, cz, rx, ry, rz, segments=12, rings=8):
         for segment in range(segments):
             a = ring * stride + segment
             b = a + stride
-            indices.extend((a, b, a+1, a+1, b, b+1))
+            indices.extend((a, a+1, b, a+1, b+1, b))
     return positions, normals, indices
 
 
