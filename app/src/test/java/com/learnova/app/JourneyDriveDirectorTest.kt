@@ -135,8 +135,8 @@ class JourneyDriveDirectorTest {
         assertEquals("vehicle_077_small_tractor", VehicleFallbackSelector.fallbackKey("farm", "vehicle_076_farm_utility"))
         assertEquals("vehicle_078_loader", VehicleFallbackSelector.fallbackKey("construction", "vehicle_079_hauler"))
         assertEquals("vehicle_068_buggy", VehicleFallbackSelector.fallbackKey("suv", "vehicle_020_compact_suv"))
-        assertEquals("vehicle_100_2050_vision", VehicleFallbackSelector.fallbackKey("concept", "vehicle_091_aero_taxi"))
-        assertEquals("vehicle_100_2050_vision", VehicleFallbackSelector.fallbackKey("electric", "vehicle_006_electric_sedan"))
+        assertEquals("vehicle_091_aero_taxi", VehicleFallbackSelector.fallbackKey("concept", "vehicle_091_aero_taxi"))
+        assertEquals("vehicle_091_aero_taxi", VehicleFallbackSelector.fallbackKey("electric", "vehicle_006_electric_sedan"))
         assertEquals("vehicle_001_city_car", VehicleFallbackSelector.fallbackKey("service", "vehicle_031_taxi"))
     }
 
@@ -159,7 +159,7 @@ class JourneyDriveDirectorTest {
             "vehicle_051_motorcycle", "vehicle_052_scooter", "vehicle_058_tricycle",
             "vehicle_059_bicycle", "vehicle_061_auto_rickshaw", "vehicle_068_buggy",
             "vehicle_077_small_tractor", "vehicle_078_loader", "vehicle_082_airport_shuttle",
-            "vehicle_100_2050_vision"
+            "vehicle_091_aero_taxi", "vehicle_097_trex_mount"
         )
         assertEquals(500, VehicleCatalog.all.size)
         VehicleCatalog.all.forEach { vehicle ->
