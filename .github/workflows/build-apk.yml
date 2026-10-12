@@ -284,11 +284,11 @@ jobs:
           fi
           count=$(find "$ROOT" -maxdepth 1 -type f \( -name '*.glb' -o -name '*.glb.gz' -o -name '*.glb.b64' \) | sed -E 's/\.(glb|glb\.gz|glb\.b64)$//' | sort -u | wc -l)
           echo "Packaged creature asset keys: $count"
-          test "$count" -ge 4 || { echo "::error::At least four verified real creature asset keys are required."; exit 1; }
-          for species in deer fox horse wolf cow boar rabbit stag; do
+          test "$count" -ge 14 || { echo "::error::At least fourteen verified real creature asset keys are required."; exit 1; }
+          for species in deer fox horse wolf cow boar rabbit stag alpaca bull donkey husky shiba_inu white_horse; do
             test -s "$ROOT/$species.glb" || { echo "::error::Verified near-field asset missing: $species.glb"; exit 1; }
           done
-          echo "Verified near-field inventory gate passed: deer, fox, horse, wolf, cow, boar, rabbit, stag."
+          echo "Verified near-field inventory gate passed: deer, fox, horse, wolf, cow, boar, rabbit, stag, alpaca, bull, donkey, husky, shiba_inu, white_horse."
 
       - name: Verify Baseline Profile packaging
         shell: bash
