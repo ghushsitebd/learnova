@@ -125,13 +125,13 @@ internal class CreatureGlbController(
             val matrix = transformMatrix
             matrix[0] = c * sc
             matrix[1] = 0f
-            matrix[2] = s * sc
+            matrix[2] = -s * sc
             matrix[3] = 0f
             matrix[4] = 0f
             matrix[5] = sc
             matrix[6] = 0f
             matrix[7] = 0f
-            matrix[8] = -s * sc
+            matrix[8] = s * sc
             matrix[9] = 0f
             matrix[10] = c * sc
             matrix[11] = 0f
