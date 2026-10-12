@@ -20,7 +20,7 @@ internal class VillageMarketWorld(
     private val asset: FilamentAsset
 ) {
     private companion object {
-        const val MAX_BOXES = 420
+        const val MAX_BOXES = 480
         const val STRIDE = 36
         val FACES = intArrayOf(0,1,2,0,2,3,4,6,5,4,7,6,0,4,5,0,5,1,1,5,6,1,6,2,2,6,7,2,7,3,4,0,3,4,3,7)
     }
@@ -87,23 +87,40 @@ internal class VillageMarketWorld(
                 if (count >= MAX_BOXES-10) break
                 val centerSide=side*(if (market) 10.5+(seed ushr 5)%3L else 13.5+(seed ushr 6)%5L)
                 if (market) {
-                    // Counter, broad canopy and supports form a recognizable open-air bazaar stall.
+                    // Counter, canopy and posts establish the silhouette of a roadside bazaar stall.
                     box(d,centerSide,3.2,1.05,2.6)
                     box(d,centerSide,3.9,0.22,3.2,2.1)
                     box(d,centerSide-side*1.55,0.14,1.9,0.14,0.02)
                     box(d,centerSide+side*1.55,0.14,1.9,0.14,0.02)
                     box(d,centerSide-side*0.72,0.10,2.0,0.10,0.02)
                     box(d,centerSide+side*0.72,0.10,2.0,0.10,0.02)
+                    // A raised shop sign and front shelf make each stall read as a market.
+                    box(d,centerSide,1.55,0.30,0.14,1.58)
+                    box(d,centerSide,2.15,0.12,0.46,1.18)
+                    // Small produce crates are placed at the two ends of the counter.
+                    box(d,centerSide-side*1.08,0.46,0.42,0.46,0.56)
+                    box(d,centerSide+side*1.08,0.46,0.42,0.46,0.56)
+                    // A narrow rear shelf and its supports add depth without extra draw calls.
+                    box(d,centerSide+side*1.05,1.75,0.10,0.22,1.42)
+                    box(d,centerSide+side*1.05-side*0.78,0.10,0.42,0.10,1.02)
+                    box(d,centerSide+side*1.05+side*0.78,0.10,0.42,0.10,1.02)
                 } else {
                     val w=if ((seed and 7L)==0L) 4.6 else 3.7
                     val h=if ((seed and 15L)==0L) 3.0 else 2.35
                     box(d,centerSide,w,h,4.0,top=0.97)
                     box(d,centerSide,w*1.18,0.42,4.55,h,0.78)
                     val front=centerSide-side*(w*0.5+0.08)
+                    // Door, lintel and paired window frames break up the plain house facade.
                     box(d,front,0.72,1.45,0.14,0.03)
                     box(d,front,0.54,0.52,0.12,1.45)
                     box(d,front-side*0.85,0.55,0.52,0.12,1.45)
                     box(d,front-side*0.45,1.55,0.14,0.95,1.82)
+                    box(d,front-side*0.88,0.62,0.58,0.12,1.18)
+                    box(d,front-side*0.88,0.10,0.70,0.12,1.16)
+                    box(d,front-side*0.88-side*0.31,0.10,0.70,0.12,1.16)
+                    box(d,front+side*0.88,0.62,0.58,0.12,1.18)
+                    box(d,front+side*0.88,0.10,0.70,0.12,1.16)
+                    box(d,front+side*0.88+side*0.31,0.10,0.70,0.12,1.16)
                 }
             }
             if (village && (seed and 7L)==0L && count < MAX_BOXES-10) {
