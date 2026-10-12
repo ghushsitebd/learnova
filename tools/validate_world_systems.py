@@ -62,6 +62,8 @@ require("creatures", r"Array\(8\)\s*\{\s*CreatureGlbController", "bounded eight-
 require("creatures", r"it in packagedSpecies", "unpackaged animals must not be promoted to authored GLB presentation")
 require("creatures", r"val travelYaw = if \(travelSign >= 0\.0\).*?val roadsideYaw = if \(side > 0\.0\).*?val facing = sample\.yaw \+ travelYaw \+ roadsideYaw", "wildlife heading must apply roadside orientation in both travel directions", flags=re.S)
 require("creature_controller", r"runCatching \{ resourceLoader\?\.destroy\(\) \}\s*resourceLoader = null", "idle creature slots must release GLB resource-loader memory", flags=re.S)
+require("creature_controller", r"private val transformMatrix = FloatArray\(16\)", "reusable transform matrix must avoid per-update allocations")
+require("creature_controller", r"engine\.transformManager\.setTransform\(transform, matrix\)", "reused creature transform must be applied")
 require("railway", r"class DistantRailwayWorld", "distant railway world layer missing")
 
 if errors:
