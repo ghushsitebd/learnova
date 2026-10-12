@@ -85,6 +85,14 @@ internal class CreatureGlbController(
     fun move(x: Double, y: Double, z: Double, yaw: Double, scale: Double) {
         val asset = activeAsset ?: return
         position(asset, x, y, z, yaw, scale)
+    }
+
+    /**
+     * Sample skeletal animation at render cadence, independently of the slower
+     * roadside placement cadence. This keeps walking smooth without recomputing
+     * every animal's world position on every rendered frame.
+     */
+    fun animate() {
         val animator = activeAnimator ?: return
         val elapsed = (System.nanoTime() * 1e-9 - animationStartSeconds).coerceAtLeast(0.0)
         val cycle = animationCycleDuration
