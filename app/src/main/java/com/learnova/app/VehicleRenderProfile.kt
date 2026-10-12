@@ -23,6 +23,16 @@ internal data class VehicleRenderProfile(
 
     companion object {
         fun forType(type: String): VehicleRenderProfile = when (type) {
+            "dinosaur_mount" ->
+                VehicleRenderProfile(
+                    lod0Distance = 20f,
+                    lod1Distance = 48f,
+                    lod2Distance = 95f,
+                    shadowDistance = 58f,
+                    enableWheelAnimation = false,
+                    enableBodyAnimation = false
+                )
+
             "motorcycle", "cycle", "three_wheeler" ->
                 VehicleRenderProfile(
                     lod0Distance = 18f,
