@@ -88,6 +88,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
     private var proceduralRoad: ProceduralRoadMesh? = null
     private var terrainMesh: LearnovaTerrainMesh? = null
     private var roadsideWorld: RoadsideWorld? = null
+    private var villageMarketWorld: VillageMarketWorld? = null
     private var waterSurfaceWorld: WaterSurfaceWorld? = null
     private var distantRailwayWorld: DistantRailwayWorld? = null
     private var shorelineWorld: ShorelineWorld? = null
@@ -180,6 +181,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 proceduralRoad = ProceduralRoadMesh(viewer.engine, viewer.scene, asset).also { it.build() }
                 terrainMesh = LearnovaTerrainMesh(viewer.engine, viewer.scene, asset).also { it.build() }
                 roadsideWorld = RoadsideWorld(viewer.engine, viewer.scene, asset).also { it.build() }
+                villageMarketWorld = VillageMarketWorld(viewer.engine, viewer.scene, asset).also { it.build() }
                 waterSurfaceWorld = WaterSurfaceWorld(viewer.engine, viewer.scene, asset).also { it.build() }
                 distantRailwayWorld = DistantRailwayWorld(viewer.engine, viewer.scene, asset).also { it.build() }
                 shorelineWorld = ShorelineWorld(viewer.engine, viewer.scene, asset).also { it.build() }
@@ -205,6 +207,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
             proceduralRoad = null
             terrainMesh = null
             roadsideWorld = null
+            villageMarketWorld = null
             waterSurfaceWorld = null
             distantRailwayWorld = null
             shorelineWorld = null
@@ -287,6 +290,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                     proceduralRoad?.update(vehicleDistance)
                     terrainMesh?.update(vehicleDistance)
                     roadsideWorld?.update(vehicleDistance)
+                    villageMarketWorld?.update(vehicleDistance)
                     waterSurfaceWorld?.update(vehicleDistance)
                     distantRailwayWorld?.update(vehicleDistance, dt)
                     shorelineWorld?.update(vehicleDistance)
@@ -719,6 +723,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 proceduralRoad?.destroy()
                 terrainMesh?.destroy()
                 roadsideWorld?.destroy()
+                villageMarketWorld?.destroy()
                 waterSurfaceWorld?.destroy()
                 shorelineWorld?.destroy()
                 worldLife?.destroy()
@@ -728,6 +733,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 worldLife = null
                 nearFieldCreatureWorld = null
                 roadsideWorld = null
+                villageMarketWorld = null
                 waterSurfaceWorld = null
                 shorelineWorld = null
                 terrainMesh = viewer.asset?.let { asset ->
@@ -750,6 +756,9 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
                 }
                 roadsideWorld = viewer.asset?.let {
                     RoadsideWorld(viewer.engine, viewer.scene, it).also { world -> world.build() }
+                }
+                villageMarketWorld = viewer.asset?.let {
+                    VillageMarketWorld(viewer.engine, viewer.scene, it).also { world -> world.build() }
                 }
 
                 cacheWheelEntities()
@@ -1414,6 +1423,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         terrainMesh?.destroy()
         terrainMesh = null
         roadsideWorld?.destroy()
+        villageMarketWorld?.destroy()
         waterSurfaceWorld?.destroy()
         shorelineWorld?.destroy()
         worldLife?.destroy()
@@ -1427,6 +1437,7 @@ class Learnova3DView(context: Context) : FrameLayout(context) {
         learningSignWorld?.destroy()
         learningSignWorld = null
         roadsideWorld = null
+        villageMarketWorld = null
         waterSurfaceWorld = null
         if (rendererReady && sunEntity != 0) {
             viewer.scene.removeEntity(sunEntity)
