@@ -533,3 +533,26 @@ if ASSETS.exists():
             print(f"::error::Deep GLB validation failed for {candidate.name}: {exc}")
             sys.exit(1)
     print("Deep GLB validation passed: full lengths, chunk bounds, JSON and gzip integrity checked.")
+
+
+# Geometry contract for the launch heavy hauler: the authored GLB must advertise
+# six wheels and the expected stable vehicle identity in its glTF metadata.
+HAULER = ASSETS / "vehicle_079_hauler.glb"
+if HAULER.is_file():
+    try:
+        hauler_doc = _glb_json.loads(
+            _read_glb_payload(HAULER)[20:20 + _glb_struct.unpack_from("<I", _read_glb_payload(HAULER), 12)[0]]
+            .decode("utf-8").rstrip(" \t\r\n\0")
+        )
+        extras = hauler_doc.get("asset", {}).get("extras", {})
+        if extras.get("vehicleId") != 79 or extras.get("vehicleName") != "Construction Hauler":
+            raise ValueError("stable vehicle ID/name metadata missing")
+        if extras.get("expectedWheelCount") != 6:
+            raise ValueError("Construction Hauler must declare six wheels (three axles)")
+        print("Vehicle geometry contract passed: launch Construction Hauler uses six-wheel multi-axle geometry.")
+    except (OSError, EOFError, ValueError, gzip.BadGzipFile, UnicodeDecodeError, _glb_json.JSONDecodeError, _glb_struct.error) as exc:
+        print(f"::error::Heavy hauler geometry validation failed: {exc}")
+        sys.exit(1)
+else:
+    print("::error::Launch Construction Hauler GLB missing; cannot validate multi-axle geometry.")
+    sys.exit(1)

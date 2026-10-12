@@ -255,8 +255,18 @@ def make_glb(path: Path, vehicle_id: int, name: str, kind: str):
         add(cube(-length*0.465, body_y - body_h*0.18, 0, 0.12, 0.12, width*0.98), 4)
     
         # Wheels: two inline wheels for bikes; four road wheels for cars and utility vehicles.
-        is_bike = kind in {"motorcycle", "cycle"} or any(x in name.lower() for x in ("bike", "bicycle", "tricycle", "scooter"))
-        wheel_xs = (-length * 0.36, length * 0.36) if is_bike else (-length * 0.32, length * 0.32)
+        lower_name = name.lower()
+        is_bike = kind in {"motorcycle", "cycle"} or any(x in lower_name for x in ("bike", "bicycle", "tricycle", "scooter"))
+        # Heavy haulers need a real multi-axle silhouette: three axles on both
+        # sides (six wheels), instead of the four-wheel placeholder used by cars.
+        is_six_wheel_hauler = not is_bike and (
+            "hauler" in lower_name or "long haul" in lower_name or "six wheel" in lower_name
+        )
+        wheel_xs = (
+            (-length * 0.36, length * 0.36) if is_bike else
+            (-length * 0.34, 0.0, length * 0.34) if is_six_wheel_hauler else
+            (-length * 0.32, length * 0.32)
+        )
         wheel_radius = radius
         wheel_tracks = (0,) if is_bike else (-width * 0.46, width * 0.46)
         for x in wheel_xs:
@@ -363,8 +373,16 @@ def make_glb(path: Path, vehicle_id: int, name: str, kind: str):
     # these procedural prototypes stationary while the world moves around them.
     part_node_count = len(nodes)
     nodes.append({"name":"VehicleRoot","children":list(range(part_node_count))})
+    expected_wheels = 0 if kind == "dinosaur_mount" else (
+        2 if kind in {"motorcycle", "cycle"} or any(x in name.lower() for x in ("bike", "bicycle", "tricycle", "scooter")) else
+        6 if any(x in name.lower() for x in ("hauler", "long haul", "six wheel")) else 4
+    )
     document = {
-        "asset":{"version":"2.0","generator":"Learnova scale-aware vehicle prototype generator"},
+        "asset":{
+            "version":"2.0",
+            "generator":"Learnova scale-aware vehicle prototype generator",
+            "extras":{"vehicleId":vehicle_id,"vehicleName":name,"vehicleType":kind,"expectedWheelCount":expected_wheels}
+        },
         "scene":0,"scenes":[{"nodes":[part_node_count]}],
         "nodes":nodes,"meshes":meshes,"materials":materials,
         "buffers":[{"byteLength":len(binary)}],"bufferViews":views,"accessors":accessors,
