@@ -265,7 +265,7 @@ def make_glb(path: Path, vehicle_id: int, name: str, kind: str):
             kind in {"motorcycle", "cycle"} or any(x in lower_name for x in ("bike", "bicycle", "scooter"))
         )
         is_multi_axle = not is_tricycle and not is_bike and (
-            kind in {"bus", "truck", "commercial", "construction", "airport"}
+            kind in {"bus", "truck"}
             or any(x in lower_name for x in ("truck", "bus", "hauler", "long haul", "six wheel"))
         )
         if is_tricycle:
