@@ -164,9 +164,13 @@ internal class NearFieldCreatureWorld(
         val x = sample.x + cos(sample.yaw) * roadsideOffset
         val z = sample.z - sin(sample.yaw) * roadsideOffset
         val travelSign = cos(elapsedSeconds * motionSpeed + phase)
-        val facing = sample.yaw +
-            if (travelSign >= 0.0) 0.0 else kotlin.math.PI +
-            if (side > 0.0) -1.5708 else 1.5708
+        // Keep the heading calculation unambiguous: reverse the walk direction
+        // first, then turn toward the road from either roadside. Parentheses are
+        // important here because Kotlin's if-expression precedence can otherwise
+        // apply the roadside turn only while travelling backward.
+        val travelYaw = if (travelSign >= 0.0) 0.0 else kotlin.math.PI
+        val roadsideYaw = if (side > 0.0) -kotlin.math.PI / 2.0 else kotlin.math.PI / 2.0
+        val facing = sample.yaw + travelYaw + roadsideYaw
         val scale = when (species) {
             "horse" -> 1.18
             "wolf" -> 1.10
