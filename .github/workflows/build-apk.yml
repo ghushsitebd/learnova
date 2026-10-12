@@ -345,6 +345,19 @@ jobs:
 
           echo "Integrity validation passed."
 
+      - name: Install Android emulator host runtime libraries
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The hosted runner image does not always include PulseAudio's runtime
+          # library. The emulator exits before ADB can see emulator-5554 without it.
+          sudo apt-get update
+          sudo apt-get install -y libpulse0t64 || sudo apt-get install -y libpulse0
+          ldconfig -p | grep -E 'libpulse\.so\.0' >/dev/null || {
+            echo "::error::Android emulator host dependency libpulse.so.0 is unavailable."
+            exit 1
+          }
+
       - name: Enable KVM for deterministic emulator boot
         shell: bash
         run: |
