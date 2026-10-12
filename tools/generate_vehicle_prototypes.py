@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate scale-aware, distinct mobile-friendly GLB models for all 500 garage slots.
+"""Generate scale-aware GLB models for the first 100 launch garage slots.
 
 Four authored upstream GLBs are fetched first and are never overwritten. This
 script fills only missing slots with original procedural prototypes. Dimensions
@@ -17,7 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "app/src/main/java/com/learnova/app/VehicleCatalog.kt"
 OUT = ROOT / "app/src/main/assets/vehicles"
-VEHICLE_COUNT = 500
+VEHICLE_COUNT = 100
 JSON_CHUNK = 0x4E4F534A
 BIN_CHUNK = 0x004E4942
 
@@ -37,7 +37,9 @@ RE = re.compile(r'VehicleDefinition\(\s*(\d+)\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"\s*
 
 def dims(kind: str, name: str, vehicle_id: int):
     n = name.lower()
-    if kind == "bus" or "bus" in n:
+    if kind == "dinosaur_mount":
+        length, width, height, wheel = 3.8, 1.55, 2.35, 0.18
+    elif kind == "bus" or "bus" in n:
         length, width, height, wheel = 10.2, 2.50, 3.15, 0.48
     elif kind == "truck" or kind in {"commercial", "construction", "farm", "airport"}:
         length, width, height, wheel = 6.4, 2.35, 2.75, 0.48
@@ -140,6 +142,29 @@ def wheel(cx, cy, cz, radius, depth, segments=20):
     return p, n, ix
 
 
+def ellipsoid(cx, cy, cz, rx, ry, rz, segments=12, rings=8):
+    """Compact UV sphere with scaled normals for dinosaur bodies and riders."""
+    positions, normals, indices = [], [], []
+    for ring in range(rings + 1):
+        phi = math.pi * ring / rings
+        for segment in range(segments + 1):
+            theta = 2.0 * math.pi * segment / segments
+            nx = math.sin(phi) * math.cos(theta)
+            ny = math.cos(phi)
+            nz = math.sin(phi) * math.sin(theta)
+            positions.extend((cx + rx * nx, cy + ry * ny, cz + rz * nz))
+            vx, vy, vz = nx / max(rx, 1e-5), ny / max(ry, 1e-5), nz / max(rz, 1e-5)
+            norm = math.sqrt(vx*vx + vy*vy + vz*vz) or 1.0
+            normals.extend((vx/norm, vy/norm, vz/norm))
+    stride = segments + 1
+    for ring in range(rings):
+        for segment in range(segments):
+            a = ring * stride + segment
+            b = a + stride
+            indices.extend((a, b, a+1, a+1, b, b+1))
+    return positions, normals, indices
+
+
 def make_glb(path: Path, vehicle_id: int, name: str, kind: str):
     length, width, height, radius = dims(kind, name, vehicle_id)
     body_y = radius * 1.15 + max(0.28, height * 0.22)
@@ -153,96 +178,147 @@ def make_glb(path: Path, vehicle_id: int, name: str, kind: str):
         p, n, ix = shape
         parts.append((p, n, ix, material))
 
-    add(tapered_box(0, body_y, 0, body_len, body_h, body_w, 0.97, 0.96), 0)
-    # A bus/truck cargo body is taller; passenger vehicles get a sloped-looking
-    # smaller cabin placed on the chassis. Low-poly forms keep mobile draw cost low.
-    cabin_h = max(0.42, height - (body_y + body_h * 0.52) - radius * 0.65)
-    cabin_len = length * (0.38 if kind in {"bus", "truck", "commercial", "airport"} else 0.42)
-    cabin_w = width * (0.86 if kind in {"bus", "truck"} else 0.78)
-    cabin_x = -length * 0.04 if kind in {"bus", "truck", "van"} else -length * 0.02
-    cabin_y = body_y + body_h * 0.48 + cabin_h * 0.5
-    add(tapered_box(cabin_x, cabin_y, 0, cabin_len, cabin_h, cabin_w, 0.78, 0.86), 1)
-    # Individual glazing panes and pillars make vehicle classes readable at game distance.
-    glass_y = cabin_y + cabin_h * 0.06
-    glass_h = max(0.16, cabin_h * 0.46)
-    pane_count = 6 if kind == "bus" or "bus" in name.lower() else (4 if kind in {"van", "commercial"} else 2)
-    pane_gap = min(0.055, cabin_len * 0.035)
-    pane_len = (cabin_len * 0.76 - pane_gap * (pane_count - 1)) / pane_count
-    pane_start = cabin_x - (pane_len * pane_count + pane_gap * (pane_count - 1)) / 2 + pane_len / 2
-    for side in (-1, 1):
-        for pane in range(pane_count):
-            px = pane_start + pane * (pane_len + pane_gap)
-            add(cube(px, glass_y, side * (cabin_w/2 + 0.012), pane_len, glass_h, 0.022), 2)
-    # Broad angled-looking front windscreen, rear glass, and front/rear bumpers.
-    add(cube(length * 0.19, glass_y, 0, max(0.16, cabin_len*0.20), glass_h*0.82, cabin_w*0.90), 2)
-    add(cube(-length * 0.22, glass_y, 0, max(0.12, cabin_len*0.12), glass_h*0.70, cabin_w*0.84), 2)
-    add(cube(length*0.465, body_y - body_h*0.18, 0, 0.13, 0.13, width*0.98), 4)
-    add(cube(-length*0.465, body_y - body_h*0.18, 0, 0.12, 0.12, width*0.98), 4)
-
-    # Wheels: two inline wheels for bikes; four road wheels for cars and utility vehicles.
-    is_bike = kind in {"motorcycle", "cycle"} or any(x in name.lower() for x in ("bike", "bicycle", "tricycle", "scooter"))
-    wheel_xs = (-length * 0.36, length * 0.36) if is_bike else (-length * 0.32, length * 0.32)
-    wheel_radius = radius
-    wheel_tracks = (0,) if is_bike else (-width * 0.46, width * 0.46)
-    for x in wheel_xs:
-        for z in wheel_tracks:
-            # Farm tractors use visibly larger rear drive wheels; heavy vehicles
-            # get a little more tire mass without changing their catalog scale.
-            tire_radius = wheel_radius
-            if kind == "farm" and x < 0:
-                tire_radius *= 1.32
-            elif kind in {"truck", "bus", "construction"}:
-                tire_radius *= 1.06
-            add(wheel(x, tire_radius, z, tire_radius, max(0.12, width*0.095), segments=20), 3)
-            add(wheel(x, tire_radius, z + (0.008 if z >= 0 else -0.008), tire_radius*0.48,
-                      max(0.125, width*0.098), segments=20), 4)
-
-    # Grille, layered lamp clusters, mirrors, door handles, side sill and trim.
-    add(cube(length*0.462, body_y + body_h*0.02, 0, 0.035, body_h*0.30, width*0.28), 4)
-    for side in (-1, 1):
-        add(cube(cabin_x + cabin_len*0.24, cabin_y - cabin_h*0.02,
-                 side*(cabin_w/2 + 0.075), 0.16, 0.075, 0.13), 4)
-        add(cube(cabin_x + cabin_len*0.22, cabin_y + cabin_h*0.02,
-                 side*(cabin_w/2 + 0.14), 0.10, 0.075, 0.10), 2)
-        if not is_bike:
-            add(cube(0, body_y - body_h*0.36, side*(width*0.475), body_len*0.72, 0.055, 0.035), 4)
-            # Door handles provide a small but useful realism cue in close-up views.
-            for door_x in (-length*0.08, length*0.12):
-                add(cube(door_x, body_y + body_h*0.22, side*(body_w*0.475 + 0.012), 0.12, 0.025, 0.018), 4)
-
-    # Distinct utility silhouettes: pickup bed, roof rails, and tall commercial fronts.
-    if "pickup" in name.lower() or "farm" in name.lower():
-        add(cube(-length*0.25, body_y + body_h*0.62, 0, length*0.27, 0.10, body_w*0.80), 1)
+    if kind == "dinosaur_mount":
+        # Distinct prehistoric mounts: body, four legs, tail, head, saddle and seated rider.
+        lower_name = name.lower()
+        paint = {
+            "trex": (0.36, 0.49, 0.22, 1.0),
+            "triceratops": (0.56, 0.39, 0.22, 1.0),
+            "stegosaurus": (0.20, 0.48, 0.40, 1.0),
+            "parasaurolophus": (0.70, 0.47, 0.16, 1.0),
+        }.get("trex" if "trex" in lower_name else
+              "triceratops" if "triceratops" in lower_name else
+              "stegosaurus" if "stegosaurus" in lower_name else "parasaurolophus",
+              PALETTE[2])
+        add(ellipsoid(-0.08, 0.98, 0, 0.88, 0.56, 0.57), 0)
+        add(ellipsoid(-0.02, 0.69, 0, 0.67, 0.24, 0.43), 1)
+        add(ellipsoid(-0.54, 1.05, 0, 0.48, 0.49, 0.50), 0)
+        for lx in (-0.52, 0.43):
+            for side in (-1, 1):
+                add(ellipsoid(lx, 0.43, side*0.36, 0.22, 0.43, 0.20), 0)
+                add(ellipsoid(lx + 0.05, 0.13, side*0.39, 0.27, 0.13, 0.23), 1)
+        add(ellipsoid(-1.08, 0.97, 0, 0.55, 0.29, 0.30), 0)
+        add(ellipsoid(-1.52, 0.91, 0, 0.43, 0.18, 0.19), 0)
+        add(ellipsoid(0.61, 1.26, 0, 0.31, 0.42, 0.34), 0)
+        add(ellipsoid(0.88, 1.51, 0, 0.39, 0.30, 0.34), 0)
+        add(ellipsoid(1.14, 1.39, 0, 0.32, 0.18, 0.28), 1)
         for side in (-1, 1):
-            add(cube(-length*0.25, body_y + body_h*0.83, side*body_w*0.39,
-                     length*0.28, 0.34, 0.055), 0)
-    if kind in {"suv", "offroad", "rescue", "safari"} or any(x in name.lower() for x in ("jeep", "safari", "rescue")):
+            add(ellipsoid(0.92, 1.59, side*0.29, 0.065, 0.07, 0.045, 10, 6), 9)
+        if "triceratops" in lower_name:
+            add(ellipsoid(0.76, 1.76, 0, 0.34, 0.13, 0.30), 1)
+            for side in (-1, 1):
+                add(tapered_box(0.92, 1.83, side*0.18, 0.10, 0.29, 0.10, 0.28, 0.28), 1)
+                add(tapered_box(1.23, 1.49, side*0.13, 0.09, 0.20, 0.09, 0.25, 0.25), 1)
+        elif "stegosaurus" in lower_name:
+            for plate_index, px in enumerate((-0.72, -0.43, -0.14, 0.15, 0.42)):
+                add(ellipsoid(px, 1.53 + (plate_index % 2)*0.05, 0, 0.14, 0.29, 0.07), 1)
+            add(ellipsoid(1.05, 1.49, 0, 0.28, 0.18, 0.26), 0)
+        elif "parasaurolophus" in lower_name:
+            add(ellipsoid(0.83, 1.80, 0, 0.18, 0.32, 0.15), 1)
+            add(ellipsoid(1.02, 1.98, 0, 0.30, 0.11, 0.12), 1)
+        else:
+            for side in (-1, 1):
+                add(ellipsoid(0.47, 0.96, side*0.38, 0.12, 0.25, 0.11), 0)
+                add(ellipsoid(0.55, 0.76, side*0.39, 0.12, 0.09, 0.10), 1)
+        add(ellipsoid(-0.10, 1.48, 0, 0.48, 0.13, 0.48), 4)
+        add(ellipsoid(-0.08, 1.68, 0, 0.18, 0.25, 0.17), 8)
+        add(ellipsoid(-0.02, 1.99, 0, 0.16, 0.17, 0.16), 7)
+        add(ellipsoid(-0.02, 2.14, 0, 0.17, 0.065, 0.17), 8)
         for side in (-1, 1):
-            add(cube(cabin_x, cabin_y + cabin_h*0.52, side*cabin_w*0.43,
-                     cabin_len*0.92, 0.045, 0.045), 4)
-    # Functional class cues: emergency beacons/stripes, taxi roof sign,
-    # bus entrance doors, and exposed utility exhausts improve silhouette reads.
-    lower_name = name.lower()
-    if kind == "emergency" or any(word in lower_name for word in ("ambulance", "police", "fire", "rescue")):
-        beacon_color = 5 if ("ambulance" in lower_name or "police" in lower_name) else 6
-        add(cube(cabin_x, cabin_y + cabin_h*0.56, 0, cabin_len*0.42, 0.075, cabin_w*0.48), beacon_color)
+            add(ellipsoid(0.04, 1.48, side*0.28, 0.20, 0.11, 0.10), 8)
+            add(ellipsoid(0.11, 1.67, side*0.19, 0.08, 0.20, 0.08), 7)
+    else:
+        add(tapered_box(0, body_y, 0, body_len, body_h, body_w, 0.97, 0.96), 0)
+        # A bus/truck cargo body is taller; passenger vehicles get a sloped-looking
+        # smaller cabin placed on the chassis. Low-poly forms keep mobile draw cost low.
+        cabin_h = max(0.42, height - (body_y + body_h * 0.52) - radius * 0.65)
+        cabin_len = length * (0.38 if kind in {"bus", "truck", "commercial", "airport"} else 0.42)
+        cabin_w = width * (0.86 if kind in {"bus", "truck"} else 0.78)
+        cabin_x = -length * 0.04 if kind in {"bus", "truck", "van"} else -length * 0.02
+        cabin_y = body_y + body_h * 0.48 + cabin_h * 0.5
+        add(tapered_box(cabin_x, cabin_y, 0, cabin_len, cabin_h, cabin_w, 0.78, 0.86), 1)
+        # Individual glazing panes and pillars make vehicle classes readable at game distance.
+        glass_y = cabin_y + cabin_h * 0.06
+        glass_h = max(0.16, cabin_h * 0.46)
+        pane_count = 6 if kind == "bus" or "bus" in name.lower() else (4 if kind in {"van", "commercial"} else 2)
+        pane_gap = min(0.055, cabin_len * 0.035)
+        pane_len = (cabin_len * 0.76 - pane_gap * (pane_count - 1)) / pane_count
+        pane_start = cabin_x - (pane_len * pane_count + pane_gap * (pane_count - 1)) / 2 + pane_len / 2
         for side in (-1, 1):
-            add(cube(length*0.02, body_y + body_h*0.04, side*(body_w*0.49),
-                     body_len*0.48, 0.11, 0.025), 5 if "police" in lower_name else 6)
-    if "taxi" in lower_name:
-        add(tapered_box(cabin_x, cabin_y + cabin_h*0.60, 0, 0.28, 0.11, 0.22, 0.92, 0.92), 5)
-    if kind == "bus" or "bus" in lower_name:
-        add(cube(length*0.12, body_y + body_h*0.05, width*0.478, 0.075, body_h*0.72, 0.025), 4)
-    if kind in {"farm", "construction"} or any(word in lower_name for word in ("tractor", "loader", "hauler")):
-        add(cube(-length*0.16, cabin_y + cabin_h*0.40, -width*0.30, 0.075, cabin_h*0.95, 0.075), 4)
-        add(cube(-length*0.18, cabin_y + cabin_h*0.88, -width*0.30, 0.28, 0.07, 0.07), 4)
-
-    # Headlights, rear lamps and indicator blocks.
-    for z in (-width*0.34, width*0.34):
-        add(cube(length*0.458, body_y + body_h*0.18, z, 0.075, 0.12, 0.14), 5)
-        add(cube(length*0.462, body_y + body_h*0.05, z, 0.035, 0.055, 0.09), 4)
-        add(cube(-length*0.458, body_y + body_h*0.18, z, 0.07, 0.11, 0.13), 6)
-
+            for pane in range(pane_count):
+                px = pane_start + pane * (pane_len + pane_gap)
+                add(cube(px, glass_y, side * (cabin_w/2 + 0.012), pane_len, glass_h, 0.022), 2)
+        # Broad angled-looking front windscreen, rear glass, and front/rear bumpers.
+        add(cube(length * 0.19, glass_y, 0, max(0.16, cabin_len*0.20), glass_h*0.82, cabin_w*0.90), 2)
+        add(cube(-length * 0.22, glass_y, 0, max(0.12, cabin_len*0.12), glass_h*0.70, cabin_w*0.84), 2)
+        add(cube(length*0.465, body_y - body_h*0.18, 0, 0.13, 0.13, width*0.98), 4)
+        add(cube(-length*0.465, body_y - body_h*0.18, 0, 0.12, 0.12, width*0.98), 4)
+    
+        # Wheels: two inline wheels for bikes; four road wheels for cars and utility vehicles.
+        is_bike = kind in {"motorcycle", "cycle"} or any(x in name.lower() for x in ("bike", "bicycle", "tricycle", "scooter"))
+        wheel_xs = (-length * 0.36, length * 0.36) if is_bike else (-length * 0.32, length * 0.32)
+        wheel_radius = radius
+        wheel_tracks = (0,) if is_bike else (-width * 0.46, width * 0.46)
+        for x in wheel_xs:
+            for z in wheel_tracks:
+                # Farm tractors use visibly larger rear drive wheels; heavy vehicles
+                # get a little more tire mass without changing their catalog scale.
+                tire_radius = wheel_radius
+                if kind == "farm" and x < 0:
+                    tire_radius *= 1.32
+                elif kind in {"truck", "bus", "construction"}:
+                    tire_radius *= 1.06
+                add(wheel(x, tire_radius, z, tire_radius, max(0.12, width*0.095), segments=20), 3)
+                add(wheel(x, tire_radius, z + (0.008 if z >= 0 else -0.008), tire_radius*0.48,
+                          max(0.125, width*0.098), segments=20), 4)
+    
+        # Grille, layered lamp clusters, mirrors, door handles, side sill and trim.
+        add(cube(length*0.462, body_y + body_h*0.02, 0, 0.035, body_h*0.30, width*0.28), 4)
+        for side in (-1, 1):
+            add(cube(cabin_x + cabin_len*0.24, cabin_y - cabin_h*0.02,
+                     side*(cabin_w/2 + 0.075), 0.16, 0.075, 0.13), 4)
+            add(cube(cabin_x + cabin_len*0.22, cabin_y + cabin_h*0.02,
+                     side*(cabin_w/2 + 0.14), 0.10, 0.075, 0.10), 2)
+            if not is_bike:
+                add(cube(0, body_y - body_h*0.36, side*(width*0.475), body_len*0.72, 0.055, 0.035), 4)
+                # Door handles provide a small but useful realism cue in close-up views.
+                for door_x in (-length*0.08, length*0.12):
+                    add(cube(door_x, body_y + body_h*0.22, side*(body_w*0.475 + 0.012), 0.12, 0.025, 0.018), 4)
+    
+        # Distinct utility silhouettes: pickup bed, roof rails, and tall commercial fronts.
+        if "pickup" in name.lower() or "farm" in name.lower():
+            add(cube(-length*0.25, body_y + body_h*0.62, 0, length*0.27, 0.10, body_w*0.80), 1)
+            for side in (-1, 1):
+                add(cube(-length*0.25, body_y + body_h*0.83, side*body_w*0.39,
+                         length*0.28, 0.34, 0.055), 0)
+        if kind in {"suv", "offroad", "rescue", "safari"} or any(x in name.lower() for x in ("jeep", "safari", "rescue")):
+            for side in (-1, 1):
+                add(cube(cabin_x, cabin_y + cabin_h*0.52, side*cabin_w*0.43,
+                         cabin_len*0.92, 0.045, 0.045), 4)
+        # Functional class cues: emergency beacons/stripes, taxi roof sign,
+        # bus entrance doors, and exposed utility exhausts improve silhouette reads.
+        lower_name = name.lower()
+        if kind == "emergency" or any(word in lower_name for word in ("ambulance", "police", "fire", "rescue")):
+            beacon_color = 5 if ("ambulance" in lower_name or "police" in lower_name) else 6
+            add(cube(cabin_x, cabin_y + cabin_h*0.56, 0, cabin_len*0.42, 0.075, cabin_w*0.48), beacon_color)
+            for side in (-1, 1):
+                add(cube(length*0.02, body_y + body_h*0.04, side*(body_w*0.49),
+                         body_len*0.48, 0.11, 0.025), 5 if "police" in lower_name else 6)
+        if "taxi" in lower_name:
+            add(tapered_box(cabin_x, cabin_y + cabin_h*0.60, 0, 0.28, 0.11, 0.22, 0.92, 0.92), 5)
+        if kind == "bus" or "bus" in lower_name:
+            add(cube(length*0.12, body_y + body_h*0.05, width*0.478, 0.075, body_h*0.72, 0.025), 4)
+        if kind in {"farm", "construction"} or any(word in lower_name for word in ("tractor", "loader", "hauler")):
+            add(cube(-length*0.16, cabin_y + cabin_h*0.40, -width*0.30, 0.075, cabin_h*0.95, 0.075), 4)
+            add(cube(-length*0.18, cabin_y + cabin_h*0.88, -width*0.30, 0.28, 0.07, 0.07), 4)
+    
+        # Headlights, rear lamps and indicator blocks.
+        for z in (-width*0.34, width*0.34):
+            add(cube(length*0.458, body_y + body_h*0.18, z, 0.075, 0.12, 0.14), 5)
+            add(cube(length*0.462, body_y + body_h*0.05, z, 0.035, 0.055, 0.09), 4)
+            add(cube(-length*0.458, body_y + body_h*0.18, z, 0.07, 0.11, 0.13), 6)
+    
+    
     materials = [
         {"name":"paint", "pbrMetallicRoughness":{"baseColorFactor":paint,"metallicFactor":0.28,"roughnessFactor":0.32}},
         {"name":"roof", "pbrMetallicRoughness":{"baseColorFactor":[paint[0]*0.82,paint[1]*0.82,paint[2]*0.82,1],"metallicFactor":0.2,"roughnessFactor":0.4}},
@@ -251,6 +327,9 @@ def make_glb(path: Path, vehicle_id: int, name: str, kind: str):
         {"name":"wheel_hub", "pbrMetallicRoughness":{"baseColorFactor":TRIM,"metallicFactor":0.72,"roughnessFactor":0.28}},
         {"name":"headlight", "pbrMetallicRoughness":{"baseColorFactor":LIGHT,"metallicFactor":0.05,"roughnessFactor":0.2}},
         {"name":"tail_light", "pbrMetallicRoughness":{"baseColorFactor":[0.85,0.025,0.02,1],"metallicFactor":0.0,"roughnessFactor":0.25}},
+        {"name":"explorer_skin", "pbrMetallicRoughness":{"baseColorFactor":[0.82,0.57,0.36,1],"metallicFactor":0.0,"roughnessFactor":0.8}},
+        {"name":"explorer_clothes", "pbrMetallicRoughness":{"baseColorFactor":[0.96,0.62,0.10,1],"metallicFactor":0.0,"roughnessFactor":0.7}},
+        {"name":"dinosaur_eye", "pbrMetallicRoughness":{"baseColorFactor":[0.025,0.018,0.012,1],"metallicFactor":0.0,"roughnessFactor":0.45}},
     ]
     binary = bytearray()
     views, accessors, meshes, nodes = [], [], [], []
@@ -307,7 +386,7 @@ def main():
     made, preserved = 0, 0
     for vehicle_id, name, kind, key in entries:
         target = OUT / f"{key}.glb"
-        if target.is_file() and target.stat().st_size > 20:
+        if target.is_file() and target.stat().st_size > 20 and kind != "dinosaur_mount":
             preserved += 1
             continue
         length, width, height, size = make_glb(target, vehicle_id, name, kind)
