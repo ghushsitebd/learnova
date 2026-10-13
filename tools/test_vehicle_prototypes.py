@@ -88,6 +88,42 @@ class VehiclePrototypeTests(unittest.TestCase):
                     self.assertGreaterEqual(pbr.get("roughnessFactor", -1), 0)
                     self.assertLessEqual(pbr.get("roughnessFactor", 2), 1)
 
+    def test_complete_launch_batch_catalog_and_generated_models(self):
+        """Exercise all 100 launch slots, not only the four dinosaur mounts."""
+        catalog_text = GENERATOR.CATALOG.read_text(encoding="utf-8")
+        entries = [
+            (int(vehicle_id), name, kind, key)
+            for vehicle_id, name, kind, key in GENERATOR.RE.findall(catalog_text)
+            if int(vehicle_id) <= GENERATOR.VEHICLE_COUNT
+        ]
+        self.assertEqual(len(entries), 100, "launch catalog must define exactly 100 initial slots")
+        self.assertEqual([entry[0] for entry in entries], list(range(1, 101)))
+        self.assertEqual(len({entry[3] for entry in entries}), 100, "asset keys must be unique")
+
+        with tempfile.TemporaryDirectory(prefix="learnova-launch-batch-") as directory:
+            output = Path(directory)
+            digests = set()
+            for vehicle_id, name, kind, key in entries:
+                path = output / f"{key}.glb"
+                GENERATOR.make_glb(path, vehicle_id, name, kind)
+                document, binary = read_glb(path)
+                extras = document["asset"].get("extras", {})
+                self.assertEqual(extras.get("vehicleId"), vehicle_id, key)
+                self.assertEqual(extras.get("vehicleName"), name, key)
+                self.assertEqual(extras.get("vehicleType"), kind, key)
+                self.assertGreater(len(binary), 1024, key)
+                digest = hashlib.sha256(path.read_bytes()).digest()
+                self.assertNotIn(digest, digests, f"duplicate generated model: {key}")
+                digests.add(digest)
+
+                wheel_count = extras.get("wheelMeshCount")
+                self.assertEqual(wheel_count, extras.get("expectedWheelCount"), key)
+                if kind == "dinosaur_mount":
+                    self.assertEqual(wheel_count, 0, key)
+                    self.assertGreaterEqual(len(document.get("meshes", [])), 20, key)
+                else:
+                    self.assertGreater(wheel_count, 0, key)
+
     def test_vehicle_dimensions_stay_positive_and_plausible(self):
         for vehicle_id, name, kind in DINOSAURS:
             length, width, height, wheel = GENERATOR.dims(kind, name, vehicle_id)
