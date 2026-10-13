@@ -90,11 +90,16 @@ internal class LearnovaAdaptiveQuality {
  * simply keep NaN and the frame-time governor remains authoritative.
  */
 internal class LearnovaHeadroomMonitor(context: Context) {
-    private val executor: ScheduledExecutorService =
+    // The renderer view can detach and reattach during Activity/window lifecycle
+    // changes. Keep executor creation restartable instead of retaining a permanently
+    // shut-down executor after the first detach.
+    private var executor: ScheduledExecutorService = newExecutor()
+    private val running = AtomicBoolean(false)
+
+    private fun newExecutor(): ScheduledExecutorService =
         Executors.newSingleThreadScheduledExecutor { runnable ->
             Thread(runnable, "LearnovaHeadroom").apply { isDaemon = true }
         }
-    private val running = AtomicBoolean(false)
     private val cpu = AtomicReference(Float.NaN)
     private val gpu = AtomicReference(Float.NaN)
 
@@ -104,17 +109,22 @@ internal class LearnovaHeadroomMonitor(context: Context) {
         } else null
 
     @SuppressLint("NewApi")
+    @Synchronized
     fun start() {
         val manager = health ?: return
         if (!running.compareAndSet(false, true)) return
+        if (executor.isShutdown || executor.isTerminated) {
+            executor = newExecutor()
+        }
+        val activeExecutor = executor
 
-        executor.execute {
+        activeExecutor.execute {
             poll(manager)
             val interval = maxOf(
                 safeInterval(manager.getCpuHeadroomMinIntervalMillis()),
                 safeInterval(manager.getGpuHeadroomMinIntervalMillis())
             )
-            executor.scheduleAtFixedRate(
+            activeExecutor.scheduleAtFixedRate(
                 { poll(manager) },
                 interval,
                 interval,
@@ -126,6 +136,7 @@ internal class LearnovaHeadroomMonitor(context: Context) {
     fun cpuHeadroom(): Float = cpu.get()
     fun gpuHeadroom(): Float = gpu.get()
 
+    @Synchronized
     fun stop() {
         running.set(false)
         executor.shutdownNow()
