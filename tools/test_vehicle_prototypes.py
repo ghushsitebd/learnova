@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+"""Regression tests for deterministic launch-batch vehicle and dinosaur GLBs."""
+
+from __future__ import annotations
+
+import hashlib
+import importlib.util
+import json
+import struct
+import tempfile
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+GENERATOR_PATH = ROOT / "tools" / "generate_vehicle_prototypes.py"
+SPEC = importlib.util.spec_from_file_location("learnova_vehicle_generator", GENERATOR_PATH)
+GENERATOR = importlib.util.module_from_spec(SPEC)
+assert SPEC and SPEC.loader
+SPEC.loader.exec_module(GENERATOR)
+
+DINOSAURS = (
+    (97, "T-Rex Explorer Mount", "dinosaur_mount"),
+    (98, "Triceratops Trail Mount", "dinosaur_mount"),
+    (99, "Stegosaurus Forest Mount", "dinosaur_mount"),
+    (100, "Parasaurolophus Adventure Mount", "dinosaur_mount"),
+)
+
+
+def read_glb(path: Path) -> tuple[dict, bytes]:
+    raw = path.read_bytes()
+    if len(raw) < 20 or raw[:4] != b"glTF":
+        raise AssertionError(f"{path.name}: missing GLB header")
+    version, declared_length = struct.unpack_from("<II", raw, 4)
+    if version != 2 or declared_length != len(raw):
+        raise AssertionError(f"{path.name}: invalid GLB version/length")
+    json_length, json_type = struct.unpack_from("<II", raw, 12)
+    if json_type != GENERATOR.JSON_CHUNK:
+        raise AssertionError(f"{path.name}: JSON chunk is not first")
+    json_start = 20
+    document = json.loads(raw[json_start:json_start + json_length].decode("utf-8").rstrip(" \\t\\r\\n\\0"))
+    binary_header = json_start + json_length
+    if binary_header + 8 > len(raw):
+        raise AssertionError(f"{path.name}: missing binary chunk header")
+    binary_length, binary_type = struct.unpack_from("<II", raw, binary_header)
+    binary_start = binary_header + 8
+    if binary_type != GENERATOR.BIN_CHUNK or binary_start + binary_length != len(raw):
+        raise AssertionError(f"{path.name}: invalid binary chunk boundary")
+    return document, raw[binary_start:binary_start + binary_length]
+
+
+class VehiclePrototypeTests(unittest.TestCase):
+    def test_first_batch_dinosaur_mounts_are_distinct_and_rider_ready(self):
+        with tempfile.TemporaryDirectory(prefix="learnova-dino-test-") as directory:
+            output = Path(directory)
+            hashes = set()
+            for vehicle_id, name, kind in DINOSAURS:
+                first = output / f"{vehicle_id:03d}-first.glb"
+                second = output / f"{vehicle_id:03d}-repeat.glb"
+                GENERATOR.make_glb(first, vehicle_id, name, kind)
+                GENERATOR.make_glb(second, vehicle_id, name, kind)
+                first_bytes = first.read_bytes()
+                self.assertEqual(hashlib.sha256(first_bytes).digest(), hashlib.sha256(second.read_bytes()).digest(),
+                                 f"{name} generation must be deterministic")
+                digest = hashlib.sha256(first_bytes).hexdigest()
+                self.assertNotIn(digest, hashes, f"{name} must not duplicate another mount")
+                hashes.add(digest)
+
+                document, binary = read_glb(first)
+                extras = document["asset"].get("extras", {})
+                self.assertEqual(document["asset"]["version"], "2.0")
+                self.assertEqual(extras.get("vehicleId"), vehicle_id)
+                self.assertEqual(extras.get("vehicleType"), "dinosaur_mount")
+                self.assertEqual(extras.get("expectedWheelCount"), 0)
+                self.assertEqual(extras.get("wheelMeshCount"), 0)
+                self.assertGreaterEqual(len(document.get("meshes", [])), 20)
+                self.assertGreaterEqual(len(document.get("nodes", [])), 21)
+                self.assertEqual(document["scenes"][0]["nodes"], [len(document["nodes"]) - 1])
+                self.assertEqual(document["nodes"][-1]["name"], "VehicleRoot")
+                self.assertEqual(len(document["nodes"][-1]["children"]), len(document["nodes"]) - 1)
+                self.assertGreater(len(binary), 1024)
+
+                materials = document.get("materials", [])
+                self.assertGreaterEqual(len(materials), 10)
+                for material in materials:
+                    pbr = material.get("pbrMetallicRoughness")
+                    self.assertIsInstance(pbr, dict)
+                    self.assertEqual(len(pbr.get("baseColorFactor", [])), 4)
+                    self.assertGreaterEqual(pbr.get("roughnessFactor", -1), 0)
+                    self.assertLessEqual(pbr.get("roughnessFactor", 2), 1)
+
+    def test_vehicle_dimensions_stay_positive_and_plausible(self):
+        for vehicle_id, name, kind in DINOSAURS:
+            length, width, height, wheel = GENERATOR.dims(kind, name, vehicle_id)
+            self.assertGreater(length, 0)
+            self.assertGreater(width, 0)
+            self.assertGreater(height, 0)
+            self.assertEqual(wheel, 0.18)
+            self.assertLess(length, 6)
+            self.assertLess(width, 3)
+            self.assertLess(height, 4)
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
