@@ -124,6 +124,17 @@ class VehiclePrototypeTests(unittest.TestCase):
                 else:
                     self.assertGreater(wheel_count, 0, key)
 
+    def test_garage_is_limited_to_the_first_100_launch_vehicles(self):
+        """Future catalog entries must not leak into the 100-vehicle launch garage."""
+        garage_path = ROOT / "app" / "src" / "main" / "java" / "com" / "learnova" / "app" / "VehicleGarageView.kt"
+        garage = garage_path.read_text(encoding="utf-8")
+        self.assertIn("private val launchVehicles = VehicleCatalog.all.take(100)", garage)
+        self.assertIn("ceil(launchVehicles.size / pageSize.toDouble())", garage)
+        self.assertIn("drawCard(c, launchVehicles[index]", garage)
+        self.assertIn("onSelected(launchVehicles[selectedId - 1])", garage)
+        self.assertNotIn("VehicleCatalog.all[index]", garage)
+        self.assertNotIn("VehicleCatalog.all[selectedId - 1]", garage)
+
     def test_vehicle_dimensions_stay_positive_and_plausible(self):
         for vehicle_id, name, kind in DINOSAURS:
             length, width, height, wheel = GENERATOR.dims(kind, name, vehicle_id)
