@@ -27,7 +27,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: pip
 
       - name: Compile all project tooling
         run: python -m compileall -q tools
@@ -80,7 +79,7 @@ jobs:
         run: |
           set -euo pipefail
           gradle :macrobenchmark:assembleBenchmark --no-daemon --stacktrace
-          gradle :baseline-profile:assembleBenchmark --no-daemon --stacktrace
+          gradle :baseline-profile:assembleDebug --no-daemon --stacktrace
 
       - name: Run Android lint
         run: gradle :app:lintDebug --no-daemon --stacktrace
