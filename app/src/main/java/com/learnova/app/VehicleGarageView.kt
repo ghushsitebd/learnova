@@ -25,10 +25,13 @@ internal class VehicleGarageView(
         typeface = Typeface.create("sans-serif", Typeface.BOLD)
     }
 
+    // Keep the initial playable garage aligned with the requested 100-vehicle launch batch.
+    // The broader catalog may contain future entries, but they must not leak into this launch UI.
+    private val launchVehicles = VehicleCatalog.all.take(100)
     private var page = 0
     private var selectedId = 1
     private val pageSize = 12
-    private val totalPages = ceil(VehicleCatalog.all.size / pageSize.toDouble()).toInt()
+    private val totalPages = ceil(launchVehicles.size / pageSize.toDouble()).toInt()
 
     init {
         setBackgroundColor(Color.rgb(10, 18, 28))
@@ -36,7 +39,7 @@ internal class VehicleGarageView(
     }
 
     fun setSelected(id: Int) {
-        selectedId = id.coerceIn(1, VehicleCatalog.all.size)
+        selectedId = id.coerceIn(1, launchVehicles.size)
         page = (selectedId - 1) / pageSize
         invalidate()
     }
@@ -72,13 +75,13 @@ internal class VehicleGarageView(
 
         for (slot in 0 until pageSize) {
             val index = page * pageSize + slot
-            if (index >= VehicleCatalog.all.size) break
+            if (index >= launchVehicles.size) break
 
             val row = slot / cols
             val col = slot % cols
             val left = gap + col * (cardW + gap)
             val topY = top + gap + row * (cardH + gap)
-            drawCard(c, VehicleCatalog.all[index], left, topY, cardW, cardH)
+            drawCard(c, launchVehicles[index], left, topY, cardW, cardH)
         }
 
         drawButton(c, 18f, h - 58f, 120f, 42f, "CLOSE", false)
@@ -169,7 +172,7 @@ internal class VehicleGarageView(
             when {
                 e.x < 150f -> onClosed()
                 e.x > w - 155f -> {
-                    onSelected(VehicleCatalog.all[selectedId - 1])
+                    onSelected(launchVehicles[selectedId - 1])
                     onClosed()
                 }
                 else -> {
@@ -192,8 +195,8 @@ internal class VehicleGarageView(
         if (col !in 0 until cols || row !in 0..3) return true
 
         val index = page * pageSize + row * cols + col
-        if (index in VehicleCatalog.all.indices) {
-            selectedId = VehicleCatalog.all[index].id
+        if (index in launchVehicles.indices) {
+            selectedId = launchVehicles[index].id
             invalidate()
         }
         return true
