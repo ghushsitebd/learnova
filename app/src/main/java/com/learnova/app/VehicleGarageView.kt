@@ -30,8 +30,10 @@ internal class VehicleGarageView(
     private val launchVehicles = VehicleCatalog.all.take(100)
     private var page = 0
     private var selectedId = 1
-    private val pageSize = 12
-    private val totalPages = ceil(launchVehicles.size / pageSize.toDouble()).toInt()
+
+    private fun pageSizeForWidth(width: Float): Int = (if (width >= 900f) 4 else 3) * 4
+    private fun totalPagesForWidth(width: Float): Int =
+        ceil(launchVehicles.size / pageSizeForWidth(width).toDouble()).toInt().coerceAtLeast(1)
 
     init {
         setBackgroundColor(Color.rgb(10, 18, 28))
@@ -40,7 +42,7 @@ internal class VehicleGarageView(
 
     fun setSelected(id: Int) {
         selectedId = id.coerceIn(1, launchVehicles.size)
-        page = (selectedId - 1) / pageSize
+        page = (selectedId - 1) / pageSizeForWidth(width.toFloat())
         invalidate()
     }
 
@@ -62,6 +64,9 @@ internal class VehicleGarageView(
         title.color = Color.rgb(180, 215, 232)
         c.drawText("100 vehicles • All available", 24f, 68f, title)
 
+        val pageSize = pageSizeForWidth(w)
+        val totalPages = totalPagesForWidth(w)
+        page = page.coerceIn(0, totalPages - 1)
         title.textAlign = Paint.Align.RIGHT
         c.drawText("${page + 1} / $totalPages", w - 24f, 42f, title)
 
@@ -176,7 +181,7 @@ internal class VehicleGarageView(
                     onClosed()
                 }
                 else -> {
-                    page = (page + 1) % totalPages
+                    page = (page + 1) % totalPagesForWidth(w)
                     invalidate()
                 }
             }
@@ -185,6 +190,7 @@ internal class VehicleGarageView(
 
         val gap = 12f
         val cols = if (w >= 900f) 4 else 3
+        val pageSize = pageSizeForWidth(w)
         val top = 88f
         val bottom = 72f
         val cardW = (w - gap * (cols + 1)) / cols
