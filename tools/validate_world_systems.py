@@ -23,6 +23,7 @@ FILES = {
     "creatures": APP / "NearFieldCreatureWorld.kt",
     "creature_controller": APP / "CreatureGlbController.kt",
     "railway": APP / "DistantRailwayWorld.kt",
+    "headroom": APP / "LearnovaAdaptiveQuality.kt",
 }
 
 errors = []
@@ -70,6 +71,10 @@ require("creature_controller", r"engine\.transformManager\.setTransform\(transfo
 require("creature_controller", r"fun animate\(\)", "creature skeletal animation must have a render-cadence update path")
 require("creatures", r"creatures\[index\]\.animate\(\).*?if \(now - lastUpdateNanos < UPDATE_NANOS\) return", "animate wildlife every render update while throttling world placement", flags=re.S)
 require("railway", r"class DistantRailwayWorld", "distant railway world layer missing")
+require("headroom", r"private var executor: ScheduledExecutorService = newExecutor\(\)", "headroom executor must be recreatable after lifecycle shutdown")
+require("headroom", r"if \(executor\.isShutdown \|\| executor\.isTerminated\)\s*\{\s*executor = newExecutor\(\)\s*\}", "headroom monitor must restart after view detach/reattach")
+require("headroom", r"@Synchronized\s*fun start\(\)", "headroom monitor start must serialize lifecycle calls")
+require("headroom", r"@Synchronized\s*fun stop\(\)", "headroom monitor stop must serialize lifecycle calls")
 
 if errors:
     for error in errors:
