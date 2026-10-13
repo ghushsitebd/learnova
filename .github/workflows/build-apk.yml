@@ -138,7 +138,7 @@ jobs:
       - name: Regression-test deterministic vehicle and dinosaur model generation
         run: |
           set -euo pipefail
-          python3 -m unittest tools/test_vehicle_prototypes.py -v
+          python3 tools/test_vehicle_prototypes.py
 
       # The launch batch is intentionally 100 dedicated models; the remaining catalog uses verified class fallbacks.
       - name: Generate dedicated vehicle models for first 100 launch vehicles
