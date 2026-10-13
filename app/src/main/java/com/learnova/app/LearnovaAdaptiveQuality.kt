@@ -1,5 +1,6 @@
 package com.learnova.app
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import android.os.CpuHeadroomParams
@@ -102,6 +103,7 @@ internal class LearnovaHeadroomMonitor(context: Context) {
             context.getSystemService(Context.SYSTEM_HEALTH_SERVICE) as? SystemHealthManager
         } else null
 
+    @SuppressLint("NewApi")
     fun start() {
         val manager = health ?: return
         if (!running.compareAndSet(false, true)) return
