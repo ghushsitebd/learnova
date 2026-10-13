@@ -1,5 +1,6 @@
 package com.learnova.app
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import android.os.CpuHeadroomParams
@@ -88,6 +89,7 @@ internal class LearnovaAdaptiveQuality {
  * headroom queries as potentially taking more than 1ms. Unsupported devices
  * simply keep NaN and the frame-time governor remains authoritative.
  */
+@SuppressLint("NewApi") // Android 16-only APIs are reachable only when the API-36 service is available.
 internal class LearnovaHeadroomMonitor(context: Context) {
     private val executor: ScheduledExecutorService =
         Executors.newSingleThreadScheduledExecutor { runnable ->
