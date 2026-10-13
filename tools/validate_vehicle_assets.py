@@ -241,6 +241,11 @@ def validate_glb_document(path):
         for view_index, view in enumerate(buffer_views):
             if not isinstance(view, dict):
                 return f"bufferView {view_index} is not an object"
+            if view.get("target") not in {None, 34962, 34963}:
+                return f"bufferView {view_index} has an invalid GPU target"
+            stride = view.get("byteStride")
+            if stride is not None and (not isinstance(stride, int) or stride < 4 or stride > 252 or stride % 4):
+                return f"bufferView {view_index} has an invalid byteStride"
             buffer_index = view.get("buffer", 0)
             if not isinstance(buffer_index, int) or buffer_index < 0 or buffer_index >= len(buffers):
                 return f"bufferView {view_index} references a missing buffer"
@@ -291,15 +296,46 @@ def validate_glb_document(path):
                 ):
                     return f"mesh {mesh_index} primitive {primitive_index} references a missing material"
 
+        parent_of = {}
         for node_index, node in enumerate(nodes):
+            if not isinstance(node, dict):
+                return f"node {node_index} is not an object"
             mesh_index = node.get("mesh")
             if mesh_index is not None and (
                 not isinstance(mesh_index, int) or mesh_index < 0 or mesh_index >= len(meshes)
             ):
                 return f"node {node_index} references a missing mesh"
-            for child in node.get("children", []):
+            children = node.get("children", [])
+            if not isinstance(children, list):
+                return f"node {node_index} children must be an array"
+            if len(children) != len(set(children)):
+                return f"node {node_index} contains duplicate child references"
+            for child in children:
                 if not isinstance(child, int) or child < 0 or child >= len(nodes) or child == node_index:
                     return f"node {node_index} has an invalid child reference"
+                if child in parent_of:
+                    return f"node {child} has multiple parents ({parent_of[child]} and {node_index})"
+                parent_of[child] = node_index
+
+        # A GLTF node graph must be acyclic; otherwise some renderers recurse forever.
+        visit_state = [0] * len(nodes)
+        def visit_node(index):
+            if visit_state[index] == 1:
+                return f"node hierarchy contains a cycle through node {index}"
+            if visit_state[index] == 2:
+                return None
+            visit_state[index] = 1
+            for child in nodes[index].get("children", []):
+                error = visit_node(child)
+                if error:
+                    return error
+            visit_state[index] = 2
+            return None
+
+        for node_index in range(len(nodes)):
+            hierarchy_error = visit_node(node_index)
+            if hierarchy_error:
+                return hierarchy_error
 
         if not scenes:
             return "GLB JSON contains no scenes"
