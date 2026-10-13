@@ -308,6 +308,48 @@ def validate_glb_document(path):
                     references.append(primitive["indices"])
                 if any(not isinstance(i, int) or i < 0 or i >= len(accessors) for i in references):
                     return f"mesh {mesh_index} primitive {primitive_index} references a missing accessor"
+
+                # Validate semantic shapes and index types, not only reference bounds.
+                # A structurally valid GLB can still crash or render incorrectly when
+                # POSITION/NORMAL/TEXCOORD attributes have incompatible accessor types.
+                for semantic, accessor_ref in attributes.items():
+                    semantic_accessor = accessors[accessor_ref]
+                    semantic_type = semantic_accessor.get("type")
+                    semantic_component = semantic_accessor.get("componentType")
+                    if semantic == "POSITION" and (
+                        semantic_type != "VEC3" or semantic_component != 5126
+                    ):
+                        return f"mesh {mesh_index} primitive {primitive_index} POSITION must be FLOAT VEC3"
+                    if semantic == "NORMAL" and (
+                        semantic_type != "VEC3" or semantic_component != 5126
+                    ):
+                        return f"mesh {mesh_index} primitive {primitive_index} NORMAL must be FLOAT VEC3"
+                    if semantic.startswith("TEXCOORD_") and (
+                        semantic_type != "VEC2" or semantic_component not in {5121, 5123, 5126}
+                    ):
+                        return f"mesh {mesh_index} primitive {primitive_index} {semantic} has an invalid accessor format"
+                    if semantic.startswith("JOINTS_") and (
+                        semantic_type != "VEC4" or semantic_component not in {5121, 5123}
+                        or semantic_accessor.get("normalized", False)
+                    ):
+                        return f"mesh {mesh_index} primitive {primitive_index} {semantic} must be unnormalized unsigned VEC4"
+                    if semantic.startswith("WEIGHTS_") and (
+                        semantic_type != "VEC4"
+                        or semantic_component not in {5121, 5123, 5126}
+                        or (semantic_component != 5126 and not semantic_accessor.get("normalized", False))
+                    ):
+                        return f"mesh {mesh_index} primitive {primitive_index} {semantic} has an invalid accessor format"
+
+                if "POSITION" not in attributes:
+                    return f"mesh {mesh_index} primitive {primitive_index} is missing POSITION"
+                if "indices" in primitive:
+                    index_accessor = accessors[primitive["indices"]]
+                    if index_accessor.get("type") != "SCALAR" or index_accessor.get("componentType") not in {5121, 5123, 5125}:
+                        return f"mesh {mesh_index} primitive {primitive_index} indices must use an unsigned SCALAR accessor"
+                primitive_mode = primitive.get("mode", 4)
+                if not isinstance(primitive_mode, int) or primitive_mode not in range(7):
+                    return f"mesh {mesh_index} primitive {primitive_index} has an invalid primitive mode"
+
                 material_index = primitive.get("material")
                 if material_index is not None and (
                     not isinstance(material_index, int)
