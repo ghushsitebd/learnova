@@ -129,7 +129,8 @@ class VehiclePrototypeTests(unittest.TestCase):
         garage_path = ROOT / "app" / "src" / "main" / "java" / "com" / "learnova" / "app" / "VehicleGarageView.kt"
         garage = garage_path.read_text(encoding="utf-8")
         self.assertIn("private val launchVehicles = VehicleCatalog.all.take(100)", garage)
-        self.assertIn("ceil(launchVehicles.size / pageSize.toDouble())", garage)
+        self.assertIn("private fun pageSizeForWidth(width: Float)", garage)
+        self.assertIn("ceil(launchVehicles.size / pageSizeForWidth(width).toDouble())", garage)
         self.assertIn("drawCard(c, launchVehicles[index]", garage)
         self.assertIn("onSelected(launchVehicles[selectedId - 1])", garage)
         self.assertNotIn("VehicleCatalog.all[index]", garage)
