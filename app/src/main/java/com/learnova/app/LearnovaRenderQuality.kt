@@ -13,17 +13,13 @@ import kotlin.math.min
  * and recent frame time so realism does not come at the cost of stutter.
  */
 class LearnovaRenderQuality(context: Context) {
-    private val memoryClassMb: Int =
-        (context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager)
-            ?.memoryClass ?: 128
+    private val activityManager =
+        context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+    private val memoryClassMb: Int = activityManager?.memoryClass ?: 128
+    private val lowRamDevice: Boolean = activityManager?.isLowRamDevice ?: true
 
     private val adaptiveQuality = AdaptiveFrameQuality(
-        initialLevel = when {
-            memoryClassMb >= 512 -> 3
-            memoryClassMb >= 256 -> 2
-            memoryClassMb >= 192 -> 1
-            else -> 0
-        }
+        initialLevel = RenderQualityPolicy.initialLevel(memoryClassMb, lowRamDevice)
     )
 
     fun beginFrame(): Long = System.nanoTime()
@@ -118,5 +114,22 @@ internal class AdaptiveFrameQuality(initialLevel: Int) {
         }
 
         return currentLevel
+    }
+}
+
+
+/** Pure startup tier policy, including Android's explicit low-RAM device signal. */
+internal object RenderQualityPolicy {
+    fun initialLevel(memoryClassMb: Int, lowRamDevice: Boolean): Int {
+        val memoryTier = when {
+            memoryClassMb >= 512 -> 3
+            memoryClassMb >= 256 -> 2
+            memoryClassMb >= 192 -> 1
+            else -> 0
+        }
+        // Low-RAM devices stay on a restrained scene density even if OEMs report
+        // an unusually generous memory class. Frame-time adaptation can still
+        // lower this tier further when the renderer is under pressure.
+        return if (lowRamDevice) min(memoryTier, 1) else memoryTier
     }
 }
