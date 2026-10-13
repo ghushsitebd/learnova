@@ -142,6 +142,9 @@ internal class LearnovaHeadroomMonitor(context: Context) {
         executor.shutdownNow()
     }
 
+    // The monitor is instantiated only on API 36+, but lint analyses this
+    // helper independently of the guarded service lookup above.
+    @SuppressLint("NewApi")
     private fun poll(manager: SystemHealthManager) {
         if (!running.get()) return
         try {
