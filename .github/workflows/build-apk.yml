@@ -135,6 +135,11 @@ jobs:
           test -s app/src/main/assets/vehicles/vehicle_068_buggy.glb
           test -s app/src/main/assets/vehicles/vehicle_100_2050_vision.glb
 
+      - name: Compile-check Python asset and CI tooling
+        run: |
+          set -euo pipefail
+          python3 -m compileall -q tools
+
       - name: Regression-test deterministic vehicle and dinosaur model generation
         run: |
           set -euo pipefail
