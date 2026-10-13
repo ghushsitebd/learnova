@@ -113,11 +113,27 @@ internal class VehicleGarageView(
         title.textAlign = Paint.Align.CENTER
         title.color = Color.WHITE
         title.textSize = min(cw * 0.095f, 16f)
-        c.drawText(v.name, x + cw / 2f, y + ch * 0.77f, title)
+        c.drawText(fitText(v.name, cw - 16f, title), x + cw / 2f, y + ch * 0.77f, title)
 
         title.textSize = min(cw * 0.075f, 12f)
         title.color = Color.rgb(175, 205, 220)
-        c.drawText("AVAILABLE", x + cw / 2f, y + ch * 0.91f, title)
+        val category = if (v.type.equals("dinosaur_mount", ignoreCase = true)) {
+            "DINO MOUNT"
+        } else {
+            v.type.replace('_', ' ').uppercase()
+        }
+        c.drawText(fitText(category, cw - 16f, title), x + cw / 2f, y + ch * 0.91f, title)
+    }
+
+    /** Keep long catalog names readable inside narrow phone cards. */
+    private fun fitText(text: String, maxWidth: Float, paint: Paint): String {
+        if (paint.measureText(text) <= maxWidth) return text
+        val suffix = "…"
+        var candidate = text
+        while (candidate.isNotEmpty() && paint.measureText(candidate + suffix) > maxWidth) {
+            candidate = candidate.dropLast(1)
+        }
+        return if (candidate.isEmpty()) suffix else candidate + suffix
     }
 
     private fun drawVehicleSilhouette(c: Canvas, cx: Float, cy: Float, s: Float, type: String) {
