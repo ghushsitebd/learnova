@@ -135,6 +135,11 @@ jobs:
           test -s app/src/main/assets/vehicles/vehicle_068_buggy.glb
           test -s app/src/main/assets/vehicles/vehicle_100_2050_vision.glb
 
+      - name: Regression-test deterministic vehicle and dinosaur model generation
+        run: |
+          set -euo pipefail
+          python3 -m unittest tools/test_vehicle_prototypes.py -v
+
       # The launch batch is intentionally 100 dedicated models; the remaining catalog uses verified class fallbacks.
       - name: Generate dedicated vehicle models for first 100 launch vehicles
         run: |
