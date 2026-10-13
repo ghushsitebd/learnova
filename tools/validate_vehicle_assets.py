@@ -258,14 +258,19 @@ def validate_glb_document(path):
             if byte_offset + byte_length > buffers[buffer_index]["byteLength"]:
                 return f"bufferView {view_index} extends beyond its buffer"
 
+        component_sizes = {5120: 1, 5121: 1, 5122: 2, 5123: 2, 5125: 4, 5126: 4}
+        type_components = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4,
+                           "MAT2": 4, "MAT3": 9, "MAT4": 16}
         for accessor_index, accessor in enumerate(accessors):
             if not isinstance(accessor, dict):
                 return f"accessor {accessor_index} is not an object"
             if not isinstance(accessor.get("count"), int) or accessor["count"] <= 0:
                 return f"accessor {accessor_index} has an invalid count"
-            if accessor.get("componentType") not in {5120, 5121, 5122, 5123, 5125, 5126}:
+            component_type = accessor.get("componentType")
+            if component_type not in component_sizes:
                 return f"accessor {accessor_index} has an unsupported componentType"
-            if accessor.get("type") not in {"SCALAR", "VEC2", "VEC3", "VEC4", "MAT2", "MAT3", "MAT4"}:
+            accessor_type = accessor.get("type")
+            if accessor_type not in type_components:
                 return f"accessor {accessor_index} has an unsupported type"
             view_index = accessor.get("bufferView")
             if view_index is not None and (
@@ -274,6 +279,21 @@ def validate_glb_document(path):
                 return f"accessor {accessor_index} references a missing bufferView"
             if view_index is None and "sparse" not in accessor:
                 return f"accessor {accessor_index} has neither bufferView nor sparse data"
+            if view_index is not None:
+                view = buffer_views[view_index]
+                component_size = component_sizes[component_type]
+                element_size = component_size * type_components[accessor_type]
+                accessor_offset = accessor.get("byteOffset", 0)
+                stride = view.get("byteStride", element_size)
+                if not isinstance(accessor_offset, int) or accessor_offset < 0:
+                    return f"accessor {accessor_index} has an invalid byteOffset"
+                if accessor_offset % component_size:
+                    return f"accessor {accessor_index} byteOffset is not component-aligned"
+                if stride < element_size:
+                    return f"accessor {accessor_index} element exceeds its bufferView stride"
+                required_end = accessor_offset + (accessor["count"] - 1) * stride + element_size
+                if required_end > view["byteLength"]:
+                    return f"accessor {accessor_index} exceeds its bufferView byteLength"
 
         for mesh_index, mesh in enumerate(meshes):
             primitives = mesh.get("primitives", [])
@@ -343,9 +363,16 @@ def validate_glb_document(path):
         if not isinstance(scene_index, int) or scene_index < 0 or scene_index >= len(scenes):
             return "GLB JSON has an invalid active scene"
         for scene_index, scene in enumerate(scenes):
-            for node_index in scene.get("nodes", []):
+            roots = scene.get("nodes", [])
+            if not isinstance(roots, list):
+                return f"scene {scene_index} roots must be an array"
+            if len(roots) != len(set(roots)):
+                return f"scene {scene_index} contains duplicate root nodes"
+            for node_index in roots:
                 if not isinstance(node_index, int) or node_index < 0 or node_index >= len(nodes):
                     return f"scene {scene_index} references a missing node"
+                if node_index in parent_of:
+                    return f"scene {scene_index} root node {node_index} is already a child of another node"
 
     except (OSError, EOFError, gzip.BadGzipFile, UnicodeDecodeError, json.JSONDecodeError, ValueError, TypeError) as exc:
         return f"cannot validate GLB JSON structure: {exc}"
