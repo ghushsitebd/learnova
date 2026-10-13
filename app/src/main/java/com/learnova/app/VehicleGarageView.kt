@@ -40,6 +40,12 @@ internal class VehicleGarageView(
         isFocusable = true
     }
 
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        // Recompute the selected card's page when switching between phone/tablet layouts.
+        page = (selectedId - 1) / pageSizeForWidth(w.toFloat())
+    }
+
     fun setSelected(id: Int) {
         selectedId = id.coerceIn(1, launchVehicles.size)
         page = (selectedId - 1) / pageSizeForWidth(width.toFloat())
