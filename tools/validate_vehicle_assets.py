@@ -193,6 +193,129 @@ def validate_glb_container(path):
         return f"cannot read/decompress asset: {exc}"
     return None
 
+def validate_glb_document(path):
+    """Validate cross-references inside the GLB JSON, not just its outer byte container."""
+    try:
+        if path.name.endswith(".glb.gz"):
+            with gzip.open(path, "rb") as stream:
+                payload = stream.read()
+        else:
+            payload = path.read_bytes()
+
+        json_length = int.from_bytes(payload[12:16], "little")
+        document = json.loads(payload[20:20 + json_length].decode("utf-8"))
+        asset = document.get("asset")
+        if not isinstance(asset, dict) or asset.get("version") != "2.0":
+            return "GLB JSON must declare asset.version 2.0"
+
+        buffers = document.get("buffers", [])
+        buffer_views = document.get("bufferViews", [])
+        accessors = document.get("accessors", [])
+        meshes = document.get("meshes", [])
+        nodes = document.get("nodes", [])
+        scenes = document.get("scenes", [])
+
+        if len(buffers) > 1:
+            return "GLB must not declare more than one embedded buffer"
+        binary_length = 0
+        offset = 12
+        while offset < len(payload):
+            chunk_length = int.from_bytes(payload[offset:offset + 4], "little")
+            chunk_type = int.from_bytes(payload[offset + 4:offset + 8], "little")
+            if chunk_type == 0x004E4942:
+                binary_length = chunk_length
+                break
+            offset += 8 + chunk_length
+
+        for buffer_index, buffer in enumerate(buffers):
+            if not isinstance(buffer, dict):
+                return f"buffer {buffer_index} is not an object"
+            if buffer.get("uri"):
+                return f"buffer {buffer_index} uses an external URI; GLB assets must be self-contained"
+            byte_length = buffer.get("byteLength")
+            if not isinstance(byte_length, int) or byte_length <= 0:
+                return f"buffer {buffer_index} has an invalid byteLength"
+            if buffer_index == 0 and byte_length > binary_length:
+                return f"buffer byteLength {byte_length} exceeds embedded BIN chunk {binary_length}"
+
+        for view_index, view in enumerate(buffer_views):
+            if not isinstance(view, dict):
+                return f"bufferView {view_index} is not an object"
+            buffer_index = view.get("buffer", 0)
+            if not isinstance(buffer_index, int) or buffer_index < 0 or buffer_index >= len(buffers):
+                return f"bufferView {view_index} references a missing buffer"
+            byte_offset = view.get("byteOffset", 0)
+            byte_length = view.get("byteLength")
+            if not isinstance(byte_offset, int) or byte_offset < 0:
+                return f"bufferView {view_index} has an invalid byteOffset"
+            if not isinstance(byte_length, int) or byte_length <= 0:
+                return f"bufferView {view_index} has an invalid byteLength"
+            if byte_offset + byte_length > buffers[buffer_index]["byteLength"]:
+                return f"bufferView {view_index} extends beyond its buffer"
+
+        for accessor_index, accessor in enumerate(accessors):
+            if not isinstance(accessor, dict):
+                return f"accessor {accessor_index} is not an object"
+            if not isinstance(accessor.get("count"), int) or accessor["count"] <= 0:
+                return f"accessor {accessor_index} has an invalid count"
+            if accessor.get("componentType") not in {5120, 5121, 5122, 5123, 5125, 5126}:
+                return f"accessor {accessor_index} has an unsupported componentType"
+            if accessor.get("type") not in {"SCALAR", "VEC2", "VEC3", "VEC4", "MAT2", "MAT3", "MAT4"}:
+                return f"accessor {accessor_index} has an unsupported type"
+            view_index = accessor.get("bufferView")
+            if view_index is not None and (
+                not isinstance(view_index, int) or view_index < 0 or view_index >= len(buffer_views)
+            ):
+                return f"accessor {accessor_index} references a missing bufferView"
+            if view_index is None and "sparse" not in accessor:
+                return f"accessor {accessor_index} has neither bufferView nor sparse data"
+
+        for mesh_index, mesh in enumerate(meshes):
+            primitives = mesh.get("primitives", [])
+            if not primitives:
+                return f"mesh {mesh_index} has no primitives"
+            for primitive_index, primitive in enumerate(primitives):
+                attributes = primitive.get("attributes", {})
+                if not isinstance(attributes, dict) or not attributes:
+                    return f"mesh {mesh_index} primitive {primitive_index} has no attributes"
+                references = list(attributes.values())
+                if "indices" in primitive:
+                    references.append(primitive["indices"])
+                if any(not isinstance(i, int) or i < 0 or i >= len(accessors) for i in references):
+                    return f"mesh {mesh_index} primitive {primitive_index} references a missing accessor"
+                material_index = primitive.get("material")
+                if material_index is not None and (
+                    not isinstance(material_index, int)
+                    or material_index < 0
+                    or material_index >= len(document.get("materials", []))
+                ):
+                    return f"mesh {mesh_index} primitive {primitive_index} references a missing material"
+
+        for node_index, node in enumerate(nodes):
+            mesh_index = node.get("mesh")
+            if mesh_index is not None and (
+                not isinstance(mesh_index, int) or mesh_index < 0 or mesh_index >= len(meshes)
+            ):
+                return f"node {node_index} references a missing mesh"
+            for child in node.get("children", []):
+                if not isinstance(child, int) or child < 0 or child >= len(nodes) or child == node_index:
+                    return f"node {node_index} has an invalid child reference"
+
+        if not scenes:
+            return "GLB JSON contains no scenes"
+        scene_index = document.get("scene", 0)
+        if not isinstance(scene_index, int) or scene_index < 0 or scene_index >= len(scenes):
+            return "GLB JSON has an invalid active scene"
+        for scene_index, scene in enumerate(scenes):
+            for node_index in scene.get("nodes", []):
+                if not isinstance(node_index, int) or node_index < 0 or node_index >= len(nodes):
+                    return f"scene {scene_index} references a missing node"
+
+    except (OSError, EOFError, gzip.BadGzipFile, UnicodeDecodeError, json.JSONDecodeError, ValueError, TypeError) as exc:
+        return f"cannot validate GLB JSON structure: {exc}"
+    return None
+
+
 print("Learnova vehicle validation: auditing 100 dedicated launch models and 500-slot fallback coverage.")
 
 if not ASSETS.is_dir():
@@ -232,6 +355,11 @@ for vehicle_id, key in keys:
     container_error = validate_glb_container(path)
     if container_error:
         errors.append(f"{key}: {container_error}.")
+        continue
+
+    document_error = validate_glb_document(path)
+    if document_error:
+        errors.append(f"{key}: {document_error}.")
         continue
 
     scene_error = validate_generated_scene_root(path)
