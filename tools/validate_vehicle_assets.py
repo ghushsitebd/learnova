@@ -416,7 +416,12 @@ def validate_glb_document(path):
                 if node_index in parent_of:
                     return f"scene {scene_index} root node {node_index} is already a child of another node"
 
-    except (OSError, EOFError, gzip.BadGzipFile, UnicodeDecodeError, json.JSONDecodeError, ValueError, TypeError) as exc:
+    except (
+        OSError, EOFError, gzip.BadGzipFile, UnicodeDecodeError,
+        json.JSONDecodeError, ValueError, TypeError, AttributeError, RecursionError,
+    ) as exc:
+        # Malformed third-party GLBs should fail the asset gate with a readable
+        # validation error instead of terminating the entire validator traceback.
         return f"cannot validate GLB JSON structure: {exc}"
     return None
 
