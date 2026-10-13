@@ -79,7 +79,7 @@ jobs:
         run: |
           set -euo pipefail
           gradle :macrobenchmark:assembleBenchmark --no-daemon --stacktrace
-          gradle :baseline-profile:assembleDebug --no-daemon --stacktrace
+          gradle :baseline-profile:assemble --no-daemon --stacktrace
 
       - name: Run Android lint
         run: gradle :app:lintDebug --no-daemon --stacktrace
