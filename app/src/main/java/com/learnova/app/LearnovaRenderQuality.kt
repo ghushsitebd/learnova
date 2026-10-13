@@ -17,74 +17,106 @@ class LearnovaRenderQuality(context: Context) {
         (context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager)
             ?.memoryClass ?: 128
 
-    private var frameSamples = 0
-    private var slowFrames = 0
-    private var goodFrames = 0
-    private var thermalDowngrades = 0
-    private var quality = when {
-        memoryClassMb >= 512 -> 3
-        memoryClassMb >= 256 -> 2
-        memoryClassMb >= 192 -> 1
-        else -> 0
-    }
+    private val adaptiveQuality = AdaptiveFrameQuality(
+        initialLevel = when {
+            memoryClassMb >= 512 -> 3
+            memoryClassMb >= 256 -> 2
+            memoryClassMb >= 192 -> 1
+            else -> 0
+        }
+    )
 
     fun beginFrame(): Long = System.nanoTime()
 
     fun endFrame(startNanos: Long) {
         val ms = (System.nanoTime() - startNanos) / 1_000_000.0
-        frameSamples++
-        when {
-            ms > 18.0 -> {
-                slowFrames++
-                goodFrames = 0
-            }
-            ms < 13.0 -> {
-                goodFrames++
-            }
-            else -> {
-                goodFrames = 0
-            }
-        }
-
-        if (frameSamples >= 45) {
-            if (slowFrames >= 6) quality = max(0, quality - 1)
-            else if (slowFrames == 0 && goodFrames >= 32) quality = min(3, quality + 1)
-            frameSamples = 0
-            slowFrames = 0
-            goodFrames = 0
-        }
+        adaptiveQuality.observe(ms)
     }
 
-    fun distantTrafficCount(): Int = when (quality) {
+    fun distantTrafficCount(): Int = when (adaptiveQuality.level()) {
         0 -> 2
         1 -> 3
         2 -> 5
         else -> 6
     }
 
-    fun animalCount(): Int = when (quality) {
+    fun animalCount(): Int = when (adaptiveQuality.level()) {
         0 -> 3
         1 -> 5
         2 -> 7
         else -> 9
     }
 
-    fun treeDetail(): Float = when (quality) {
+    fun treeDetail(): Float = when (adaptiveQuality.level()) {
         0 -> 0.78f
         1 -> 0.88f
         2 -> 0.96f
         else -> 1.0f
     }
 
-    fun shadowAlpha(): Int = when (quality) {
+    fun shadowAlpha(): Int = when (adaptiveQuality.level()) {
         0 -> 42
         1 -> 52
         2 -> 62
         else -> 72
     }
 
-    fun level(): Int = quality
+    fun level(): Int = adaptiveQuality.level()
 
     fun supportsModernGraphics(): Boolean =
         Build.VERSION.SDK_INT >= 29
+}
+
+/**
+ * Pure, deterministic frame-time controller. Keeping the policy separate from
+ * Android lets CI test quality changes without a device or renderer.
+ *
+ * A 45-frame window avoids quality oscillation: sustained slow frames lower
+ * scene density, while an entirely slow-frame-free window with enough fast
+ * frames can cautiously restore detail.
+ */
+internal class AdaptiveFrameQuality(initialLevel: Int) {
+    private companion object {
+        const val MIN_LEVEL = 0
+        const val MAX_LEVEL = 3
+        const val WINDOW_FRAMES = 45
+        const val SLOW_FRAME_MS = 18.0
+        const val GOOD_FRAME_MS = 13.0
+        const val SLOW_FRAMES_TO_DOWNGRADE = 6
+        const val GOOD_FRAMES_TO_UPGRADE = 32
+    }
+
+    private var currentLevel = initialLevel.coerceIn(MIN_LEVEL, MAX_LEVEL)
+    private var frameSamples = 0
+    private var slowFrames = 0
+    private var consecutiveGoodFrames = 0
+
+    fun level(): Int = currentLevel
+
+    fun observe(frameTimeMs: Double): Int {
+        frameSamples++
+
+        when {
+            !frameTimeMs.isFinite() || frameTimeMs < 0.0 || frameTimeMs > SLOW_FRAME_MS -> {
+                slowFrames++
+                consecutiveGoodFrames = 0
+            }
+            frameTimeMs < GOOD_FRAME_MS -> consecutiveGoodFrames++
+            else -> consecutiveGoodFrames = 0
+        }
+
+        if (frameSamples >= WINDOW_FRAMES) {
+            when {
+                slowFrames >= SLOW_FRAMES_TO_DOWNGRADE ->
+                    currentLevel = max(MIN_LEVEL, currentLevel - 1)
+                slowFrames == 0 && consecutiveGoodFrames >= GOOD_FRAMES_TO_UPGRADE ->
+                    currentLevel = min(MAX_LEVEL, currentLevel + 1)
+            }
+            frameSamples = 0
+            slowFrames = 0
+            consecutiveGoodFrames = 0
+        }
+
+        return currentLevel
+    }
 }
