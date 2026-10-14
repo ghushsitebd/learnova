@@ -437,6 +437,19 @@ jobs:
           disable-animations: true
           script: bash .github/scripts/emulator_smoke.sh
 
+      - name: Upload runtime Macrobenchmark reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Learnova-Macrobenchmark-Reports
+          path: |
+            macrobenchmark/build/reports/**
+            macrobenchmark/build/outputs/**
+            macrobenchmark/build/test-results/**
+            app/build/reports/androidTests/**
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Generate SHA-256
         run: |
           sha256sum Learnova.apk | tee Learnova.apk.sha256
