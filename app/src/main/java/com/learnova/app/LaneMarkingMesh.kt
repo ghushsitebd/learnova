@@ -152,13 +152,20 @@ internal class LaneMarkingMesh(
         // Keep fixed-size GPU buffers fully initialized. Unused triangles collapse
         // to vertex zero and therefore cost no visible geometry.
         while (quadCount < MAX_QUADS) {
-            repeat(4) { vertices.putFloat(0f) }
-            repeat(4) { vertices.putFloat(0f) }
-            repeat(1) { vertices.putFloat(0f) }
-            repeat(1) { vertices.putFloat(0f) }
-            repeat(1) { vertices.putFloat(0f) }
-            repeat(1) { vertices.putFloat(1f) }
-            repeat(2) { vertices.putFloat(0f) }
+            // Each vertex is 9 floats (POSITION float3 + TANGENTS float4 + UV0 float2).
+            // Initialize all four vertices, not just 14 floats, so the fixed-size
+            // staging buffer is fully populated before it is uploaded to Filament.
+            repeat(4) {
+                vertices.putFloat(0f) // position x
+                vertices.putFloat(0f) // position y
+                vertices.putFloat(0f) // position z
+                vertices.putFloat(0f) // tangent x
+                vertices.putFloat(0f) // tangent y
+                vertices.putFloat(0f) // tangent z
+                vertices.putFloat(1f) // tangent w
+                vertices.putFloat(0f) // uv u
+                vertices.putFloat(0f) // uv v
+            }
             val base = quadCount * 4
             repeat(6) { indices.putShort(base.toShort()) }
             quadCount++
