@@ -17,7 +17,18 @@ internal object BoundedAssetReader {
         while (true) {
             val count = input.read(buffer)
             if (count < 0) break
-            if (count == 0) continue
+            if (count == 0) {
+                // Defensive handling for unusual InputStreams that report no progress.
+                // Fall back to a single-byte read so the loop cannot spin forever.
+                val single = input.read()
+                if (single < 0) break
+                if (total == maxBytes) {
+                    throw IOException("Asset exceeds the " + maxBytes + "-byte safety limit")
+                }
+                output.write(single)
+                total++
+                continue
+            }
             if (count > maxBytes - total) {
                 throw IOException("Asset exceeds the " + maxBytes + "-byte safety limit")
             }
