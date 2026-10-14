@@ -36,9 +36,9 @@ internal class VehicleAssetResolver(private val context: Context) {
             try {
                 context.assets.open(path).use { input ->
                     val bytes = if (path.endsWith(".gz")) {
-                        GZIPInputStream(input).use { it.readBytes() }
+                        GZIPInputStream(input).use { BoundedAssetReader.read(it, MAX_ASSET_BYTES) }
                     } else {
-                        input.readBytes()
+                        BoundedAssetReader.read(input, MAX_ASSET_BYTES)
                     }
                     // Reject malformed containers before passing bytes to native Filament.
                     if (isValidGlb(bytes)) return bytes
@@ -91,6 +91,7 @@ internal class VehicleAssetResolver(private val context: Context) {
     private companion object {
         const val GLB_HEADER_SIZE = 12
         const val GLB_CHUNK_HEADER_SIZE = 8
+        const val MAX_ASSET_BYTES = 64 * 1024 * 1024
         const val GLB_VERSION = 2
         const val GLB_JSON_CHUNK = 0x4E4F534A
     }
