@@ -63,7 +63,7 @@ internal class VehicleAssetResolver(private val context: Context) {
      */
     private fun readBounded(input: InputStream): ByteArray {
         val output = ByteArrayOutputStream()
-        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        val buffer = ByteArray(8192)
         var total = 0
         while (true) {
             val count = input.read(buffer)
