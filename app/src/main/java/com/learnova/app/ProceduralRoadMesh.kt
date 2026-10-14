@@ -45,6 +45,7 @@ internal class ProceduralRoadMesh(
     private var shoulderVertexBuffer: VertexBuffer? = null
     private var shoulderIndexBuffer: IndexBuffer? = null
     private var shoulderMaterial: com.google.android.filament.MaterialInstance? = null
+    private var laneMarkings: LaneMarkingMesh? = null
 
     // Reused CPU staging buffers keep the sliding road window allocation-free
     // during normal driving. This is important on low-memory Android phones.
@@ -104,6 +105,7 @@ internal class ProceduralRoadMesh(
 
         shoulderMaterial = findShoulderMaterial()
         buildShoulders()
+        laneMarkings = LaneMarkingMesh(engine, scene, asset).also { it.build() }
         update(0.0)
         return true
     }
@@ -158,6 +160,7 @@ internal class ProceduralRoadMesh(
         data.flip()
         vertexBuffer?.setBufferAt(engine, 0, data)
         updateShoulders(centerDistance)
+        laneMarkings?.update(centerDistance)
         lastCenter = centerDistance
     }
 
@@ -333,6 +336,8 @@ internal class ProceduralRoadMesh(
     }
 
     fun destroy() {
+        laneMarkings?.destroy()
+        laneMarkings = null
         if (entity != 0) {
             scene.removeEntity(entity)
             engine.renderableManager.destroy(entity)
