@@ -43,6 +43,28 @@ class BoundedAssetReaderTest {
         assertArrayEquals(expected, BoundedAssetReader.read(input, 16))
     }
 
+    @Test
+    fun recoversFromZeroProgressReadWithoutLosingBytes() {
+        val expected = byteArrayOf(11, 22, 33)
+        val input = object : java.io.InputStream() {
+            private var offset = 0
+            private var returnZeroOnce = true
+            override fun read(): Int = if (offset >= expected.size) -1 else expected[offset++].toInt() and 0xff
+            override fun read(buffer: ByteArray, off: Int, len: Int): Int {
+                if (returnZeroOnce) {
+                    returnZeroOnce = false
+                    return 0
+                }
+                if (offset >= expected.size) return -1
+                val count = minOf(len, expected.size - offset)
+                System.arraycopy(expected, offset, buffer, off, count)
+                offset += count
+                return count
+            }
+        }
+        assertArrayEquals(expected, BoundedAssetReader.read(input, 8))
+    }
+
     @Test(expected = IllegalArgumentException::class)
     fun rejectsNonPositiveLimit() {
         BoundedAssetReader.read(ByteArrayInputStream(byteArrayOf(1)), 0)
