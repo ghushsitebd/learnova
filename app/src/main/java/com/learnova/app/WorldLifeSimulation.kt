@@ -107,7 +107,7 @@ internal class WorldLifeSimulation(
             // Keep all road traffic inside the actual two-lane carriageway.
             // Lane centres are +/-1.75 m on the nominal 7.2 m road; the limited
             // correction below may move a vehicle only within its own lane.
-            val baseLane = if (((seed ushr 3) and 1L) == 0L) -1.75 else 1.75
+            val baseLane = RoadTrafficLanePolicy.laneOffset(seed)
             val side = if ((seed and 1L) == 0L) -1.0 else 1.0
             // Traffic only performs a lane correction when it has enough
             // longitudinal separation. This avoids the arcade-like "weaving"
@@ -119,7 +119,7 @@ internal class WorldLifeSimulation(
             val laneShift = if (laneShiftAllowed) {
                 sin(centerDistance * 0.014 + trafficPhase * 6.283) * correctionBand
             } else 0.0
-            val lane = baseLane + laneShift
+            val lane = RoadTrafficLanePolicy.correctedLaneOffset(baseLane, laneShift)
             val biome = WorldDirector.profile(agentDistance).biome
             val isBusyBiome = biome == WorldDirector.Biome.MARKET || biome == WorldDirector.Biome.VILLAGE
             // People and wildlife belong to the landscape, not the carriageway.
@@ -234,8 +234,7 @@ internal class WorldLifeSimulation(
                 isPedestrian -> sample.yaw.toDouble() + sin(walkPhase) * 0.08
                 isWildlife -> sample.yaw.toDouble() + sin(walkPhase) * 0.16
                 // Vehicles in opposite lanes face opposite directions.
-                lane < 0.0 -> sample.yaw.toDouble() + kotlin.math.PI
-                else -> sample.yaw.toDouble()
+                else -> RoadTrafficLanePolicy.headingYaw(sample.yaw.toDouble(), lane)
             }
             val groundY = sample.y.toDouble() +
                 kotlin.math.sin(sample.bank.toDouble()) * kotlin.math.abs(roadsideOffset) * 0.35
