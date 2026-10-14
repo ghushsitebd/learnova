@@ -75,7 +75,9 @@ internal class CreatureAssetResolver(private val context: Context) {
                         path.endsWith(".b64") -> {
                             val encodedBytes = BoundedAssetReader.read(input, MAX_BASE64_BYTES)
                             val decoded = Base64.decode(encodedBytes, Base64.DEFAULT)
-                            if (decoded.size > MAX_ASSET_BYTES) continue
+                            if (decoded.size > MAX_ASSET_BYTES) {
+                                throw java.io.IOException("Decoded creature asset exceeds the safety limit")
+                            }
                             decoded
                         }
                         else -> BoundedAssetReader.read(input, MAX_ASSET_BYTES)
