@@ -165,6 +165,32 @@ jobs:
           print("Verified: first 100 models packaged, including four rideable dinosaur mounts; slots 101–500 may use class fallbacks.")
           PY
 
+      - name: Enforce launch vehicle asset size and packaging budget
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          catalog = Path("app/src/main/java/com/learnova/app/VehicleCatalog.kt").read_text()
+          entries = [(int(i), key) for i, key in re.findall(
+              r'VehicleDefinition\(\s*(\d+)\s*,\s*"[^"]+"\s*,\s*"[^"]+"\s*,\s*"([^"]+)"',
+              catalog
+          ) if int(i) <= 100]
+          root = Path("app/src/main/assets/vehicles")
+          files = [root / f"{key}.glb" for _, key in entries]
+          missing = [str(path) for path in files if not path.is_file() or path.stat().st_size == 0]
+          if missing:
+              raise SystemExit(f"Missing or empty launch vehicle models: {missing}")
+          sizes = [(path, path.stat().st_size) for path in files]
+          too_large = [(path.name, size) for path, size in sizes if size > 8 * 1024 * 1024]
+          total = sum(size for _, size in sizes)
+          if too_large:
+              raise SystemExit(f"Single vehicle GLB exceeds 8 MiB budget: {too_large}")
+          if total > 96 * 1024 * 1024:
+              raise SystemExit(f"100-model launch asset budget exceeded: {total / 1024 / 1024:.2f} MiB > 96 MiB")
+          print(f"Launch vehicle asset budget passed: {len(files)} GLBs, {total / 1024 / 1024:.2f} MiB total, largest {max(size for _, size in sizes) / 1024 / 1024:.2f} MiB.")
+          PY
+
       - name: Validate vehicle asset contracts
         run: |
           set -euo pipefail

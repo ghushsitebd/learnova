@@ -25,19 +25,30 @@ internal class VehicleGarageView(
         typeface = Typeface.create("sans-serif", Typeface.BOLD)
     }
 
+    // Keep the initial playable garage aligned with the requested 100-vehicle launch batch.
+    // The broader catalog may contain future entries, but they must not leak into this launch UI.
+    private val launchVehicles = VehicleCatalog.all.take(100)
     private var page = 0
     private var selectedId = 1
-    private val pageSize = 12
-    private val totalPages = ceil(VehicleCatalog.all.size / pageSize.toDouble()).toInt()
+
+    private fun pageSizeForWidth(width: Float): Int = (if (width >= 900f) 4 else 3) * 4
+    private fun totalPagesForWidth(width: Float): Int =
+        ceil(launchVehicles.size / pageSizeForWidth(width).toDouble()).toInt().coerceAtLeast(1)
 
     init {
         setBackgroundColor(Color.rgb(10, 18, 28))
         isFocusable = true
     }
 
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        // Recompute the selected card's page when switching between phone/tablet layouts.
+        page = (selectedId - 1) / pageSizeForWidth(w.toFloat())
+    }
+
     fun setSelected(id: Int) {
-        selectedId = id.coerceIn(1, VehicleCatalog.all.size)
-        page = (selectedId - 1) / pageSize
+        selectedId = id.coerceIn(1, launchVehicles.size)
+        page = (selectedId - 1) / pageSizeForWidth(width.toFloat())
         invalidate()
     }
 
@@ -59,6 +70,9 @@ internal class VehicleGarageView(
         title.color = Color.rgb(180, 215, 232)
         c.drawText("100 vehicles • All available", 24f, 68f, title)
 
+        val pageSize = pageSizeForWidth(w)
+        val totalPages = totalPagesForWidth(w)
+        page = page.coerceIn(0, totalPages - 1)
         title.textAlign = Paint.Align.RIGHT
         c.drawText("${page + 1} / $totalPages", w - 24f, 42f, title)
 
@@ -72,13 +86,13 @@ internal class VehicleGarageView(
 
         for (slot in 0 until pageSize) {
             val index = page * pageSize + slot
-            if (index >= VehicleCatalog.all.size) break
+            if (index >= launchVehicles.size) break
 
             val row = slot / cols
             val col = slot % cols
             val left = gap + col * (cardW + gap)
             val topY = top + gap + row * (cardH + gap)
-            drawCard(c, VehicleCatalog.all[index], left, topY, cardW, cardH)
+            drawCard(c, launchVehicles[index], left, topY, cardW, cardH)
         }
 
         drawButton(c, 18f, h - 58f, 120f, 42f, "CLOSE", false)
@@ -99,11 +113,27 @@ internal class VehicleGarageView(
         title.textAlign = Paint.Align.CENTER
         title.color = Color.WHITE
         title.textSize = min(cw * 0.095f, 16f)
-        c.drawText(v.name, x + cw / 2f, y + ch * 0.77f, title)
+        c.drawText(fitText(v.name, cw - 16f, title), x + cw / 2f, y + ch * 0.77f, title)
 
         title.textSize = min(cw * 0.075f, 12f)
         title.color = Color.rgb(175, 205, 220)
-        c.drawText("AVAILABLE", x + cw / 2f, y + ch * 0.91f, title)
+        val category = if (v.type.equals("dinosaur_mount", ignoreCase = true)) {
+            "DINO MOUNT"
+        } else {
+            v.type.replace('_', ' ').uppercase()
+        }
+        c.drawText(fitText(category, cw - 16f, title), x + cw / 2f, y + ch * 0.91f, title)
+    }
+
+    /** Keep long catalog names readable inside narrow phone cards. */
+    private fun fitText(text: String, maxWidth: Float, paint: Paint): String {
+        if (paint.measureText(text) <= maxWidth) return text
+        val suffix = "…"
+        var candidate = text
+        while (candidate.isNotEmpty() && paint.measureText(candidate + suffix) > maxWidth) {
+            candidate = candidate.dropLast(1)
+        }
+        return if (candidate.isEmpty()) suffix else candidate + suffix
     }
 
     private fun drawVehicleSilhouette(c: Canvas, cx: Float, cy: Float, s: Float, type: String) {
@@ -169,11 +199,11 @@ internal class VehicleGarageView(
             when {
                 e.x < 150f -> onClosed()
                 e.x > w - 155f -> {
-                    onSelected(VehicleCatalog.all[selectedId - 1])
+                    onSelected(launchVehicles[selectedId - 1])
                     onClosed()
                 }
                 else -> {
-                    page = (page + 1) % totalPages
+                    page = (page + 1) % totalPagesForWidth(w)
                     invalidate()
                 }
             }
@@ -182,6 +212,7 @@ internal class VehicleGarageView(
 
         val gap = 12f
         val cols = if (w >= 900f) 4 else 3
+        val pageSize = pageSizeForWidth(w)
         val top = 88f
         val bottom = 72f
         val cardW = (w - gap * (cols + 1)) / cols
@@ -192,8 +223,8 @@ internal class VehicleGarageView(
         if (col !in 0 until cols || row !in 0..3) return true
 
         val index = page * pageSize + row * cols + col
-        if (index in VehicleCatalog.all.indices) {
-            selectedId = VehicleCatalog.all[index].id
+        if (index in launchVehicles.indices) {
+            selectedId = launchVehicles[index].id
             invalidate()
         }
         return true
