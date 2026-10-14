@@ -1,10 +1,8 @@
 package com.learnova.app
 
 import android.content.Context
-import java.io.ByteArrayOutputStream
 import java.io.FileNotFoundException
 import java.io.IOException
-import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.zip.GZIPInputStream
@@ -38,9 +36,9 @@ internal class VehicleAssetResolver(private val context: Context) {
             try {
                 context.assets.open(path).use { input ->
                     val bytes = if (path.endsWith(".gz")) {
-                        GZIPInputStream(input).use { readBounded(it) }
+                        GZIPInputStream(input).use { BoundedAssetReader.read(it, MAX_ASSET_BYTES) }
                     } else {
-                        readBounded(input)
+                        BoundedAssetReader.read(input, MAX_ASSET_BYTES)
                     }
                     // Reject malformed containers before passing bytes to native Filament.
                     if (isValidGlb(bytes)) return bytes
@@ -56,27 +54,6 @@ internal class VehicleAssetResolver(private val context: Context) {
         return null
     }
 
-    /**
-     * Read plain and compressed assets through the same hard cap. A malformed or
-     * unexpectedly large GLB (including a gzip expansion bomb) must not exhaust
-     * the app heap on memory-constrained devices.
-     */
-    private fun readBounded(input: InputStream): ByteArray {
-        val output = ByteArrayOutputStream()
-        val buffer = ByteArray(8192)
-        var total = 0
-        while (true) {
-            val count = input.read(buffer)
-            if (count < 0) break
-            if (count == 0) continue
-            if (count > MAX_ASSET_BYTES - total) {
-                throw IOException("Vehicle asset exceeds the " + MAX_ASSET_BYTES + "-byte safety limit")
-            }
-            output.write(buffer, 0, count)
-            total += count
-        }
-        return output.toByteArray()
-    }
     /**
      * Validates the GLB v2 container envelope and chunk boundaries.
      * This does not replace CI's deeper JSON/mesh/texture checks, but prevents
