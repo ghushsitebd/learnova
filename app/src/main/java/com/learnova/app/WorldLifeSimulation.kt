@@ -233,6 +233,8 @@ internal class WorldLifeSimulation(
             val bodyYaw = when {
                 isPedestrian -> sample.yaw.toDouble() + sin(walkPhase) * 0.08
                 isWildlife -> sample.yaw.toDouble() + sin(walkPhase) * 0.16
+                // Vehicles in opposite lanes face opposite directions.
+                lane < 0.0 -> sample.yaw.toDouble() + kotlin.math.PI
                 else -> sample.yaw.toDouble()
             }
             val groundY = sample.y.toDouble() +
