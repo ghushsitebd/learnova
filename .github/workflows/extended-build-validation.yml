@@ -34,6 +34,9 @@ jobs:
       - name: Generate and regression-test launch vehicle models
         run: python tools/test_vehicle_prototypes.py
 
+      - name: Validate all 100 generated GLB files
+        run: python tools/test_glb_quality.py
+
       - name: Verify regression test file is tracked
         run: git diff --check
 

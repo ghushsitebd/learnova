@@ -89,6 +89,7 @@ internal class LearnovaAdaptiveQuality {
  * headroom queries as potentially taking more than 1ms. Unsupported devices
  * simply keep NaN and the frame-time governor remains authoritative.
  */
+@SuppressLint("NewApi") // Android 16-only APIs are reachable only when the API-36 service is available.
 internal class LearnovaHeadroomMonitor(context: Context) {
     // The renderer view can detach and reattach during Activity/window lifecycle
     // changes. Keep executor creation restartable instead of retaining a permanently
