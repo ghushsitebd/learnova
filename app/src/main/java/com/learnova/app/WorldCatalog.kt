@@ -24,7 +24,7 @@ data class WorldScene(
 
 object LearnovaWorldCatalog {
     private val baseAnimals = listOf(
-        "Elephant","Lion","Tiger","Leopard","Cheetah","Giraffe","Zebra","Hippopotamus",
+        "Elephant","Lion","Tiger","Bengal Tiger","Leopard","Cheetah","Giraffe","Zebra","Hippopotamus",
         "Rhinoceros","Gorilla","Chimpanzee","Orangutan","Bear","Wolf","Fox","Deer",
         "Moose","Camel","Horse","Donkey","Cow","Buffalo","Goat","Sheep","Rabbit",
         "Kangaroo","Panda","Koala","Sloth","Otter","Seal","Walrus","Dolphin","Whale",
@@ -35,10 +35,10 @@ object LearnovaWorldCatalog {
         "Butterfly","Bee","Ant","Ladybird","Dragonfly","Grasshopper","Cricket",
         "Spider","Scorpion","Beetle","Dinosaur","Triceratops","Stegosaurus",
         "Brachiosaurus","Velociraptor","Tyrannosaurus","Mammoth","Bison","Yak",
-        "Reindeer","Alpaca","Llama","Meerkat","Hyena","Warthog","Gorilla","Baboon",
+        "Reindeer","Alpaca","Llama","Meerkat","Hyena","Warthog","Baboon",
         "Mongoose","Porcupine","Hedgehog","Squirrel","Raccoon","Badger","Beaver",
         "Armadillo","Platypus","Seahorse","Jellyfish","Stingray","Swordfish","Salmon",
-        "Crab","Lobster","Starfish","Seahorse","Pelican","Heron","Toucan","Canary",
+        "Crab","Lobster","Starfish","Pelican","Heron","Toucan","Canary",
         "Robin","Magpie","Bat","Mole","Marmot"
     )
 
