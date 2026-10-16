@@ -29,7 +29,10 @@ internal class CreatureAssetResolver(private val context: Context) {
         // Authored GLBs are optional but repeatedly reused by near-field encounters.
         // Cache decoded bytes so a lesson transition does not repeatedly perform
         // AssetManager I/O + Base64 decoding on the render thread.
+        // Bound both decoded GLBs and encoded Base64 input before allocating large arrays.
         private const val MAX_CACHE_BYTES = 16 * 1024 * 1024
+        private const val MAX_ASSET_BYTES = MAX_CACHE_BYTES
+        private const val MAX_BASE64_BYTES = 24 * 1024 * 1024
         private val cacheLock = Any()
         private val decodedCache = object : LinkedHashMap<String, ByteArray>(16, 0.75f, true) {}
         private var cachedBytes = 0
@@ -67,13 +70,17 @@ internal class CreatureAssetResolver(private val context: Context) {
                 context.assets.open(path).use { input ->
                     val bytes = when {
                         path.endsWith(".gz") -> {
-                            GZIPInputStream(input).use { it.readBytes() }
+                            GZIPInputStream(input).use { BoundedAssetReader.read(it, MAX_ASSET_BYTES) }
                         }
                         path.endsWith(".b64") -> {
-                            val encoded = input.bufferedReader(Charsets.US_ASCII).use { it.readText() }
-                            Base64.decode(encoded, Base64.DEFAULT)
+                            val encodedBytes = BoundedAssetReader.read(input, MAX_BASE64_BYTES)
+                            val decoded = Base64.decode(encodedBytes, Base64.DEFAULT)
+                            if (decoded.size > MAX_ASSET_BYTES) {
+                                throw java.io.IOException("Decoded creature asset exceeds the safety limit")
+                            }
+                            decoded
                         }
-                        else -> input.readBytes()
+                        else -> BoundedAssetReader.read(input, MAX_ASSET_BYTES)
                     }
                     // Fail closed: only pass genuine GLB containers to Filament.
                     if (bytes.size < 20 ||
@@ -104,6 +111,9 @@ internal class CreatureAssetResolver(private val context: Context) {
                 // break world startup or distant-life rendering.
             } catch (_: IllegalArgumentException) {
                 // Invalid base64 is treated like a missing optional asset.
+            } catch (_: java.io.IOException) {
+                // Oversized or unreadable optional assets must not exhaust memory
+                // or prevent the remaining representations from being attempted.
             }
         }
         return null
