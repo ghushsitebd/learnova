@@ -97,7 +97,7 @@ internal class WorldLifeSimulation(
             // but nearby vehicles visibly gain/lose distance like real traffic.
             val trafficPhase = phaseFromSeed(seed)
             val trafficMotion = sin((centerDistance * (0.012 + ((seed ushr 36) % 7L) * 0.001)) +
-                animationTime * (0.32 + ((seed ushr 39) % 30L) / 100.0) + trafficPhase * 6.283) *
+                animationTime * (0.32 + ((seed ushr 39) % 30L) / 100.0) + trafficPhase * 3.283) *
                 (2.0 + ((seed ushr 39) % 30L) / 10.0)
             val agentDistance = d + trafficMotion
             val sample = RoadSpline.sampleRelative(agentDistance, centerDistance)
@@ -106,27 +106,27 @@ internal class WorldLifeSimulation(
             val distanceFromPlayer = kotlin.math.abs(agentDistance - centerDistance)
             val baseLane = when {
                 distanceFromPlayer < NEAR_RADIUS -> when ((seed ushr 3) % 5L) {
-                    0L -> -6.2
-                    1L -> 6.2
-                    2L -> -12.0
-                    3L -> 12.0
-                    else -> 18.0
+                    0L -> -3.2
+                    1L -> 3.2
+                    2L -> -5.2
+                    3L -> 5.2
+                    else -> 7.2
                 }
                 distanceFromPlayer < MID_RADIUS -> when ((seed ushr 3) % 6L) {
-                    0L -> -6.2
-                    1L -> 6.2
-                    2L -> -12.0
-                    3L -> 12.0
-                    4L -> -18.0
-                    else -> 18.0
+                    0L -> -3.2
+                    1L -> 3.2
+                    2L -> -5.2
+                    3L -> 5.2
+                    4L -> -7.2
+                    else -> 7.2
                 }
                 else -> when ((seed ushr 3) % 7L) {
-                    0L -> -6.2
-                    1L -> 6.2
-                    2L -> -12.0
-                    3L -> 12.0
-                    5L -> -20.0
-                    else -> 20.0
+                    0L -> -3.2
+                    1L -> 3.2
+                    2L -> -5.2
+                    3L -> 5.2
+                    5L -> -8.5
+                    else -> 8.5
                 }
             }
             val side = if ((seed and 1L) == 0L) -1.0 else 1.0
@@ -138,7 +138,7 @@ internal class WorldLifeSimulation(
                 (seed ushr 12) % 5L == 0L &&
                 kotlin.math.abs(trafficMotion) > 0.9
             val laneShift = if (laneShiftAllowed) {
-                sin(centerDistance * 0.014 + trafficPhase * 6.283) * correctionBand
+                sin(centerDistance * 0.014 + trafficPhase * 3.283) * correctionBand
             } else 0.0
             val lane = baseLane + laneShift
             val biome = WorldDirector.profile(agentDistance).biome
@@ -171,10 +171,10 @@ internal class WorldLifeSimulation(
             // avoiding the synchronized "all objects slide together" look.
             val localTime = centerDistance * (0.028 + ((seed ushr 27) % 9L) * 0.001) +
                 animationTime * (0.55 + ((seed ushr 31) % 35L) / 100.0)
-            val baseDrift = if (moving) sin(localTime + phase * 6.283) * (1.15 + ((seed ushr 30) % 80L) / 100.0) else 0.0
+            val baseDrift = if (moving) sin(localTime + phase * 3.283) * (1.15 + ((seed ushr 30) % 80L) / 100.0) else 0.0
             // Walkers use a slower, shorter gait: lateral sway + subtle body
             // bounce makes them read as living people instead of sliding blocks.
-            val walkPhase = centerDistance * (if (isWildlife) 0.11 else 0.22) + phase * 6.283
+            val walkPhase = centerDistance * (if (isWildlife) 0.11 else 0.22) + phase * 3.283
             val pedestrianSway = if (isPedestrian) sin(walkPhase) * 0.48 else 0.0
             val pedestrianDrift = if (isPedestrian && moving) sin(walkPhase * 0.5) * 0.55 else 0.0
             val creatureIndex = Math.floorMod(seed, LearnovaWorldCatalog.creatureRuntimeProfiles.size.toLong()).toInt()

@@ -27,7 +27,7 @@ internal class ProceduralRoadMesh(
     private val asset: FilamentAsset
 ) {
     private companion object {
-        const val ROAD_WIDTH = 7.2f
+        const val ROAD_WIDTH = 12.8f
         const val SAMPLE_STEP = 3.25
         const val BEHIND = 80.0
         const val SAMPLE_COUNT = 191
