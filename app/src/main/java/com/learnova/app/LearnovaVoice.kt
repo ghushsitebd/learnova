@@ -3,6 +3,9 @@ package com.learnova.app
 import android.content.Context
 import android.media.MediaPlayer
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
+import android.os.Handler
+import android.os.Looper
 import android.speech.tts.Voice
 import java.util.Locale
 
@@ -19,6 +22,14 @@ class LearnovaVoice(private val context: Context) : TextToSpeech.OnInitListener 
     private var pendingText: String? = null
     private var pendingLocale: Locale = Locale.US
     private var childPlayer: MediaPlayer? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var dialogueGeneration = 0
+    private var activeAnimalDialogue: AnimalDialogueDirector.Dialogue? = null
+    private var animalDialogueIndex = 0
+    private var pendingAnimalDialogue: AnimalDialogueDirector.Dialogue? = null
+    private var pendingAnimalLineCallback: ((AnimalDialogueDirector.SpokenLine) -> Unit)? = null
+    private var activeAnimalLineCallback: ((AnimalDialogueDirector.SpokenLine) -> Unit)? = null
+    private var animalDialogueCompletion: (() -> Unit)? = null
 
     override fun onInit(status: Int) {
         if (status != TextToSpeech.SUCCESS) return
@@ -29,6 +40,132 @@ class LearnovaVoice(private val context: Context) : TextToSpeech.OnInitListener 
             speak(it, pendingLocale)
             pendingText = null
         }
+        tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            override fun onStart(utteranceId: String?) = Unit
+
+            override fun onDone(utteranceId: String?) {
+                if (utteranceId?.startsWith("learnova-animal-dialogue-") == true) {
+                    mainHandler.post {
+                        val generation = utteranceId.substringAfter("learnova-animal-dialogue-").substringBefore("-").toIntOrNull()
+                        if (generation == dialogueGeneration) {
+                            animalDialogueIndex += 1
+                            speakNextAnimalDialogueLine(generation)
+                        }
+                    }
+                }
+            }
+
+            @Deprecated("Deprecated in Android API")
+            override fun onError(utteranceId: String?) {
+                if (utteranceId?.startsWith("learnova-animal-dialogue-") == true) {
+                    mainHandler.post {
+                        val generation = utteranceId.substringAfter("learnova-animal-dialogue-").substringBefore("-").toIntOrNull()
+                        if (generation == dialogueGeneration) {
+                            animalDialogueIndex += 1
+                            speakNextAnimalDialogueLine(generation)
+                        }
+                    }
+                }
+            }
+        })
+        pendingAnimalDialogue?.let { dialogue ->
+            val callback = pendingAnimalLineCallback
+            val completion = animalDialogueCompletion
+            pendingAnimalDialogue = null
+            pendingAnimalLineCallback = null
+            animalDialogueCompletion = null
+            playAnimalDialogue(dialogue, callback, completion)
+        }
+    }
+
+
+    /**
+     * Plays an automatic animal-to-animal dialogue. Transcripts are speech-only:
+     * callers must not render question text, answer options, or captions on screen.
+     * The callback can drive speaker/listener animation cues in the 3D scene.
+     */
+    internal fun playAnimalDialogue(
+        dialogue: AnimalDialogueDirector.Dialogue,
+        onLineStarted: ((AnimalDialogueDirector.SpokenLine) -> Unit)? = null,
+        onComplete: (() -> Unit)? = null
+    ) {
+        stopChildAudio()
+        if (!ready) {
+            pendingAnimalDialogue = dialogue
+            pendingAnimalLineCallback = onLineStarted
+            animalDialogueCompletion = onComplete
+            return
+        }
+        tts.stop()
+        dialogueGeneration += 1
+        activeAnimalDialogue = dialogue
+        animalDialogueIndex = 0
+        activeAnimalLineCallback = onLineStarted
+        animalDialogueCompletion = onComplete
+        speakNextAnimalDialogueLine(dialogueGeneration)
+    }
+
+    private fun speakNextAnimalDialogueLine(generation: Int) {
+        if (generation != dialogueGeneration) return
+        val dialogue = activeAnimalDialogue ?: return
+        if (animalDialogueIndex >= dialogue.lines.size) {
+            activeAnimalDialogue = null
+            activeAnimalLineCallback = null
+            val completion = animalDialogueCompletion
+            animalDialogueCompletion = null
+            completion?.invoke()
+            return
+        }
+        val line = dialogue.lines[animalDialogueIndex]
+        val locale = when (line.language) {
+            AnimalDialogueDirector.SpeechLanguage.BANGLA -> Locale("bn", "BD")
+            AnimalDialogueDirector.SpeechLanguage.ARABIC -> Locale("ar")
+        }
+        if (!selectOfflineVoice(locale)) {
+            // Never silently fall back to a network voice during the child's lesson.
+            // Bundle verified Bangla/Arabic recordings for devices without offline voices.
+            animalDialogueIndex += 1
+            speakNextAnimalDialogueLine(generation)
+            return
+        }
+        val animalPitch = when (line.animal.lowercase()) {
+            "lion", "tiger", "bear" -> 0.92f
+            "fox", "monkey", "rabbit" -> 1.20f
+            else -> 1.05f
+        }
+        tts.setPitch(animalPitch)
+        tts.setSpeechRate(if (line.language == AnimalDialogueDirector.SpeechLanguage.ARABIC) 0.76f else 0.82f)
+        activeAnimalLineCallback?.invoke(line)
+        tts.speak(
+            line.audioText,
+            TextToSpeech.QUEUE_FLUSH,
+            null,
+            "learnova-animal-dialogue-$generation-$animalDialogueIndex"
+        )
+    }
+
+
+    /**
+     * Selects an installed, on-device voice only. Network-dependent TTS voices
+     * are excluded so this lesson does not need a server connection.
+     */
+    private fun selectOfflineVoice(locale: Locale): Boolean {
+        if (!ready) return false
+        val matchingVoice = runCatching {
+            tts.voices
+                .orEmpty()
+                .asSequence()
+                .filter { !it.isNetworkConnectionRequired }
+                .filter { it.locale.language.equals(locale.language, ignoreCase = true) }
+                .maxByOrNull { voice ->
+                    (if (voice.locale.country.equals(locale.country, ignoreCase = true)) 100 else 0) +
+                        voice.quality
+                }
+        }.getOrNull() ?: return false
+        return runCatching {
+            tts.voice = matchingVoice
+            true
+        }.getOrDefault(false)
     }
 
     fun speakEnglishLesson(letter: String, word: String) {
@@ -119,6 +256,7 @@ class LearnovaVoice(private val context: Context) : TextToSpeech.OnInitListener 
         tts.speak(line, TextToSpeech.QUEUE_FLUSH, null, "learnova-character-${profile.id}")
         tts.setSpeechRate(0.72f)
         tts.setPitch(1.18f)
+
     }
 
     fun characterDiscover(character: String, word: String) {
@@ -210,6 +348,12 @@ class LearnovaVoice(private val context: Context) : TextToSpeech.OnInitListener 
 
     fun stop() {
         stopChildAudio()
+        dialogueGeneration += 1
+        activeAnimalDialogue = null
+        pendingAnimalDialogue = null
+        activeAnimalLineCallback = null
+        pendingAnimalLineCallback = null
+        animalDialogueCompletion = null
         if (ready) tts.stop()
     }
 

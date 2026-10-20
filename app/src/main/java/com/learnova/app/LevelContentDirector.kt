@@ -27,16 +27,16 @@ internal object LevelContentDirector {
     private const val LEVELS_PER_CHAPTER = 10
 
     private val chapterThemes = arrayOf(
-        Triple(WorldDirector.Biome.FOREST, "animals and nature", "deer"),
-        Triple(WorldDirector.Biome.RIVER, "water and river life", "fish"),
-        Triple(WorldDirector.Biome.MOUNTAIN, "mountains and geography", "eagle"),
-        Triple(WorldDirector.Biome.DESERT, "desert animals and adaptation", "camel"),
-        Triple(WorldDirector.Biome.PLATEAU, "wildlife and habitats", "horse"),
-        Triple(WorldDirector.Biome.MARKET, "community and road safety", "car"),
-        Triple(WorldDirector.Biome.VILLAGE, "family and good manners", "cow"),
-        Triple(WorldDirector.Biome.COAST, "marine life and cleanliness", "dolphin"),
-        Triple(WorldDirector.Biome.FOREST, "Arabic words in nature", "fox"),
-        Triple(WorldDirector.Biome.VILLAGE, "Quran learning and character", "rabbit")
+        Triple(WorldDirector.Biome.FOREST, "Quran and Islamic foundations", "deer"),
+        Triple(WorldDirector.Biome.RIVER, "wudu and cleanliness", "fish"),
+        Triple(WorldDirector.Biome.MOUNTAIN, "prophets and Islamic history", "eagle"),
+        Triple(WorldDirector.Biome.DESERT, "salah and daily worship", "camel"),
+        Triple(WorldDirector.Biome.PLATEAU, "dua and dhikr", "horse"),
+        Triple(WorldDirector.Biome.MARKET, "halal living and honest dealings", "car"),
+        Triple(WorldDirector.Biome.VILLAGE, "Islamic manners and family rights", "cow"),
+        Triple(WorldDirector.Biome.COAST, "Quranic surahs and remembrance", "dolphin"),
+        Triple(WorldDirector.Biome.FOREST, "Arabic for Quran learning", "fox"),
+        Triple(WorldDirector.Biome.VILLAGE, "Islamic character and kindness", "rabbit")
     )
 
     private val lessonModes = arrayOf(
@@ -109,80 +109,46 @@ internal object LevelContentDirector {
         return primary
     }
 
+    /**
+     * Core study is Islamic learning only. Animals and vehicles remain as
+     * scenery/gameplay companions; they are not the curriculum subject.
+     * Quran passages are not fabricated here: recitation content must come
+     * from a verified Quran source/catalog.
+     */
+    private val islamicLessons = listOf(
+        LessonContent("Bismillah", "আল্লাহর নামে শুরু", "بِسْمِ اللَّهِ", "শেখো: কাজের শুরুতে বিসমিল্লাহ বলা", "Bismillah"),
+        LessonContent("Alhamdulillah", "সকল প্রশংসা আল্লাহর", "الْحَمْدُ لِلَّهِ", "শেখো: আল্লাহর প্রশংসা ও কৃতজ্ঞতা", "Alhamdulillah"),
+        LessonContent("Allahu Akbar", "আল্লাহ সর্বশ্রেষ্ঠ", "اللَّهُ أَكْبَرُ", "শেখো: আল্লাহু আকবারের অর্থ", "Allahu Akbar"),
+        LessonContent("SubhanAllah", "আল্লাহ পবিত্র", "سُبْحَانَ اللَّهِ", "শেখো: সুবহানাল্লাহ কখন বলা হয়", "SubhanAllah"),
+        LessonContent("Astaghfirullah", "আল্লাহর কাছে ক্ষমা চাই", "أَسْتَغْفِرُ اللَّهَ", "শেখো: ইস্তিগফারের অর্থ", "Astaghfirullah"),
+        LessonContent("Assalamu Alaikum", "আপনার ওপর শান্তি বর্ষিত হোক", "السَّلَامُ عَلَيْكُمْ", "শেখো: সালামের আদব", "Assalamu Alaikum"),
+        LessonContent("Al-Fatiha", "সূরা আল-ফাতিহা", "سورة الفاتحة", "শেখো: সূরা ফাতিহার নাম ও নামাজে এর গুরুত্ব", "Al-Fatiha"),
+        LessonContent("Al-Ikhlas", "সূরা আল-ইখলাস", "سورة الإخلاص", "শেখো: সূরা ইখলাসের পরিচয়", "Al-Ikhlas"),
+        LessonContent("Al-Falaq", "সূরা আল-ফালাক", "سورة الفلق", "শেখো: সূরা ফালাকের পরিচয়", "Al-Falaq"),
+        LessonContent("An-Nas", "সূরা আন-নাস", "سورة الناس", "শেখো: সূরা নাসের পরিচয়", "An-Nas"),
+        LessonContent("Quran", "পবিত্র কুরআন", "القرآن الكريم", "শেখো: কুরআনের আদব ও যত্ন", "Quran"),
+        LessonContent("Wudu", "অজু", "الوضوء", "শেখো: অজুর ধাপ ও পরিচ্ছন্নতা", "Wudu"),
+        LessonContent("Salah", "নামাজ", "الصلاة", "শেখো: নামাজের সময়, প্রস্তুতি ও আদব", "Salah"),
+        LessonContent("Masjid", "মসজিদ", "المسجد", "শেখো: মসজিদের আদব", "Masjid"),
+        LessonContent("Sawm", "রোজা", "الصوم", "শেখো: রমজানের রোজার পরিচয়", "Sawm"),
+        LessonContent("Zakah", "যাকাত", "الزكاة", "শেখো: যাকাতের উদ্দেশ্য", "Zakah"),
+        LessonContent("Sadaqah", "সদকা", "الصدقة", "শেখো: দান ও সাহায্যের গুরুত্ব", "Sadaqah"),
+        LessonContent("Tawheed", "তাওহিদ: আল্লাহ এক", "التوحيد", "শেখো: তাওহিদের মৌলিক ধারণা", "Tawheed"),
+        LessonContent("Adab", "ইসলামি শিষ্টাচার", "الأدب", "শেখো: কথা ও আচরণে সুন্দর আদব", "Adab"),
+        LessonContent("Truthfulness", "সত্যবাদিতা", "الصدق", "শেখো: সত্য কথা বলা ও আমানত রক্ষা", "Truthfulness"),
+        LessonContent("Parents", "মা-বাবার প্রতি সদাচরণ", "بر الوالدين", "শেখো: মা-বাবার সঙ্গে উত্তম আচরণ", "Parents"),
+        LessonContent("Cleanliness", "পরিচ্ছন্নতা", "النظافة", "শেখো: শরীর, পোশাক ও জায়গা পরিষ্কার রাখা", "Cleanliness"),
+        LessonContent("Halal", "হালাল", "حلال", "শেখো: হালাল-হারাম বিষয়ে বড়দের/বিশ্বস্ত আলেমের নির্দেশনা মানা", "Halal"),
+        LessonContent("Prophet Muhammad ﷺ", "নবী মুহাম্মদ ﷺ", "محمد رسول الله", "শেখো: নবীজির ﷺ জীবনী ও উত্তম চরিত্র", "Prophet Muhammad ﷺ"),
+        LessonContent("Ayat al-Kursi", "আয়াতুল কুরসি", "آية الكرسي", "শেখো: আয়াতুল কুরসির পরিচয়; তিলাওয়াত যাচাইকৃত উৎস থেকে", "Ayat al-Kursi"),
+        LessonContent("Dua", "দোয়া", "الدعاء", "শেখো: দোয়া করা ও আল্লাহর কাছে চাওয়া", "Dua")
+    )
+
     private fun lessonPack(primary: String, secondary: String, local: Int, chapter: Int): List<LessonContent> {
-        val words = mapOf(
-            "deer" to Triple("Deer", "হরিণ", "غزال"), "fox" to Triple("Fox", "শিয়াল", "ثعلب"),
-            "rabbit" to Triple("Rabbit", "খরগোশ", "أرنب"), "wolf" to Triple("Wolf", "নেকড়ে", "ذئب"),
-            "horse" to Triple("Horse", "ঘোড়া", "حصان"), "cow" to Triple("Cow", "গরু", "بقرة"),
-            "fish" to Triple("Fish", "মাছ", "سمك"), "duck" to Triple("Duck", "হাঁস", "بطة"),
-            "turtle" to Triple("Turtle", "কচ্ছপ", "سلحفاة"), "dolphin" to Triple("Dolphin", "ডলফিন", "دلفين"),
-            "camel" to Triple("Camel", "উট", "جمل"), "eagle" to Triple("Eagle", "ঈগল", "نسر"),
-            "car" to Triple("Car", "গাড়ি", "سيارة"), "bird" to Triple("Bird", "পাখি", "طائر"),
-            "goat" to Triple("Goat", "ছাগল", "ماعز"), "sheep" to Triple("Sheep", "ভেড়া", "خروف"),
-            "chicken" to Triple("Chicken", "মুরগি", "دجاج"),
-            "lion" to Triple("Lion", "সিংহ", "أسد"),
-            "tiger" to Triple("Tiger", "বাঘ", "نمر"),
-            "elephant" to Triple("Elephant", "হাতি", "فيل"),
-            "leopard" to Triple("Leopard", "চিতাবাঘ", "نمر مرقط"),
-            "bear" to Triple("Bear", "ভাল্লুক", "دب"),
-            "monkey" to Triple("Monkey", "বানর", "قرد"),
-            "giraffe" to Triple("Giraffe", "জিরাফ", "زرافة"),
-            "zebra" to Triple("Zebra", "জেব্রা", "حمار وحشي"),
-            "parrot" to Triple("Parrot", "টিয়া", "ببغاء"),
-            "falcon" to Triple("Falcon", "বাজ", "صقر"),
-            "owl" to Triple("Owl", "পেঁচা", "بومة"),
-            "peacock" to Triple("Peacock", "ময়ূর", "طاووس"),
-            "ostrich" to Triple("Ostrich", "উটপাখি", "نعامة"),
-            "buffalo" to Triple("Buffalo", "মহিষ", "جاموس"),
-            "gazelle" to Triple("Gazelle", "গ্যাজেল", "غزال"),
-            "boar" to Triple("Boar", "বুনো শূকর", "خنزير بري"),
-            "frog" to Triple("Frog", "ব্যাঙ", "ضفدع"),
-            "snake" to Triple("Snake", "সাপ", "ثعبان"),
-            "crab" to Triple("Crab", "কাঁকড়া", "سرطان البحر"),
-            "shark" to Triple("Shark", "হাঙর", "قرش"),
-            "whale" to Triple("Whale", "তিমি", "حوت"),
-            "seal" to Triple("Seal", "সিল", "فقمة"),
-            "penguin" to Triple("Penguin", "পেঙ্গুইন", "بطريق"),
-            "donkey" to Triple("Donkey", "গাধা", "حمار"),
-            "bus" to Triple("Bus", "বাস", "حافلة"),
-            "bike" to Triple("Bike", "বাইক", "دراجة"),
-            "train" to Triple("Train", "ট্রেন", "قطار"),
-            "truck" to Triple("Truck", "ট্রাক", "شاحنة"),
-            "bicycle" to Triple("Bicycle", "সাইকেল", "دراجة هوائية")
-        )
-        fun make(key: String, mode: String): LessonContent {
-            val w = words[key] ?: Triple(key.replaceFirstChar { it.uppercase() }, key, key)
-            val prompt = when (mode) {
-                "arabic_word" -> "Say the Arabic word"
-                "bangla_word" -> "Say it in Bangla"
-                "english_word" -> "Say it in English"
-                "match_words" -> "Match the three words"
-                "sound_and_motion" -> "Watch and name the animal"
-                "count_and_say" -> "How many do you see?"
-                else -> "Listen and repeat"
-            }
-            val answer = when (mode) {
-                "arabic_word" -> w.third
-                "bangla_word" -> w.second
-                else -> w.first
-            }
-            return LessonContent(w.first, w.second, w.third, prompt, answer)
-        }
-        // Five lesson chapters intentionally match the 90-second / 18-second
-        // roadside cadence. Each chapter gets a deterministic mode so the same
-        // level can be replayed without collapsing back to three repeated prompts.
-        val a = lessonModes[(chapter + local) % lessonModes.size]
-        val b = lessonModes[(chapter + local + 3) % lessonModes.size]
-        val c = lessonModes[(chapter + local + 6) % lessonModes.size]
-        val d = lessonModes[(chapter + local + 9) % lessonModes.size]
-        val e = lessonModes[(chapter + local + 2) % lessonModes.size]
-        return listOf(
-            make(primary, a),
-            make(secondary, b),
-            make(primary, c),
-            make(secondary, d),
-            make(primary, e)
-        )
+        // Repeat the verified Islamic topic bank deterministically across all 500 levels.
+        // Wildlife/vehicle encounters remain visual gameplay, not secular study subjects.
+        val seed = Math.floorMod((chapter * LEVELS_PER_CHAPTER) + local, islamicLessons.size)
+        return (0 until 5).map { offset -> islamicLessons[(seed + offset * 3) % islamicLessons.size] }
     }
 
     /** Fast CI/runtime contract for the complete 500-level curriculum. */
