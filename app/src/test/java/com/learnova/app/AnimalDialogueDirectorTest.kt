@@ -35,6 +35,21 @@ class AnimalDialogueDirectorTest {
     }
 
     @Test
+    fun allLevelsAndFiveTimedActivitiesRotateAcrossDialogueBank() {
+        for (level in 1..500) {
+            val selected = (0..4).map { activity ->
+                AnimalDialogueDirector.dialogueLevelForActivity(level, activity)
+            }
+            assertEquals(5, selected.distinct().size)
+            assertTrue(selected.all { it in 1..500 })
+            assertEquals(level, selected.first())
+        }
+        assertEquals(500, AnimalDialogueDirector.dialogueLevelForActivity(500, 0))
+        assertEquals(1, AnimalDialogueDirector.dialogueLevelForActivity(500, 1))
+        assertEquals(1, AnimalDialogueDirector.dialogueLevelForActivity(1, 500))
+    }
+
+    @Test
     fun levelsOutsideRangeAreClamped() {
         assertEquals(1, AnimalDialogueDirector.dialogueForLevel(0).level)
         assertEquals(500, AnimalDialogueDirector.dialogueForLevel(501).level)
