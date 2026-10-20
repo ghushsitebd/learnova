@@ -40,4 +40,27 @@ class RoadTrafficLanePolicyTest {
         val right = RoadTrafficLanePolicy.headingYaw(pathYaw, 1.75)
         assertEquals(PI, abs(left - right), 0.000001)
     }
+
+    @Test
+    fun narrowOrMalformedRoadWidthsNeverCreateAnInvalidClampRange() {
+        for (width in listOf(0.0, 0.1, 0.5, -3.0, Double.NaN, Double.POSITIVE_INFINITY)) {
+            val corrected = RoadTrafficLanePolicy.correctedLaneOffset(
+                baseLane = -1.75,
+                requestedShift = 99.0,
+                roadWidthMeters = width
+            )
+            assertTrue("offset must remain finite for width=$width", corrected.isFinite())
+            assertTrue("offset must not exceed nominal road bounds for width=$width",
+                abs(corrected) <= RoadTrafficLanePolicy.NOMINAL_ROAD_WIDTH_METERS * 0.5)
+        }
+    }
+
+    @Test
+    fun nonFiniteLaneCorrectionsAreSafelyIgnored() {
+        for (shift in listOf(Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY)) {
+            val corrected = RoadTrafficLanePolicy.correctedLaneOffset(1.75, shift)
+            assertTrue(corrected.isFinite())
+            assertEquals(1.75, corrected, 0.0)
+        }
+    }
 }
