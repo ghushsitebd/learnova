@@ -184,11 +184,27 @@ internal class VehicleDriveDynamics(
 }
 
 internal object FutureVehicleBehavior {
+    /**
+     * Keeps travel lively without turning every vehicle into the same arcade car.
+     * Values are metres/second. The road spline still reduces speed before bends,
+     * and the learning chapter still uses its separate safe crawl speed.
+     */
     fun effectiveTargetSpeed(vehicle: VehicleDefinition): Double = when {
+        vehicle.type == "dinosaur_mount" ->
+            vehicle.targetSpeed.coerceIn(2.5, 6.0)
         vehicle.assetKey.contains("2050") || vehicle.assetKey.contains("future") ->
-            vehicle.targetSpeed.coerceIn(5.0, 10.0)
+            vehicle.targetSpeed.coerceIn(8.0, 14.0)
+        vehicle.type == "sport" ->
+            (vehicle.targetSpeed * 1.35).coerceIn(8.0, 15.5)
+        vehicle.type in setOf("car", "electric", "luxury", "suv", "pickup", "offroad") ->
+            (vehicle.targetSpeed * 1.28).coerceIn(8.0, 12.5)
+        vehicle.type in setOf("truck", "bus", "construction", "emergency", "commercial", "service") ->
+            (vehicle.targetSpeed * 1.15).coerceIn(6.0, 9.5)
+        vehicle.type in setOf("cycle", "bicycle") ->
+            (vehicle.targetSpeed * 1.10).coerceIn(3.0, 5.5)
         vehicle.type == "electric" ->
-            (vehicle.targetSpeed * 1.04).coerceAtMost(9.5)
-        else -> vehicle.targetSpeed
+            (vehicle.targetSpeed * 1.25).coerceIn(8.0, 12.0)
+        else ->
+            (vehicle.targetSpeed * 1.20).coerceIn(5.0, 11.5)
     }
 }
