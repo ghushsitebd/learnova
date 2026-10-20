@@ -225,9 +225,11 @@ class LearnovaVoice(private val context: Context) : TextToSpeech.OnInitListener 
         })
         pendingAnimalDialogue?.let { dialogue ->
             val callback = pendingAnimalLineCallback
+            val completion = animalDialogueCompletion
             pendingAnimalDialogue = null
             pendingAnimalLineCallback = null
-            playAnimalDialogue(dialogue, callback, null)
+            animalDialogueCompletion = null
+            playAnimalDialogue(dialogue, callback, completion)
         }
     }
 
