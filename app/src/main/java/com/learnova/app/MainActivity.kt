@@ -601,10 +601,14 @@ class MainActivity : AppCompatActivity() {
                 drawVehicleContactEffects(canvas, w, h, world)
                 drawCompanion(canvas, w, h, world)
             }
-            drawRoadsideLearningSign(canvas, w, h)
-            drawTopBar(canvas, w, h, world)
-            drawLearningCard(canvas, w, h, world)
-            drawHint(canvas, w, h)
+            // During the automatic audio lesson, keep the 3D world unobstructed:
+            // no text, labels, question cards, answer options, or hints are drawn.
+            if (!learningSessionActive) {
+                drawRoadsideLearningSign(canvas, w, h)
+                drawTopBar(canvas, w, h, world)
+                drawLearningCard(canvas, w, h, world)
+                drawHint(canvas, w, h)
+            }
             renderQuality.endFrame(frameStart)
 
             if (running) postInvalidateOnAnimation()
