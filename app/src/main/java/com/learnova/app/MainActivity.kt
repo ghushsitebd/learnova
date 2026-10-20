@@ -2707,35 +2707,48 @@ class MainActivity : AppCompatActivity() {
             running = false
             speed = 0f
             threeDWorld.setDriveHeld(false)
-            threeDWorld.showLearningSign()
+            threeDWorld.hideLearningSign()
             natureAudio.stop()
-            voice.speakCharacter(
-                currentFriendName(),
-                "Look! Our Magic Learning Point. Let's discover together!"
-            )
             beginAutomaticLearningActivity()
             saveProgress()
             invalidate()
         }
 
         private fun beginAutomaticLearningActivity() {
-            val sign = roadsideDirector.lessonForLearningSession(level, learningActivityIndex)
-            currentRoadsideSign = sign
-            threeDWorld.showLearningSign()
-            sign.visualKey?.let { key ->
-                // Trigger the realistic near-field creature in the current biome.
-                // It appears ahead of the vehicle instead of replacing the driving world.
-                threeDWorld.triggerLearningAnimal(key)
-            }
-            voice.speakCharacter(
-                currentFriendName(),
-                "Look! " + sign.english + ". " + sign.bangla + ". " + sign.arabic + "."
-            )
-            postDelayed({
-                if (!isFinishing && learningSessionActive) {
-                    voice.speak(sign.prompt, java.util.Locale.US)
+            // The learning chapter is audio-only: no sign text, answer choices,
+            // taps, or outside links. One animal asks in Bangla; another answers
+            // in Arabic; the answer is then explained aloud in Bangla.
+            currentRoadsideSign = null
+            threeDWorld.hideLearningSign()
+            val dialogueLevel = ((level - 1) * 5 + learningActivityIndex + 1).coerceIn(1, 500)
+            val dialogue = AnimalDialogueDirector.dialogueForLevel(dialogueLevel)
+            voice.playAnimalDialogue(
+                dialogue,
+                onLineStarted = { line ->
+                    if (!isFinishing && learningSessionActive) {
+                        val visualKey = when (line.animal.lowercase()) {
+                            "lion" -> "lion"
+                            "fox" -> "fox"
+                            "bear" -> "bear"
+                            "monkey" -> "monkey"
+                            "elephant" -> "elephant"
+                            "deer" -> "deer"
+                            "rabbit" -> "rabbit"
+                            "horse" -> "horse"
+                            "tiger" -> "tiger"
+                            "camel" -> "camel"
+                            else -> "lion"
+                        }
+                        threeDWorld.triggerLearningAnimal(visualKey)
+                    }
+                },
+                onComplete = {
+                    if (!isFinishing && learningSessionActive) {
+                        // Keep the scene alive for the rest of this automatic chapter.
+                        threeDWorld.hideLearningSign()
+                    }
                 }
-            }, 900L)
+            )
             invalidate()
         }
 
