@@ -196,14 +196,14 @@ internal object FutureVehicleBehavior {
             vehicle.targetSpeed.coerceIn(8.0, 14.0)
         vehicle.type == "sport" ->
             (vehicle.targetSpeed * 1.35).coerceIn(8.0, 15.5)
-        vehicle.type in setOf("car", "electric", "luxury", "suv", "pickup", "offroad") ->
+        vehicle.type == "electric" ->
+            (vehicle.targetSpeed * 1.25).coerceIn(8.0, 12.0)
+        vehicle.type in setOf("car", "luxury", "suv", "pickup", "offroad") ->
             (vehicle.targetSpeed * 1.28).coerceIn(8.0, 12.5)
         vehicle.type in setOf("truck", "bus", "construction", "emergency", "commercial", "service") ->
             (vehicle.targetSpeed * 1.15).coerceIn(6.0, 9.5)
         vehicle.type in setOf("cycle", "bicycle") ->
             (vehicle.targetSpeed * 1.10).coerceIn(3.0, 5.5)
-        vehicle.type == "electric" ->
-            (vehicle.targetSpeed * 1.25).coerceIn(8.0, 12.0)
         else ->
             (vehicle.targetSpeed * 1.20).coerceIn(5.0, 11.5)
     }
