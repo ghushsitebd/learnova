@@ -84,7 +84,7 @@ class LearnovaVoice(private val context: Context) : TextToSpeech.OnInitListener 
      * callers must not render question text, answer options, or captions on screen.
      * The callback can drive speaker/listener animation cues in the 3D scene.
      */
-    fun playAnimalDialogue(
+    internal fun playAnimalDialogue(
         dialogue: AnimalDialogueDirector.Dialogue,
         onLineStarted: ((AnimalDialogueDirector.SpokenLine) -> Unit)? = null,
         onComplete: (() -> Unit)? = null
