@@ -2673,7 +2673,7 @@ class MainActivity : AppCompatActivity() {
             // in Arabic; the answer is then explained aloud in Bangla.
             currentRoadsideSign = null
             threeDWorld.hideLearningSign()
-            val dialogueLevel = ((level - 1) * 5 + learningActivityIndex + 1).coerceIn(1, 500)
+            val dialogueLevel = AnimalDialogueDirector.dialogueLevelForActivity(level, learningActivityIndex)
             val dialogue = AnimalDialogueDirector.dialogueForLevel(dialogueLevel)
             voice.playAnimalDialogue(
                 dialogue,
