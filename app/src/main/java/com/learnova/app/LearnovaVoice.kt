@@ -121,12 +121,13 @@ class LearnovaVoice(private val context: Context) : TextToSpeech.OnInitListener 
             AnimalDialogueDirector.SpeechLanguage.BANGLA -> Locale("bn", "BD")
             AnimalDialogueDirector.SpeechLanguage.ARABIC -> Locale("ar")
         }
-        if (tts.isLanguageAvailable(locale) < TextToSpeech.LANG_AVAILABLE) {
+        if (!selectOfflineVoice(locale)) {
+            // Never silently fall back to a network voice during the child's lesson.
+            // Bundle verified Bangla/Arabic recordings for devices without offline voices.
             animalDialogueIndex += 1
             speakNextAnimalDialogueLine(generation)
             return
         }
-        tts.language = locale
         val animalPitch = when (line.animal.lowercase()) {
             "lion", "tiger", "bear" -> 0.92f
             "fox", "monkey", "rabbit" -> 1.20f
@@ -141,6 +142,30 @@ class LearnovaVoice(private val context: Context) : TextToSpeech.OnInitListener 
             null,
             "learnova-animal-dialogue-$generation-$animalDialogueIndex"
         )
+    }
+
+
+    /**
+     * Selects an installed, on-device voice only. Network-dependent TTS voices
+     * are excluded so this lesson does not need a server connection.
+     */
+    private fun selectOfflineVoice(locale: Locale): Boolean {
+        if (!ready) return false
+        val matchingVoice = runCatching {
+            tts.voices
+                .orEmpty()
+                .asSequence()
+                .filter { !it.isNetworkConnectionRequired }
+                .filter { it.locale.language.equals(locale.language, ignoreCase = true) }
+                .maxByOrNull { voice ->
+                    (if (voice.locale.country.equals(locale.country, ignoreCase = true)) 100 else 0) +
+                        voice.quality
+                }
+        }.getOrNull() ?: return false
+        return runCatching {
+            tts.voice = matchingVoice
+            true
+        }.getOrDefault(false)
     }
 
     fun speakEnglishLesson(letter: String, word: String) {
