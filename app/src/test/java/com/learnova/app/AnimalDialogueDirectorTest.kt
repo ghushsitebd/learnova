@@ -18,6 +18,9 @@ class AnimalDialogueDirectorTest {
             assertEquals(AnimalDialogueDirector.SpeechLanguage.ARABIC, dialogue.lines[1].language)
             assertEquals(AnimalDialogueDirector.SpeechLanguage.BANGLA, dialogue.lines[2].language)
             assertNotEquals(dialogue.lines[0].animal, dialogue.lines[1].animal)
+            assertEquals(AnimalDialogueDirector.AnimationCue.ASKING, dialogue.lines[0].animationCue)
+            assertEquals(AnimalDialogueDirector.AnimationCue.ANSWERING, dialogue.lines[1].animationCue)
+            assertEquals(AnimalDialogueDirector.AnimationCue.EXPLAINING, dialogue.lines[2].animationCue)
         }
     }
 
