@@ -40,6 +40,42 @@ class LearnovaVoice(private val context: Context) : TextToSpeech.OnInitListener 
             speak(it, pendingLocale)
             pendingText = null
         }
+        tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            override fun onStart(utteranceId: String?) = Unit
+
+            override fun onDone(utteranceId: String?) {
+                if (utteranceId?.startsWith("learnova-animal-dialogue-") == true) {
+                    mainHandler.post {
+                        val generation = utteranceId.substringAfter("learnova-animal-dialogue-").substringBefore("-").toIntOrNull()
+                        if (generation == dialogueGeneration) {
+                            animalDialogueIndex += 1
+                            speakNextAnimalDialogueLine(generation)
+                        }
+                    }
+                }
+            }
+
+            @Deprecated("Deprecated in Android API")
+            override fun onError(utteranceId: String?) {
+                if (utteranceId?.startsWith("learnova-animal-dialogue-") == true) {
+                    mainHandler.post {
+                        val generation = utteranceId.substringAfter("learnova-animal-dialogue-").substringBefore("-").toIntOrNull()
+                        if (generation == dialogueGeneration) {
+                            animalDialogueIndex += 1
+                            speakNextAnimalDialogueLine(generation)
+                        }
+                    }
+                }
+            }
+        })
+        pendingAnimalDialogue?.let { dialogue ->
+            val callback = pendingAnimalLineCallback
+            val completion = animalDialogueCompletion
+            pendingAnimalDialogue = null
+            pendingAnimalLineCallback = null
+            animalDialogueCompletion = null
+            playAnimalDialogue(dialogue, callback, completion)
+        }
     }
 
 
@@ -195,42 +231,7 @@ class LearnovaVoice(private val context: Context) : TextToSpeech.OnInitListener 
         tts.speak(line, TextToSpeech.QUEUE_FLUSH, null, "learnova-character-${profile.id}")
         tts.setSpeechRate(0.72f)
         tts.setPitch(1.18f)
-        tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-            override fun onStart(utteranceId: String?) = Unit
 
-            override fun onDone(utteranceId: String?) {
-                if (utteranceId?.startsWith("learnova-animal-dialogue-") == true) {
-                    mainHandler.post {
-                        val generation = utteranceId.substringAfter("learnova-animal-dialogue-").substringBefore("-").toIntOrNull()
-                        if (generation == dialogueGeneration) {
-                            animalDialogueIndex += 1
-                            speakNextAnimalDialogueLine(generation)
-                        }
-                    }
-                }
-            }
-
-            @Deprecated("Deprecated in Android API")
-            override fun onError(utteranceId: String?) {
-                if (utteranceId?.startsWith("learnova-animal-dialogue-") == true) {
-                    mainHandler.post {
-                        val generation = utteranceId.substringAfter("learnova-animal-dialogue-").substringBefore("-").toIntOrNull()
-                        if (generation == dialogueGeneration) {
-                            animalDialogueIndex += 1
-                            speakNextAnimalDialogueLine(generation)
-                        }
-                    }
-                }
-            }
-        })
-        pendingAnimalDialogue?.let { dialogue ->
-            val callback = pendingAnimalLineCallback
-            val completion = animalDialogueCompletion
-            pendingAnimalDialogue = null
-            pendingAnimalLineCallback = null
-            animalDialogueCompletion = null
-            playAnimalDialogue(dialogue, callback, completion)
-        }
     }
 
     fun characterDiscover(character: String, word: String) {
