@@ -59,6 +59,21 @@ internal object LevelContentDirector {
         return created
     }
 
+
+    /**
+     * Optional science-station reward at chapter milestones. Normal vocabulary
+     * lessons remain unchanged; science content is an additional discovery.
+     */
+    private val scienceMilestoneLevels = (1..10).map { it * 50 }.toSet()
+
+    fun scienceMissionForLevel(
+        level: Int,
+        language: NeutrinoLearningModule.Language = NeutrinoLearningModule.Language.ENGLISH
+    ): NeutrinoLearningModule.Mission? {
+        if (level !in scienceMilestoneLevels) return null
+        return NeutrinoLearningModule.mission(language)
+    }
+
     private fun buildProfile(safe: Int): LevelProfile {
         val chapter = (safe - 1) / LEVELS_PER_CHAPTER
         val theme = chapterThemes[chapter % chapterThemes.size]
