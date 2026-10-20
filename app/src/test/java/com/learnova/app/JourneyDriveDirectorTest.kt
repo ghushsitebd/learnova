@@ -101,6 +101,22 @@ class JourneyDriveDirectorTest {
         assertFalse(d.advanceToNextLevel())
     }
 
+    @Test fun realisticSpeedProfilesRemainDistinctAndBounded() {
+        val familyCar = VehicleCatalog.byId(1)
+        val sportCar = VehicleCatalog.byId(15)
+        val truck = VehicleCatalog.byId(40)
+        val dinosaurMount = VehicleCatalog.byId(97)
+
+        assertTrue(FutureVehicleBehavior.effectiveTargetSpeed(familyCar) in 8.0..12.5)
+        assertTrue(FutureVehicleBehavior.effectiveTargetSpeed(sportCar) >= FutureVehicleBehavior.effectiveTargetSpeed(familyCar))
+        assertTrue(FutureVehicleBehavior.effectiveTargetSpeed(truck) in 6.0..9.5)
+        assertTrue(FutureVehicleBehavior.effectiveTargetSpeed(dinosaurMount) in 2.5..6.0)
+        assertTrue(VehicleCatalog.all.all {
+            FutureVehicleBehavior.effectiveTargetSpeed(it).isFinite() &&
+                FutureVehicleBehavior.effectiveTargetSpeed(it) in 2.5..15.5
+        })
+    }
+
     @Test fun vehicleDynamicsSafetyContract() {
         val profile = VehicleCatalog.byId(184)
         val dynamics = VehicleDriveDynamics(profile)
