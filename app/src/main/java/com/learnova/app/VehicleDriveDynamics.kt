@@ -50,7 +50,7 @@ internal class VehicleDriveDynamics(
     private var last = RoadSpline.sample(0.0)
 
     fun reset(distanceMeters: Double = 0.0) {
-        distance = distanceMeters.coerceAtLeast(0.0)
+        distance = if (distanceMeters.isFinite()) distanceMeters.coerceAtLeast(0.0) else 0.0
         speed = 0.0
         wheelRotation = 0.0
         braking = false
@@ -69,7 +69,7 @@ internal class VehicleDriveDynamics(
         requestedMotion: Boolean,
         learningPause: Boolean = false
     ): Snapshot {
-        val dt = deltaSeconds.coerceIn(0.0, 0.25)
+        val dt = if (deltaSeconds.isFinite()) deltaSeconds.coerceIn(0.0, 0.25) else 0.0
         val sample = RoadSpline.sample(distance)
 
         val target = when {
