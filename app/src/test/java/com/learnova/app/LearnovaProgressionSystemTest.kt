@@ -44,7 +44,7 @@ class LearnovaProgressionSystemTest {
         val scores = listOf(0, 1, 2, 3, 0, 9, -4)
         val average = progression.masteryAverage(scores.size) { scores[it] }
 
-        // Positive observations become [1, 2, 3, 5, 0]; zero scores are unseen.
+        // Positive observations become [1, 2, 3, 5]; zero/negative scores are unseen after clamping.
         assertEquals(2.75f, average, 0.0001f)
     }
 
