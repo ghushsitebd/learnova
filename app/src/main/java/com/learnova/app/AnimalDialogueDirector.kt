@@ -87,6 +87,17 @@ internal object AnimalDialogueDirector {
             "اللَّهُ وَاحِدٌ", "এর অর্থ: আল্লাহ এক।")
     )
 
+    /**
+     * Selects a lesson for each timed activity without clamping every late-game
+     * activity to level 500. Adjacent activities rotate through the full 500-level
+     * dialogue bank, including a safe wrap from level 500 back to level 1.
+     */
+    fun dialogueLevelForActivity(level: Int, activityIndex: Int): Int {
+        val safeLevel = level.coerceIn(1, 500)
+        val safeActivity = activityIndex.coerceAtLeast(0)
+        return Math.floorMod(safeLevel - 1 + safeActivity, 500) + 1
+    }
+
     fun dialogueForLevel(level: Int): Dialogue {
         val safeLevel = level.coerceIn(1, 500)
         val lesson = lessons[(safeLevel - 1) % lessons.size]
