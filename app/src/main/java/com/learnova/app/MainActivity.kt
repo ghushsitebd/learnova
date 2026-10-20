@@ -225,8 +225,7 @@ class MainActivity : AppCompatActivity() {
                         openParentReport()
                         return true
                     }
-                    if (handleQuranChoice(x, y, w, h)) return true
-                    if (currentRoadsideSign != null) { if (!listeningForChild) startChildListening(); return true }
+                    // Learning has no written answer or tap-to-advance interaction.
                     // The vehicle badge opens the complete 500-slot garage.
                     if (y < h * 0.22f && x > w * 0.76f) {
                         steeringInput = 0f
@@ -246,8 +245,6 @@ class MainActivity : AppCompatActivity() {
                                 if (!salamPlayedForSession) {
                                     salamPlayedForSession = true
                                     voice.playSalamExchange()
-                                } else {
-                                    voice.playChildLesson(SmartLearningEngine.lesson(question))
                                 }
                             }
                             performClick()
@@ -256,23 +253,7 @@ class MainActivity : AppCompatActivity() {
                         return true
                     }
 
-                    // The learning card remains a simple three-stage touch interaction.
-                    if (y >= h * 0.63f && y <= h * 0.91f && x < w * 0.76f) {
-                        if (isQuranLevel()) {
-                            val quran = LearnovaQuranCatalog.lesson(level - 68)
-                            // The first tap starts the lesson; later taps advance its guided stages.
-                            lessonStage = (lessonStage + 1) % 3
-                            quranStageSolved = false
-                            quranFeedback = ""
-                            voice.speakQuranStage(quran.name, quran.mode, lessonStage)
-
-                        } else {
-                            lessonStage = (lessonStage + 1) % 3
-                            voice.speakSmartLesson(SmartLearningEngine.lesson(question))
-                        }
-                        invalidate()
-                        return true
-                    }
+                    // No on-screen lesson card or tap-to-advance interaction.
                 }
 
                 MotionEvent.ACTION_MOVE -> {
@@ -440,35 +421,8 @@ class MainActivity : AppCompatActivity() {
                 distance += speed
                 levelProgress += speed / LearnovaUnlimitedWorld.level(level).targetDistance * 0.006f
                 levelProgress = levelProgress.coerceAtMost(1f)
-                // The three-minute phase is driving/adventure only. Learning never
-                // interrupts the journey. After the driving target is reached, the
-                // separate 90-second learning phase starts automatically.
-                // The Magic Learning Point is a physical roadside encounter inside
-                // the driving journey. It stops the vehicle safely, presents the real
-                // roadside sign, and lets the child answer by voice before driving on.
-                if (!learningSessionActive && currentRoadsideSign == null && !levelComplete &&
-                    levelElapsedMs >= 25_000L && running) {
-                    roadsideDirector.maybeStop(level, levelProgress)?.let { sign ->
-                        currentRoadsideSign = sign
-                        listeningForChild = false
-                        running = false
-                        speed = 0f
-                        threeDWorld.setDriveHeld(false)
-                        natureAudio.stop()
-                        threeDWorld.showLearningSign()
-                        sign.visualKey?.let { key -> threeDWorld.triggerLearningAnimal(key) }
-                        voice.speakCharacter(
-                            currentFriendName(),
-                            "Look! Our Magic Learning Point. " +
-                                sign.english + ". " + sign.bangla + ". " + sign.arabic + "."
-                        )
-                        postDelayed({
-                            if (!isFinishing && currentRoadsideSign === sign) {
-                                startChildListening()
-                            }
-                        }, 900L)
-                    }
-                }
+                // No roadside vocabulary quiz: all learning is the automatic
+                // animal-to-animal Islamic dialogue chapter. The drive remains uninterrupted.
 
                 if (currentRoadsideSign == null && !levelComplete && running) {
                     val journeyEvent = journeyEventDirector.poll(levelElapsedMs, running)
@@ -603,14 +557,8 @@ class MainActivity : AppCompatActivity() {
                 drawVehicleContactEffects(canvas, w, h, world)
                 drawCompanion(canvas, w, h, world)
             }
-            // During the automatic audio lesson, keep the 3D world unobstructed:
-            // no text, labels, question cards, answer options, or hints are drawn.
-            if (!learningSessionActive) {
-                drawRoadsideLearningSign(canvas, w, h)
-                drawTopBar(canvas, w, h, world)
-                drawLearningCard(canvas, w, h, world)
-                drawHint(canvas, w, h)
-            }
+            // Text-free gameplay: no written questions, captions, cards, labels,
+            // road signs, or answer options. Dialogue is delivered through animal voices.
             renderQuality.endFrame(frameStart)
 
             if (running) postInvalidateOnAnimation()
