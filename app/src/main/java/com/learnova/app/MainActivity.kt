@@ -216,6 +216,9 @@ class MainActivity : AppCompatActivity() {
 
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
+                    // During the automatic lesson, all child touch input is ignored:
+                    // no answers, taps, garage, parent overlay, or manual progression.
+                    if (learningSessionActive) return true
                     // A quiet parent-only entry point: it is outside the child's main
                     // drive/learning controls and requires the game to be stopped.
                     if (!running && y < h * 0.12f && x < w * 0.20f) {
@@ -223,7 +226,6 @@ class MainActivity : AppCompatActivity() {
                         return true
                     }
                     if (handleQuranChoice(x, y, w, h)) return true
-                    if (learningSessionActive) return true
                     if (currentRoadsideSign != null) { if (!listeningForChild) startChildListening(); return true }
                     // The vehicle badge opens the complete 500-slot garage.
                     if (y < h * 0.22f && x > w * 0.76f) {
