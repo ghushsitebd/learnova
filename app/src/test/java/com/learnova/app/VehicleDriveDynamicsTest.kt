@@ -56,6 +56,33 @@ class VehicleDriveDynamicsTest {
         assertTrue(current.distanceMeters > 0.0)
     }
 
+    @Test fun nonFiniteFrameDeltasCannotPoisonMotionState() {
+        val d = dynamics()
+        val initial = d.snapshot()
+
+        for (invalidDelta in listOf(Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY)) {
+            val current = d.update(invalidDelta, requestedMotion = true)
+            assertEquals("invalid frame delta must not change speed", initial.speedMetersPerSecond, current.speedMetersPerSecond, 0.0)
+            assertEquals("invalid frame delta must not change distance", initial.distanceMeters, current.distanceMeters, 0.0)
+            assertEquals("invalid frame delta must not change wheel rotation", initial.wheelRotationRadians, current.wheelRotationRadians, 0.0)
+            assertTrue(current.speedMetersPerSecond.isFinite())
+            assertTrue(current.distanceMeters.isFinite())
+            assertTrue(current.wheelRotationRadians.isFinite())
+        }
+    }
+
+    @Test fun resetWithNonFiniteDistanceReturnsToSafeOrigin() {
+        for (invalidDistance in listOf(Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY)) {
+            val d = dynamics()
+            d.reset(invalidDistance)
+            val current = d.snapshot()
+            assertEquals("invalid reset distance must fall back to origin", 0.0, current.distanceMeters, 0.0)
+            assertEquals(0.0, current.speedMetersPerSecond, 0.0)
+            assertEquals(0.0, current.wheelRotationRadians, 0.0)
+            assertTrue(d.isStable())
+        }
+    }
+
     @Test fun repeatedLongFramesRemainFiniteAndStable() {
         val d = dynamics()
         repeat(200) {
