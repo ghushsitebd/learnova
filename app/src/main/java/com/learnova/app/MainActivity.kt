@@ -176,7 +176,6 @@ class MainActivity : AppCompatActivity() {
             learningPoints = prefs.getInt("learning_points", 0).coerceAtLeast(0)
             stars = prefs.getInt("stars", 0).coerceAtLeast(0)
             roadsideDirector.resetForLevel(level)
-            speakCurrentLesson()
         }
 
         fun setDrivingFromGarage(value: Boolean) {
@@ -2764,7 +2763,6 @@ class MainActivity : AppCompatActivity() {
             learningActivityIndex = 0
             lastLearningActivityMs = 0L
             saveProgress()
-            speakCurrentLesson()
         }
 
         private fun saveProgress() {
