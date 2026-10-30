@@ -244,10 +244,24 @@ jobs:
           test -s app/src/main/assets/creatures/stag.glb
           du -h app/src/main/assets/creatures/*.glb
 
+      - name: Generate animated bird wildlife prototypes
+        run: |
+          set -euo pipefail
+          python3 tools/generate_bird_prototypes.py
+          for species in parrot falcon owl peacock ostrich; do
+            test -s "app/src/main/assets/creatures/$species.glb"
+          done
+          echo "Five bird species generated with looping wing-flap animation."
+
       - name: Validate real creature animation assets
         run: |
           set -euo pipefail
           python3 tools/validate_creature_assets.py
+
+      - name: Validate generated bird geometry and wing animations
+        run: |
+          set -euo pipefail
+          python3 tools/validate_bird_assets.py
 
       - name: Validate near-field creature presentation contracts
         run: |
@@ -330,11 +344,11 @@ jobs:
           fi
           count=$(find "$ROOT" -maxdepth 1 -type f \( -name '*.glb' -o -name '*.glb.gz' -o -name '*.glb.b64' \) | sed -E 's/\.(glb|glb\.gz|glb\.b64)$//' | sort -u | wc -l)
           echo "Packaged creature asset keys: $count"
-          test "$count" -ge 14 || { echo "::error::At least fourteen verified real creature asset keys are required."; exit 1; }
-          for species in deer fox horse wolf cow boar rabbit stag alpaca bull donkey husky shiba_inu white_horse; do
+          test "$count" -ge 19 || { echo "::error::At least nineteen real creature asset keys (14 mammals + 5 birds) are required."; exit 1; }
+          for species in deer fox horse wolf cow boar rabbit stag alpaca bull donkey husky shiba_inu white_horse parrot falcon owl peacock ostrich; do
             test -s "$ROOT/$species.glb" || { echo "::error::Verified near-field asset missing: $species.glb"; exit 1; }
           done
-          echo "Verified near-field inventory gate passed: deer, fox, horse, wolf, cow, boar, rabbit, stag, alpaca, bull, donkey, husky, shiba_inu, white_horse."
+          echo "Verified near-field inventory gate passed: 14 mammals + parrot, falcon, owl, peacock and ostrich."
 
       - name: Verify Baseline Profile packaging
         shell: bash
