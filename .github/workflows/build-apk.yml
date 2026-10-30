@@ -258,6 +258,11 @@ jobs:
           set -euo pipefail
           python3 tools/validate_creature_assets.py
 
+      - name: Validate generated bird geometry and wing animations
+        run: |
+          set -euo pipefail
+          python3 tools/validate_bird_assets.py
+
       - name: Validate near-field creature presentation contracts
         run: |
           set -euo pipefail
