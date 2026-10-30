@@ -195,14 +195,14 @@ internal class NearFieldCreatureWorld(
     }
 
     private fun speciesPool(biome: WorldDirector.Biome): List<String> = when (biome) {
-        WorldDirector.Biome.FOREST -> listOf("lion", "tiger", "leopard", "bear", "monkey", "wolf", "husky", "shiba_inu", "fox", "deer", "boar", "stag", "rabbit")
-        WorldDirector.Biome.MOUNTAIN -> listOf("eagle", "falcon", "bear", "wolf", "horse", "stag", "goat")
-        WorldDirector.Biome.PLATEAU -> listOf("giraffe", "zebra", "deer", "horse", "stag", "rabbit", "ostrich")
-        WorldDirector.Biome.VILLAGE -> listOf("horse", "white_horse", "cow", "bull", "alpaca", "goat", "sheep", "chicken", "donkey", "rabbit", "buffalo")
+        WorldDirector.Biome.FOREST -> listOf("lion", "tiger", "leopard", "bear", "monkey", "wolf", "husky", "shiba_inu", "fox", "deer", "boar", "stag", "rabbit", "parrot", "owl")
+        WorldDirector.Biome.MOUNTAIN -> listOf("falcon", "owl", "bear", "wolf", "horse", "stag", "goat")
+        WorldDirector.Biome.PLATEAU -> listOf("giraffe", "zebra", "deer", "horse", "stag", "rabbit", "ostrich", "falcon")
+        WorldDirector.Biome.VILLAGE -> listOf("horse", "white_horse", "cow", "bull", "alpaca", "goat", "sheep", "chicken", "donkey", "rabbit", "buffalo", "peacock")
         WorldDirector.Biome.DESERT -> listOf("camel", "gazelle", "ostrich", "fox")
         WorldDirector.Biome.RIVER -> listOf("dolphin", "turtle", "duck", "fish", "frog")
         WorldDirector.Biome.COAST -> listOf("dolphin", "whale", "seal", "shark", "turtle", "crab")
-        WorldDirector.Biome.MARKET -> listOf("horse", "white_horse", "donkey", "goat", "cow", "bull", "alpaca", "chicken")
+        WorldDirector.Biome.MARKET -> listOf("horse", "white_horse", "donkey", "goat", "cow", "bull", "alpaca", "chicken", "parrot", "peacock")
         else -> listOf("deer", "fox", "rabbit", "bird")
     }
 
